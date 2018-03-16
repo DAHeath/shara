@@ -1,0 +1,53 @@
+name: shara
+version: '0.1.0.0'
+category: Solver
+author: David Heath and Qi Zhou
+maintainer: heath.davidanthony@gmail.com
+license: MIT
+
+default-extensions:
+- LambdaCase
+- MultiWayIf
+- GeneralizedNewtypeDeriving
+- DeriveDataTypeable
+- DeriveFunctor
+- DeriveFoldable
+- DeriveTraversable
+- RankNTypes
+- FlexibleContexts
+- FlexibleInstances
+- NoMonomorphismRestriction
+
+dependencies:
+- base >=4.9 && <5
+- ghc-paths
+- temporary
+- containers >=0.5.8
+- parsec
+- parsec-numbers
+- unordered-containers
+- pretty
+- array
+- mtl
+- process
+- monad-loops
+- lens
+- prettyprinter
+- split
+- template-haskell >=2.11
+- syb
+- z3 >=4.1
+- turtle
+- extra
+- async
+- stm
+
+library:
+  source-dirs: src
+
+  ghc-options: -Wall
+
+  exposed-modules:
+  - Formula
+  - Formula.Z3
+  - Grammar

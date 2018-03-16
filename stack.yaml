@@ -1,0 +1,24 @@
+resolver: lts-8.13
+
+packages:
+- '.'
+- location:
+    git: https://github.com/DAHeath/z3-haskell
+    commit: bb02352e19fc67d8fc7489c4ea0bd3cb609e1b3e
+  extra-dep: true
+
+extra-deps:
+- parsec-numbers-0.1.0
+- prettyprinter-1.1.1
+- fixplate-0.1.7
+- containers-0.5.8.2
+
+flags: {}
+
+extra-package-dbs: []
+
+extra-include-dirs:
+- /usr/local/include
+
+extra-lib-dirs:
+- /usr/local/lib
