@@ -53,8 +53,10 @@ forward sols s =
     Nothing -> do
       rs <- rulesWith s . view grammarRules <$> ask
       manyOr <$> mapM (\r -> do
-        rest <- forward sols (r ^. ruleLHS . nonterminalSymbol)
-        pure (rest `mkAnd` (r ^. ruleBody))) rs
+        for <- forward sols (r ^. ruleLHS . nonterminalSymbol)
+        back <- mapM (backward sols) $
+          filter (/= s) (r ^.. ruleRHS . traverse . nonterminalSymbol)
+        pure (manyAnd (for : (r ^. ruleBody) : back))) rs
     Just e -> pure (mkNot e)
 
 backward :: Map Symbol Expr -> Symbol -> Solve Expr
