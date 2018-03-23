@@ -16,12 +16,8 @@ import qualified Grammar.Shara.MinCut as MC
 
 cut :: Graph -> (Set Symbol, Set Symbol, Set Symbol)
 cut g =
-  case length (symbols g) of
-    0 -> (S.empty, S.empty, S.empty)
-    1 -> (symbols g, S.empty, S.empty)
-    _ ->
-      let (mcg, caps) = mkCutGraph g
-      in MC.mincut caps mcg
+  let (mcg, caps) = mkCutGraph g
+  in MC.mincut caps mcg
 
 -- | Construct a simple, non-hyper graph and a map of costs from an input
 -- hypergraph.

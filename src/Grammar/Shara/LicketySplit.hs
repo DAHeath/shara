@@ -1,4 +1,4 @@
-module Grammar.Shara.LicketySplit where
+module Grammar.Shara.LicketySplit (licketySplit) where
 
 import           Control.Lens
 import           Control.Monad.Reader
@@ -21,41 +21,66 @@ import           Grammar.Shara.Cut
 
 type Solve a = ExceptT Model (ReaderT Graph IO) a
 
+-- | `licketySplit` computes interpolants of a DAG. It attempts to do this
+-- maximally in parallel by cutting the DAG consideration at each iteration.
 licketySplit :: MonadIO m
              => Expr -> Grammar -> m (Either Model (Map Symbol Expr))
 licketySplit q g = do
   let m = M.singleton (g ^. grammarStart) q
-  liftIO (step 0 (mkGraph g) (mkGraph g) m)
+  -- Kick off the core loop with a restricted version of the graph that
+  -- includes everything except the query.
+  liftIO (loop gr initRestricted m)
+  where
+    gr = mkGraph g
+    restriction = S.delete (view grammarStart g) (symbols gr)
+    initRestricted = restrict restriction gr
 
-step :: Int -> Graph -> Graph -> Map Symbol Expr -> IO (Either Model (Map Symbol Expr))
-step c g restricted m =
+-- | The core loop for interpolating a DAG. The loop requires two versions of
+-- the DAG, one which is a full representation and another which is a
+-- restricted version that only contains a subset of the vertices.
+-- On each iteration, the loop cuts the restricted subset using a minimum cut
+-- algorithm. Those vertices along the cut are interpolated as a part of the
+-- current iteration. The two subgraphs on either side of the cut are the new
+-- restrictions which can be interpolated in parallel.
+loop :: Graph -> Graph -> Map Symbol Expr -> IO (Either Model (Map Symbol Expr))
+loop g restricted m =
   if null (symbols restricted S.\\ M.keysSet m)
   then pure (Right m)
   else do
     let (now, rest1, rest2) = cut restricted
-    runReaderT (runExceptT (foldrM interpSym m now)) g >>= \case
+    runReaderT (runExceptT (foldrM interp m now)) g >>= \case
+      -- We only proceed when none of the solved symbols failed.
       Left m' -> pure (Left m')
       Right m' -> do
-      -- We only proceed when none of the solved symbols failed.
-        (m1, m2) <- concurrently (step (c+1) g (restrict rest1 restricted) m')
-                                 (step (c+1) g (restrict rest2 restricted) m')
+        (m1, m2) <- concurrently (loop g (restrict rest1 restricted) m')
+                                 (loop g (restrict rest2 restricted) m')
+        -- A simple union of the two maps suffices since there should be no
+        -- possibility that the two subiterations computed interpolants for the 
+        -- same vertices.
         pure (M.union <$> m1 <*> m2)
 
--- This is for debugging without using parallel.
-concurrently' :: IO a -> IO b -> IO (a, b)
-concurrently' a b = do
+-- Replace `concurrently` by this to perform the same action without parallelism.
+sequentially :: IO a -> IO b -> IO (a, b)
+sequentially a b = do
   a' <- a
   b' <- b
   pure (a', b')
 
-interpSym :: Symbol -> Map Symbol Expr -> Solve (Map Symbol Expr)
-interpSym s sols = do
+-- | Interpolate a particular vertex in the graph.
+interp :: Symbol -> Map Symbol Expr -> Solve (Map Symbol Expr)
+interp s sols = do
+  -- Collect the forward dependencies.
   f <- forward sols s
+  -- Collect the backward dependencies.
   b <- backward sols s
+  -- Construct an interpolant of these two dependency sets and add it to the map.
   liftIO (interpolate f b) >>= \case
     Left m -> throwError m
     Right e -> pure (M.insert s e sols)
 
+-- | Collect the forward dependencies of a particular vertex. In addition to
+-- this set of dependencies containing everything below the current vertex, it
+-- also includes all siblings.
 forward :: Map Symbol Expr -> Symbol -> Solve Expr
 forward sols s =
   case M.lookup s sols of
@@ -63,11 +88,13 @@ forward sols s =
       rs <- forwardRules s <$> ask
       manyOr <$> mapM (\r -> do
         for <- forward sols (r ^. ruleLHS . nonterminalSymbol)
+        -- Collect the siblings by going backwards through the sibling branch.
         back <- mapM (backward sols) $
           filter (/= s) (r ^.. ruleRHS . traverse . nonterminalSymbol)
         pure (manyAnd (for : (r ^. ruleBody) : back))) rs
     Just e -> pure (mkNot e)
 
+-- | Collect the backward dependencies of a particular vertex.
 backward :: Map Symbol Expr -> Symbol -> Solve Expr
 backward sols s =
   case M.lookup s sols of

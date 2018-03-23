@@ -84,7 +84,10 @@ mincut caps g =
       cut = S.unions (map (\s -> search s (view forward g)) (S.toList prior)) S.\\ prior
       -- The vertices after the cut includes all other vertices.
       after = symbols g S.\\ prior S.\\ cut
-  in (cut, prior, after)
+  in
+  if null cut
+  then (prior `S.union` after, S.empty, S.empty)
+  else (cut, prior, after)
 
   where
     -- The eventual state which is calculated via the loop.

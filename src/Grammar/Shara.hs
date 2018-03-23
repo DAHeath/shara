@@ -7,10 +7,8 @@ import qualified Data.Map as M
 import           Formula hiding (Rule)
 
 import           Grammar.Grammar
-import           Grammar.Graph
 import           Grammar.Shara.LicketySplit
 import           Grammar.Shara.Disjoin
-import           Grammar.Shara.Cut
 
 import Data.Text.Prettyprint.Doc
 
