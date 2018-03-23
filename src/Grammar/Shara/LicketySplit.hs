@@ -1,4 +1,4 @@
-module Grammar.Shara.LicketySplit (licketySplit) where
+module Grammar.Shara.LicketySplit (anyOrder, licketySplit, InterpolationStrategy(..)) where
 
 import           Control.Lens
 import           Control.Monad.Reader
@@ -21,15 +21,21 @@ import           Grammar.Shara.Cut
 
 type Solve a = ExceptT Model (ReaderT Graph IO) a
 
+data InterpolationStrategy
+  = SequentialInterpolation
+  | ConcurrentInterpolation
+  deriving (Show, Read, Eq, Ord)
+
 -- | `licketySplit` computes interpolants of a DAG. It attempts to do this
 -- maximally in parallel by cutting the DAG consideration at each iteration.
 licketySplit :: MonadIO m
-             => Expr -> Grammar -> m (Either Model (Map Symbol Expr))
-licketySplit q g = do
+             => InterpolationStrategy
+             -> Expr -> Grammar -> m (Either Model (Map Symbol Expr))
+licketySplit strategy q g = do
   let m = M.singleton (g ^. grammarStart) q
   -- Kick off the core loop with a restricted version of the graph that
   -- includes everything except the query.
-  liftIO (loop gr initRestricted m)
+  liftIO (loop strategy gr initRestricted m)
   where
     gr = mkGraph g
     restriction = S.delete (view grammarStart g) (symbols gr)
@@ -42,8 +48,9 @@ licketySplit q g = do
 -- algorithm. Those vertices along the cut are interpolated as a part of the
 -- current iteration. The two subgraphs on either side of the cut are the new
 -- restrictions which can be interpolated in parallel.
-loop :: Graph -> Graph -> Map Symbol Expr -> IO (Either Model (Map Symbol Expr))
-loop g restricted m =
+loop :: InterpolationStrategy
+     -> Graph -> Graph -> Map Symbol Expr -> IO (Either Model (Map Symbol Expr))
+loop strategy g restricted m =
   if null (symbols restricted S.\\ M.keysSet m)
   then pure (Right m)
   else do
@@ -52,12 +59,16 @@ loop g restricted m =
       -- We only proceed when none of the solved symbols failed.
       Left m' -> pure (Left m')
       Right m' -> do
-        (m1, m2) <- concurrently (loop g (restrict rest1 restricted) m')
-                                 (loop g (restrict rest2 restricted) m')
+        (m1, m2) <- evaluator (loop strategy g (restrict rest1 restricted) m')
+                              (loop strategy g (restrict rest2 restricted) m')
         -- A simple union of the two maps suffices since there should be no
         -- possibility that the two subiterations computed interpolants for the 
         -- same vertices.
         pure (M.union <$> m1 <*> m2)
+  where
+    evaluator = case strategy of
+      SequentialInterpolation -> sequentially
+      ConcurrentInterpolation -> concurrently
 
 -- Replace `concurrently` by this to perform the same action without parallelism.
 sequentially :: IO a -> IO b -> IO (a, b)
@@ -65,6 +76,13 @@ sequentially a b = do
   a' <- a
   b' <- b
   pure (a', b')
+
+anyOrder :: MonadIO m => Expr -> Grammar -> m (Either Model (Map Symbol Expr))
+anyOrder q g = liftIO $ runReaderT (runExceptT (foldrM interp m now)) gr
+  where
+    gr = mkGraph g
+    m = M.singleton (g ^. grammarStart) q
+    now = S.delete (g^. grammarStart) (symbols gr)
 
 -- | Interpolate a particular vertex in the graph.
 interp :: Symbol -> Map Symbol Expr -> Solve (Map Symbol Expr)

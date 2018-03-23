@@ -1,6 +1,8 @@
 {-# LANGUAGE QuasiQuotes #-}
 module Grammar.Shara where
 
+import           Control.Monad.IO.Class
+
 import           Data.Map (Map)
 import qualified Data.Map as M
 
@@ -12,12 +14,44 @@ import           Grammar.Shara.Disjoin
 
 import Data.Text.Prettyprint.Doc
 
+data SharaCfg = SharaCfg
+  { interpolator :: Interpolator
+  , unwindStrategy :: UnwindStrategy
+  } deriving (Show, Read, Eq, Ord)
+
+data Interpolator
+  = LicketySplit InterpolationStrategy
+  | AnyOrder
+  deriving (Show, Read, Eq, Ord)
+
+data UnwindStrategy
+  = TreeUnwind
+  | DisjointDependencyUnwind
+  deriving (Show, Read, Eq, Ord)
+
 shara :: Expr -> Grammar -> IO (Either Model (Map Symbol Expr))
-shara q g =
-  let (g', cs) = mkDisjoint g
-  in licketySplit q g' >>= \case
+shara = shara' defaultCfg
+  where
+    defaultCfg =
+      SharaCfg
+      { interpolator = LicketySplit ConcurrentInterpolation
+      , unwindStrategy = DisjointDependencyUnwind
+      }
+
+shara' :: SharaCfg -> Expr -> Grammar -> IO (Either Model (Map Symbol Expr))
+shara' cfg q g =
+  let (g', cs) = unwindGrammar (unwindStrategy cfg) g
+  in solveGrammar (interpolator cfg) q g' >>= \case
     Left m -> pure (Left m)
     Right m -> pure (Right $ collapseSolution cs m)
+
+unwindGrammar :: UnwindStrategy -> Grammar -> (Grammar, Mapping)
+unwindGrammar DisjointDependencyUnwind = mkDisjoint
+unwindGrammar TreeUnwind = undefined
+
+solveGrammar :: MonadIO m => Interpolator -> Expr -> Grammar -> m (Either Model (Map Symbol Expr))
+solveGrammar (LicketySplit strategy) = licketySplit strategy
+solveGrammar AnyOrder = anyOrder
 
 testChc :: Grammar
 testChc = Grammar
@@ -42,7 +76,7 @@ testChc = Grammar
 
 runTest :: IO ()
 runTest = do
-  sol <- licketySplit [expr|not (i = 3)|] testChc
+  sol <- licketySplit ConcurrentInterpolation [expr|not (i = 3)|] testChc
   case sol of
     Left m -> print (pretty (M.toList m))
     Right m -> print (pretty (M.toList m))
