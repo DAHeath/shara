@@ -5,12 +5,13 @@ import           Control.Monad.IO.Class
 
 import           Data.Map (Map)
 import qualified Data.Map as M
+import           Data.Set (Set)
 
 import           Formula hiding (Rule)
 
 import           Grammar.Grammar
 import           Grammar.Shara.LicketySplit
-import           Grammar.Shara.Disjoin
+import           Grammar.Shara.TreeUnwind
 
 import Data.Text.Prettyprint.Doc
 
@@ -35,19 +36,22 @@ shara = shara' defaultCfg
     defaultCfg =
       SharaCfg
       { interpolator = LicketySplit ConcurrentInterpolation
-      , unwindStrategy = DisjointDependencyUnwind
+      , unwindStrategy = TreeUnwind
+      -- TODO swap this
       }
 
 shara' :: SharaCfg -> Expr -> Grammar -> IO (Either Model (Map Symbol Expr))
-shara' cfg q g =
-  let (g', cs) = unwindGrammar (unwindStrategy cfg) g
-  in solveGrammar (interpolator cfg) q g' >>= \case
+shara' cfg q g = do
+  let (q', g', cs) = unwindGrammar (unwindStrategy cfg) q g
+  liftIO $ print (pretty g')
+  solveGrammar (interpolator cfg) q' g' >>= \case
     Left m -> pure (Left m)
-    Right m -> pure (Right $ collapseSolution cs m)
+    Right m -> pure (Right m)
+    -- TODO collapse solution
 
-unwindGrammar :: UnwindStrategy -> Grammar -> (Grammar, Mapping)
-unwindGrammar DisjointDependencyUnwind = mkDisjoint
-unwindGrammar TreeUnwind = undefined
+unwindGrammar :: UnwindStrategy -> Expr -> Grammar -> (Expr, Grammar, Map Symbol (Set Symbol))
+unwindGrammar DisjointDependencyUnwind = undefined
+unwindGrammar TreeUnwind = treeUnwind
 
 solveGrammar :: MonadIO m => Interpolator -> Expr -> Grammar -> m (Either Model (Map Symbol Expr))
 solveGrammar (LicketySplit strategy) = licketySplit strategy
@@ -59,12 +63,12 @@ testChc = Grammar
   , _grammarRules =
     [ Rule zero [expr|i > n|] [one]
     , Rule one [expr|i = 0|] []
-    , Rule one [expr|i = i'+2 && i' <= n|] [two]
-    , Rule two [expr|i' = 0|] []
-    , Rule two [expr|i' = i''+2 && i'' <= n|] [three]
-    , Rule three [expr|i'' = 0|] []
-    , Rule three  [expr|i'' = i'''+2 && i''' <= n|] [four]
-    , Rule four [expr|i''' = 0|] []
+    , Rule one [expr|i = i'+2 && i' <= n|] [Nonterminal 2 [Var "i'" Int]]
+    , Rule two [expr|i = 0|] []
+    , Rule two [expr|i = i'+2 && i' <= n|] [Nonterminal 3 [Var "i'" Int]]
+    , Rule three [expr|i = 0|] []
+    , Rule three  [expr|i = i'+2 && i' <= n|] [Nonterminal 4 [Var "i'" Int]]
+    , Rule four [expr|i = 0|] []
     ]
   }
   where
