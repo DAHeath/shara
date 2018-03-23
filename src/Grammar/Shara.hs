@@ -43,7 +43,6 @@ shara = shara' defaultCfg
 shara' :: SharaCfg -> Expr -> Grammar -> IO (Either Model (Map Symbol Expr))
 shara' cfg q g = do
   let (q', g', cs) = unwindGrammar (unwindStrategy cfg) q g
-  liftIO $ print (pretty g')
   solveGrammar (interpolator cfg) q' g' >>= \case
     Left m -> pure (Left m)
     Right m -> pure (Right m)
@@ -80,7 +79,7 @@ testChc = Grammar
 
 runTest :: IO ()
 runTest = do
-  sol <- licketySplit ConcurrentInterpolation [expr|not (i = 3)|] testChc
+  sol <- shara [expr|not (i = 3)|] testChc
   case sol of
     Left m -> print (pretty (M.toList m))
     Right m -> print (pretty (M.toList m))

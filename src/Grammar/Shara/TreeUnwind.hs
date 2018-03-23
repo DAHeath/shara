@@ -11,6 +11,7 @@ import qualified Data.Map as M
 
 import           Formula hiding (Rule)
 import           Grammar.Grammar
+import           Grammar.Graph
 
 data UnwindState = UnwindState
   { _varCounter :: Int
@@ -30,38 +31,45 @@ emptyState = UnwindState
   , _mapping = M.empty
   }
 
+-- Unwind the given CHC system to a tree. In addition, rename the variables in
+-- the query to be consistent with the new CHC vocabulary and generate a map
+-- from symbols in the original grammar to symbols in the new grammar.
 treeUnwind :: Expr -> Grammar -> (Expr, Grammar, Map Symbol (Set Symbol))
 treeUnwind q g =
   let start = g ^. grammarStart
-      rs = g ^. grammarRules
-      startNT = view ruleLHS $ head $ rulesFor start rs
-      finalState = execState (loop rs startNT) emptyState
+      startNT = view ruleLHS $ head $ rulesFor start (g ^. grammarRules)
+      finalState = execState (loop (mkGraph g) startNT) emptyState
       g' = Grammar 0 (view rules finalState)
       startNT' = view ruleLHS $ head $ rulesFor 0 (g' ^. grammarRules)
       (vMap, equivs) =
         mkMapping (zip (view nonterminalVars startNT) (view nonterminalVars startNT'))
   in (subst vMap q `mkAnd` equivs, g', view mapping finalState)
 
-loop :: [Rule] -> Nonterminal -> Unwind Nonterminal
-loop rs nt =
+-- The core loop generates fresh nonterminals with uniquely named variables for
+-- all rules for a particular vertex. It generates fresh rules using these new
+-- nonterminals.
+loop :: Graph -> Nonterminal -> Unwind Nonterminal
+loop gr nt = do
+  nt' <- freshNonterminal nt
   let s = view nonterminalSymbol nt
-      rs' = rulesFor s rs
-  in do
-    nt' <- freshNonterminal nt
-    mapM_ (handleRule nt') rs'
-    pure nt'
+  mapping %= M.insertWith S.union s (S.singleton (view nonterminalSymbol nt'))
+  mapM_ (handleRule nt') (backwardRules s gr)
+  pure nt'
   where
     handleRule lhs' (Rule lhs phi rhs) = do
-      rhs' <- mapM (loop rs) rhs
+      rhs' <- mapM (loop gr) rhs
       let phi' = adjustFormula lhs lhs' rhs rhs' phi
       rules %= (Rule lhs' phi' rhs' :)
 
+    -- There are two parts to rewriting formulas. First, we must replace
+    -- variables by their fresh versions. Second, if a variable has more than one
+    -- fresh version, we must set these duplicates equal to one another.
     adjustFormula lhs lhs' rhs rhs' phi =
       let origVars = concatMap (view nonterminalVars) (lhs:rhs)
           newVars = concatMap (view nonterminalVars) (lhs':rhs')
-          (mapping, equivs) = mkMapping (zip origVars newVars)
+          (vMap, equivs) = mkMapping (zip origVars newVars)
       in
-      subst mapping phi `mkAnd` equivs
+      subst vMap phi `mkAnd` equivs
 
 mkMapping :: [(Var, Var)] -> (Map Var Var, Expr)
 mkMapping = foldr adjust (M.empty, LBool True)
@@ -72,7 +80,7 @@ adjust (v, v') (m, f) = case M.lookup v m of
   Just v'' -> (m, mkEql (view varType v') (V v') (V v'') `mkAnd` f)
 
 freshNonterminal :: Nonterminal -> Unwind Nonterminal
-freshNonterminal (Nonterminal sym vs) = do
+freshNonterminal (Nonterminal _ vs) = do
   sym' <- symCounter <<+= 1
   vs' <- mapM freshVar vs
   pure (Nonterminal sym' vs')
