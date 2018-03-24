@@ -21,7 +21,7 @@ cut g =
 
 -- | Construct a simple, non-hyper graph and a map of costs from an input
 -- hypergraph.
-mkCutGraph :: Graph -> (MC.Graph, Map (Symbol, Symbol) (Maybe Rational))
+mkCutGraph :: Graph -> (MC.Graph, Map (Symbol, Symbol) Rational)
 mkCutGraph g =
   -- Find each pairing where each pairing represents a hyperedge. The list of
   -- symbols are the sources of the edge and the distinguished symbol is the
@@ -43,8 +43,8 @@ mkCutGraph g =
     (up, down) = count g
 
     -- Modify the result due to the effects of a hyperedge.
-    handlePair :: (Symbol, [Symbol]) -> (MC.Graph, Map (Symbol, Symbol) (Maybe Rational))
-                                     -> (MC.Graph, Map (Symbol, Symbol) (Maybe Rational))
+    handlePair :: (Symbol, [Symbol]) -> (MC.Graph, Map (Symbol, Symbol) Rational)
+                                     -> (MC.Graph, Map (Symbol, Symbol) Rational)
     handlePair (snk, srcs) (mcg, cap) =
       let below = (snk, M.findWithDefault 0 snk down)
           aboves = map (\src -> (src, M.findWithDefault 0 src up)) srcs
@@ -56,8 +56,8 @@ mkCutGraph g =
     singlePair :: (Symbol, Integer)
                -> [(Symbol, Integer)]
                -> Symbol
-               -> (MC.Graph, Map (Symbol, Symbol) (Maybe Rational))
-               -> (MC.Graph, Map (Symbol, Symbol) (Maybe Rational))
+               -> (MC.Graph, Map (Symbol, Symbol) Rational)
+               -> (MC.Graph, Map (Symbol, Symbol) Rational)
     singlePair (snk, below) aboves src (mcg, cap) =
       -- Find the distinguished source's above count and separate it from the others.
       let ([(_, srcUp)], aboves') = partition ((== src) . fst) aboves
@@ -69,7 +69,7 @@ mkCutGraph g =
           numDeps = allDown * srcUp
           -- The cost of the edge is the inverse of the number of dependencies (or
           -- some default value if the number of dependencies is 0).
-          cost = if numDeps == 0 then Just 1 else Just (1 % numDeps)
+          cost = if numDeps == 0 then 1 else 1 % numDeps
       in (MC.addEdge src snk mcg, M.insert (src, snk) cost cap)
 
 -- | Calculate the number of symbols above and below each symbol in the graph.

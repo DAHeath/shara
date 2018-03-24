@@ -6,7 +6,6 @@ import           Control.Monad.State
 import           Control.Monad.Reader
 import           Control.Monad.Extra (concatMapM)
 
-import           Data.Maybe (catMaybes)
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Set (Set)
@@ -42,7 +41,7 @@ empty :: Graph
 empty = Graph M.empty M.empty S.empty S.empty
 
 data CutState = CutState
-  { _capacities :: Map (Symbol, Symbol) (Maybe Rational)
+  { _capacities :: Map (Symbol, Symbol) Rational
   , _weights    :: Map (Symbol, Symbol) Rational
   } deriving (Show, Read, Eq, Ord)
 makeLenses ''CutState
@@ -74,7 +73,7 @@ symbols g = M.keysSet (view forward g `M.union` view backward g)
 --  1) the vertices which are on the cut
 --  2) the vertices prior to the cut
 --  3) the vertices after the cut
-mincut :: Map (Symbol, Symbol) (Maybe Rational) -> Graph -> (Set Symbol, Set Symbol, Set Symbol)
+mincut :: Map (Symbol, Symbol) Rational -> Graph -> (Set Symbol, Set Symbol, Set Symbol)
 mincut caps g =
   let residual = foldr modGraph g (edges g)
       -- The vertices prior to the cut are those reachable in the residual graph.
@@ -98,11 +97,8 @@ mincut caps g =
     modGraph :: (Symbol, Symbol) -> Graph -> Graph
     modGraph (s, t) gr =
       let w = M.findWithDefault 0 (s, t) (view weights finalState)
-          c = M.findWithDefault (Just 0) (s, t) (view capacities finalState)
-          gr' =
-            case c of
-              Nothing -> gr
-              Just c' -> if w < c' then gr else deleteEdge s t gr
+          c = M.findWithDefault 0 (s, t) (view capacities finalState)
+          gr' = if w < c then gr else deleteEdge s t gr
       in if w > 0 then addEdge t s gr' else gr'
 
 
@@ -117,31 +113,22 @@ mincut caps g =
         [] -> pure ()
         (p:_) -> do
           bn <- bottleneck p
-          case bn of
-            Nothing -> pure ()
-            Just bn' ->
-              mapM_ (adjust bn') p
+          mapM_ (adjust bn) p
           loop
 
     -- How much weight can we add to each edge along this path?
-    bottleneck :: Set Edge -> Cut (Maybe Rational)
-    bottleneck es = do
-      alloweds <- catMaybes <$> mapM allowed (S.toList es)
-      pure (case alloweds of
-        [] -> Nothing
-        xs -> Just (minimum alloweds))
+    bottleneck :: Set Edge -> Cut Rational
+    bottleneck = fmap minimum . mapM allowed . S.toList
 
     -- How much more weight can we add (subtract) from the given edge?
-    allowed :: Edge -> Cut (Maybe Rational)
+    allowed :: Edge -> Cut Rational
     allowed (s, t, d) = case d of
       Forward -> do
-        c <- M.findWithDefault (Just 0) (s, t) <$> use capacities
+        c <- M.findWithDefault 0 (s, t) <$> use capacities
         w <- M.findWithDefault 0 (s, t) <$> use weights
-        pure $ case c of
-          Nothing -> Nothing
-          Just c' -> Just (c' - w)
+        pure (c - w)
       Backward ->
-        Just . M.findWithDefault 0 (t, s) <$> use weights
+        M.findWithDefault 0 (t, s) <$> use weights
 
     -- Adjust the weights of the edges in the path.
     adjust :: Rational -> Edge -> Cut ()
@@ -188,28 +175,20 @@ dfsFrom s = do
     -- edges connected to this vertex.
     | otherwise -> do
       g <- view theGraph
-      let ss = search s (view forward g)
-      let ps = search s (view backward g)
-      ss' <- concatMapM for (S.toList ss)
-      ps' <- concatMapM back (S.toList ps)
-      pure (ss' ++ ps')
+      succPaths <- concatMapM for $ S.toList (search s (view forward g))
+      predPaths <- concatMapM back $ S.toList (search s (view backward g))
+      pure (succPaths ++ predPaths)
   where
     -- We can proceed forward when there is capacity left in the edge.
     for :: Symbol -> Reader ExploreCtxt [Set Edge]
     for t = do
-      ws <- view (cutState . weights)
-      cs <- view (cutState . capacities)
-      let c = M.findWithDefault (Just 0) (s, t) cs
-      let w = M.findWithDefault 0 (s, t) ws
+      cap <- M.findWithDefault 0 (s, t) <$> view (cutState . capacities)
+      weight <- M.findWithDefault 0 (s, t) <$> view (cutState . weights)
       -- We recurse, making sure to add the current edge to the eventual traversal and
       -- noting that we've already seen the current vertex.
-      case c of
-        Nothing ->
-          map (S.insert (s, t, Forward)) <$> local (visited %~ S.insert s) (dfsFrom t)
-        Just c' ->
-          if w < c'
-          then map (S.insert (s, t, Forward)) <$> local (visited %~ S.insert s) (dfsFrom t)
-          else pure []
+      if weight < cap
+      then map (S.insert (s, t, Forward)) <$> local (visited %~ S.insert s) (dfsFrom t)
+      else pure []
 
     -- We can proceed backward when there is weight in the edge.
     back :: Symbol -> Reader ExploreCtxt [Set Edge]
