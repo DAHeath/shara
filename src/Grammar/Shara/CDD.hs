@@ -126,8 +126,32 @@ satisifyIndex r coloredRules = satisifyIndexRec 0 r coloredRules
     		      if disjoin then satisify r xs
     		      	else return False
 
+-- this need rework to have a more efficient implementation
 isDisjoin :: (Nonterminal,Nonterminal) -> Unwind Bool
-isDisjoin = undefined
+isDisjoin (n1,n2) = do
+  joinSet <- collectJoinSet n1
+  return (S.notMember n2 joinSet)
+
+-- given a nontermianl, collects it corresponding join set
+collectJoinSet :: Nonterminal -> Unwind (Set Nonterminal)
+collectJoinSet ns = do
+  (UnwindState _ graph _) <- get
+  let rules = forwardRules ns graph
+  let nextNonterminas = foldr (\r s -> S.insert (_ruleLHS r) s) S.empty rules
+  furtherJoinSets <- mapM collectJoinSet (S.toList nextNonterminas)
+  let disjointNs = foldr (\r s -> S.union (S.fromList (filter (\n -> ns /= n) (_ruleRHS r))) s) S.empty rules
+  joinSets <- mapM colllectBack (S.toList disjointNs)
+  return (S.unions (furtherJoinSets++joinSets))
+
+-- given a nontermianl, collects its back track nonterminals include itself
+colllectBack :: Nonterminal -> Unwind (Set Nonterminal)
+colllectBack ns = do
+  (UnwindState _ graph _) <- get
+  let rules = backwardRules ns graph
+  let backNonterminals =S.toList (S.fromList (concat (map _ruleRHS rules)))
+  allBackSet <- mapM colllectBack backNonterminals
+  return (S.insert ns (S.unions allBackSet))
+
 
 
 freshNonterminal :: Nonterminal -> Unwind Nonterminal
