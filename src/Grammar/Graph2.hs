@@ -26,7 +26,12 @@ data CloneInfo = CloneInfo
 type BackEdges = Set Rule
 
 mkGraph :: Grammar -> Graph
-mkGraph = undefined
+mkGraph (Grammar _ rs) =
+  let (fors, backs) = unzip $ map (\r@(Rule lhs _ rhs) ->
+        ( M.fromList (zip rhs (repeat [r]))
+        , M.singleton lhs [r]
+        )) rs
+  in Graph (M.unionsWith (++) fors) (M.unionsWith (++) backs)
 
 forwardRules :: Nonterminal -> Graph -> [Rule]
 forwardRules s = M.findWithDefault [] s . graphForward
@@ -34,11 +39,14 @@ forwardRules s = M.findWithDefault [] s . graphForward
 backwardRules :: Nonterminal -> Graph -> [Rule]
 backwardRules s = M.findWithDefault [] s . graphBackward
 
+noterminals :: Graph -> Set Nonterminal
+noterminals g = M.keysSet (graphForward g) `S.union` M.keysSet (graphBackward g)
+
 initials :: Graph -> Set Nonterminal
 initials g = undefined
 
 terminals :: Graph -> Set Nonterminal
-terminals g = undefined
+terminals g = (noterminals g) `S.difference` (M.keysSet (graphForward g))
 
 opens :: Graph -> Set Nonterminal
 opens g = undefined
@@ -50,3 +58,11 @@ toGrammar start gr =
 
 plot :: FilePath -> Graph -> IO ()
 plot fn = P.plot fn . toGrammar 0
+
+plot2 :: FilePath -> Graph -> IO ()
+plot2 fn = P.plot fn . toGrammar2 0
+
+toGrammar2 :: Symbol -> Graph -> Grammar
+toGrammar2 start gr =
+  let rs = nub $ concat $ M.elems $ graphBackward gr
+  in Grammar start rs

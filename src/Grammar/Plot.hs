@@ -42,9 +42,10 @@ dot g =
           lbl = "\"" ++ show (view nonterminalSymbol nt) ++ "\n" ++ vs' ++ "\""
       in show (view nonterminalSymbol nt) ++ " [label=" ++ lbl ++ "];"
     rule (Rule lhs f rhs) =
-      let annot = " [label=\"" ++ show (pretty f) ++ "\"];"
-          inc = map (view nonterminalSymbol) rhs
-          tar = lhs ^. nonterminalSymbol
+          let symbols = map _nonterminalSymbol rhs
+              annot = " [label=\"" ++ "head:" ++ show(_nonterminalSymbol lhs) ++"body:" ++ show (symbols) ++ "\"];"
+              inc = map (view nonterminalSymbol) rhs
+              tar = lhs ^. nonterminalSymbol
       in case inc of
         [i] -> [show i ++ " -> " ++ show tar ++ annot]
         _ ->
