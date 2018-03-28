@@ -26,19 +26,10 @@ mkGraph :: Grammar -> Graph
 mkGraph = undefined
 
 forwardRules :: Nonterminal -> Graph -> [Rule]
-forwardRules s = undefined
+forwardRules s = M.findWithDefault [] s . graphForward
 
 backwardRules :: Nonterminal -> Graph -> [Rule]
-backwardRules s = undefined
-
-successors :: Nonterminal -> Graph -> [Nonterminal]
-successors s = undefined
-
-predecessors :: Nonterminal -> Graph -> [[Nonterminal]]
-predecessors s = undefined
-
-symbols :: Graph -> Set Nonterminal
-symbols g = undefined
+backwardRules s = M.findWithDefault [] s . graphBackward
 
 initials :: Graph -> Set Nonterminal
 initials g = undefined

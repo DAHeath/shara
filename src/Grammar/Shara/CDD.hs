@@ -126,7 +126,7 @@ satisifyIndex r coloredRules = satisifyIndexRec 0 r coloredRules
     		      if disjoin then satisify r xs
     		      	else return False
 
--- this need rework to have a more efficient implementation
+--TODO: this need rework to have a more efficient implementation
 isDisjoin :: (Nonterminal,Nonterminal) -> Unwind Bool
 isDisjoin (n1,n2) = do
   joinSet <- collectJoinSet n1

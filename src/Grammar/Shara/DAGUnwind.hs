@@ -42,8 +42,10 @@ dagUnwind nextId cloneInfo solutions originalGraph lastUnwindDag = do
              (UnwindState nextId cloneInfo _ unwindDag _ _) = unwindResult
             in return (Just (UnwindResult nextId cloneInfo unwindDag))
 
+
+-- TODO : using solutions to decided if it needs to unwind
 removeInductiveEdge :: MonadIO m => Map Nonterminal Expr -> Rule ->m [Rule]
-removeInductiveEdge = undefined
+removeInductiveEdge _ r = [r]
 
 
 unwindNewRules :: [Rule] -> Unwind ()
