@@ -16,6 +16,12 @@ data Graph = Graph
   , graphBackward :: Map Nonterminal [Rule]
   } deriving (Show, Read, Eq, Ord)
 
+data CloneInfo = CloneInfo 
+  { copyToO :: (Map Nonterminal Nonterminal) 
+  , oToCopy :: (Map Nonterminal [Nonterminal])
+  } deriving (Show, Read, Eq, Ord)
+type BackEdges = Set Rule
+
 mkGraph :: Grammar -> Graph
 mkGraph = undefined
 
@@ -39,4 +45,7 @@ initials g = undefined
 
 terminals :: Graph -> Set Nonterminal
 terminals g = undefined
+
+opens :: Graph -> Set Nonterminal
+opens g = undefined
 
