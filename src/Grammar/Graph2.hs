@@ -7,7 +7,10 @@ import qualified Data.Map as M
 import           Data.Set (Set)
 import qualified Data.Set as S
 
+import           Data.List (nub)
+
 import           Grammar.Grammar
+import qualified Grammar.Plot as P
 
 -- | A more efficient representation of a chc grammar when traversing it as if
 -- it were a graph.
@@ -49,3 +52,10 @@ terminals g = undefined
 opens :: Graph -> Set Nonterminal
 opens g = undefined
 
+toGrammar :: Symbol -> Graph -> Grammar
+toGrammar start gr =
+  let rs = nub $ concat $ M.elems $ graphForward gr
+  in Grammar start rs
+
+plot :: FilePath -> Graph -> IO ()
+plot fn = P.plot fn . toGrammar 0
