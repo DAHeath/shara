@@ -84,6 +84,7 @@ updateRule r n partGraph = case (M.lookup n partGraph) of
 constructNewNode :: Nonterminal -> Unwind Nonterminal
 constructNewNode n = do
   (UnwindState _ cloneInfo newNodes _ _ _ _) <- get
+  --TODO: need to re do here, it is possible this n is not in clone at all
   let currentNode = head ((oToCopy cloneInfo) M.! n)
   if S.member currentNode newNodes then return currentNode
     else copyNewNodes n

@@ -12,6 +12,7 @@ import           Grammar.Grammar
 import           Grammar.Graph2
 import           Grammar.Shara.CDD
 import           Grammar.Shara.DAGUnwind
+import           Grammar.Shara.Pre
 
 data Vertex = Vertex Int [Var] [Edge]
 
@@ -92,6 +93,27 @@ test3 = do
                                             plot "./dotfile3" nextUnwind
     Nothing -> error "this is wrong"
 
+test4 :: IO ()
+test4 = do
+  let vars1 = [(Var "x1" Int)]
+  let vars2 = [(Var "x2" Int)]
+  let vars3 = [(Var "x3" Int)]
+  let vars4 = [(Var "x4" Int)]
+  let vars5 = [(Var "x5" Int)]
+  let n1 = Nonterminal 1 vars1
+  let n2 = Nonterminal 2 vars2
+  let n3 = Nonterminal 3 vars3
+  let n4 = Nonterminal 4 vars4
+  let n5 = Nonterminal 5 vars5
+  let r1 = Rule n2 (LBool True) [n1]
+  let r2 = Rule n3 (LBool True) [n1] 
+  let r3 = Rule n4 (LBool True) [n2]
+  let r4 = Rule n4 (LBool True) [n3]
+  let r5 = Rule n5 (LBool True) [n4]
+  let r6 = Rule n1 (LBool True) [n4]
+  let g = mkGraph (Grammar 0 [r1,r2,r3,r4,r5,r6])
+  print (backEdges g)
+  plot "./dotfile2" g
 
 shortPrint :: [Nonterminal] -> String
 shortPrint l = case l of
