@@ -43,13 +43,13 @@ noterminals :: Graph -> Set Nonterminal
 noterminals g = M.keysSet (graphForward g) `S.union` M.keysSet (graphBackward g)
 
 initials :: Graph -> Set Nonterminal
-initials g = undefined
+initials g = S.filter (\s -> all (\r -> null (_ruleRHS r)) (backwardRules s g)) (noterminals g)
 
 terminals :: Graph -> Set Nonterminal
 terminals g = (noterminals g) `S.difference` (M.keysSet (graphForward g))
 
 opens :: Graph -> Set Nonterminal
-opens g = undefined
+opens = initials
 
 toGrammar :: Symbol -> Graph -> Grammar
 toGrammar start gr =

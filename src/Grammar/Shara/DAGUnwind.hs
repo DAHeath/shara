@@ -1,5 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
-module Grammar.Shara.TreeUnwind where
+module Grammar.Shara.DAGUnwind where
 
 import           Control.Monad.State
 
@@ -19,6 +19,7 @@ data UnwindState = UnwindState
   , _graph :: Graph
   , _visitedRules :: Set Rule
   , _originalGraph :: Graph
+  , _nextUnwindRules :: [Rule]
   } deriving (Show, Read, Eq, Ord)
 
 data UnwindResult = UnwindResult
@@ -30,59 +31,59 @@ data UnwindResult = UnwindResult
 type Unwind a = State UnwindState a
 
 -- unwind the graph that part is not enough
-dagUnwind ::  MonadIO m => Int -> CloneInfo -> Map Nonterminal Expr -> Graph -> Graph -> m (Maybe UnwindResult)
-dagUnwind nextId cloneInfo solutions originalGraph lastUnwindDag = do
-  let openNs = opens lastUnwindDag
-  let originalNodes = map (\x -> (copyToO cloneInfo) M.! x) (S.toList openNs)
-  let backEdges = concat (map (\n -> backwardRules n originalGraph) originalNodes)
+dagUnwind :: [Rule] ->  Int -> CloneInfo -> Map Nonterminal Expr -> Graph -> Graph -> IO (Maybe UnwindResult)
+dagUnwind backEdges nextId cloneInfo solutions originalGraph lastUnwindDag = do
   notInductiveBackEdges' <- (mapM (removeInductiveEdge solutions) backEdges)
   let notInductiveBackEdges = concat notInductiveBackEdges'
   if null notInductiveBackEdges then return Nothing
-    else let (_,unwindResult) = runState (unwindNewRules notInductiveBackEdges) (UnwindState nextId cloneInfo (S.empty) lastUnwindDag (S.empty)  originalGraph)
-             (UnwindState nextId cloneInfo _ unwindDag _ _) = unwindResult
-            in return (Just (UnwindResult nextId cloneInfo unwindDag))
+    else do let (_,unwindResult) = runState unwindNewRules (UnwindState nextId cloneInfo (S.empty) lastUnwindDag (S.empty)  originalGraph notInductiveBackEdges)
+            let (UnwindState nextId cloneInfo _ unwindDag _ _ _) = unwindResult
+            return (Just (UnwindResult nextId cloneInfo unwindDag))
 
 
 -- TODO : using solutions to decided if it needs to unwind
-removeInductiveEdge :: MonadIO m => Map Nonterminal Expr -> Rule ->m [Rule]
-removeInductiveEdge _ r = [r]
+removeInductiveEdge :: Map Nonterminal Expr -> Rule ->IO [Rule]
+removeInductiveEdge _ r =return [r]
 
 
-unwindNewRules :: [Rule] -> Unwind ()
-unwindNewRules rs = do
-  mapM_ unwindNewRule rs
-  return ()
+unwindNewRules :: Unwind ()
+unwindNewRules = do
+  (UnwindState nextId cloneInfo newNodes graph visitedRules originalGraph nextUnwindRules) <- get
+  if  null nextUnwindRules then return ()
+    else do put (UnwindState nextId cloneInfo newNodes graph visitedRules originalGraph (tail nextUnwindRules))
+            unwindNewRule (head nextUnwindRules)
 
 unwindNewRule :: Rule -> Unwind ()
 unwindNewRule rule = do
-  (UnwindState _ _ _ _ visitedRules _) <- get
-  if S.member rule visitedRules then return ()
-    else copyRule rule
+  (UnwindState nextId _ _ _ visitedRules _ _) <- get
+  if S.member rule visitedRules then unwindNewRules
+           else copyRule rule
 
 copyRule :: Rule -> Unwind ()
 copyRule r@(Rule h expr bodys) = do
-  (UnwindState _ cloneInfo _ _ _ _) <- get
+  (UnwindState _ cloneInfo _ _ _ _ _) <- get
   let newH = head ((oToCopy cloneInfo) M.! h)
   newBodys <- mapM constructNewNode bodys
   let newRule = Rule newH expr newBodys
-  (UnwindState nextId cloneInfo2 newNodes graph visitedRules originalGraph) <- get
+  (UnwindState nextId cloneInfo2 newNodes graph visitedRules originalGraph nextUnwindRules) <- get
   let (Graph forwardRules backwardRules) = graph
   let newForwardRules = updateRule newRule newH forwardRules
   let newBackwardRules = foldr (updateRule newRule) backwardRules newBodys
   let newVisitedRules = S.insert r visitedRules
   let newGraph = Graph newForwardRules newBackwardRules
-  put (UnwindState nextId cloneInfo2 newNodes newGraph newVisitedRules originalGraph)
+  put (UnwindState nextId cloneInfo2 newNodes newGraph newVisitedRules originalGraph nextUnwindRules)
+  unwindNewRules
 
 
 updateRule :: Rule -> Nonterminal -> Map Nonterminal [Rule] -> Map Nonterminal [Rule]
 updateRule r n partGraph = case (M.lookup n partGraph) of 
   Just list -> let newList = S.toList (S.insert r (S.fromList list))
                   in M.insert n newList partGraph
-  Nothing -> M.singleton n [r] 
+  Nothing -> M.insert n [r] partGraph
 
 constructNewNode :: Nonterminal -> Unwind Nonterminal
 constructNewNode n = do
-  (UnwindState _ cloneInfo newNodes _ _ _) <- get
+  (UnwindState _ cloneInfo newNodes _ _ _ _) <- get
   let currentNode = head ((oToCopy cloneInfo) M.! n)
   if S.member currentNode newNodes then return currentNode
     else copyNewNodes n
@@ -90,19 +91,20 @@ constructNewNode n = do
 copyNewNodes :: Nonterminal -> Unwind Nonterminal
 copyNewNodes n = do
   newNode <- freshNode n
-  (UnwindState _ _ _ _ _ originalGraph) <- get
+  (UnwindState nextId cloneInfo newNodes graph visitedRules originalGraph nextUnwindRules) <- get
   let backRules = backwardRules n originalGraph
-  unwindNewRules backRules
+  put (UnwindState nextId cloneInfo newNodes graph visitedRules originalGraph (nextUnwindRules++backRules))
   return newNode
 
 freshNode :: Nonterminal -> Unwind Nonterminal
 freshNode n@(Nonterminal _ vars) = do
-  (UnwindState nextId cloneInfo newNodes graph visitedRules originalGraph) <- get
+  (UnwindState nextId cloneInfo newNodes graph visitedRules originalGraph nextUnwindRules) <- get
   let newNode = (Nonterminal nextId vars)
   let (CloneInfo copyToO oToCopy) = cloneInfo
   let newCopyToO = M.insert newNode n copyToO
   let newOToCopy = updateClone n newNode oToCopy
-  put (UnwindState (nextId+1) (CloneInfo newCopyToO newOToCopy) newNodes graph visitedRules originalGraph)
+  let newCreateNodes = S.insert newNode newNodes
+  put (UnwindState (nextId+1) (CloneInfo newCopyToO newOToCopy) newCreateNodes graph visitedRules originalGraph nextUnwindRules)
   return newNode
 
 updateClone :: Nonterminal -> Nonterminal -> Map Nonterminal [Nonterminal] -> Map Nonterminal [Nonterminal]
