@@ -84,10 +84,17 @@ updateRule r n partGraph = case (M.lookup n partGraph) of
 constructNewNode :: Nonterminal -> Unwind Nonterminal
 constructNewNode n = do
   (UnwindState _ cloneInfo newNodes _ _ _ _) <- get
-  --TODO: need to re do here, it is possible this n is not in clone at all
-  let currentNode = head ((oToCopy cloneInfo) M.! n)
+  currentNode <- getHeadNode n
   if S.member currentNode newNodes then return currentNode
     else copyNewNodes n
+
+getHeadNode :: Nonterminal -> Unwind Nonterminal
+getHeadNode n = do
+  (UnwindState _ cloneInfo _ _ _ _ _) <- get
+  let oToCopyMaps = oToCopy cloneInfo
+  if M.member n oToCopyMaps then return (head (oToCopyMaps M.! n))
+    else copyNewNodes n
+
 
 copyNewNodes :: Nonterminal -> Unwind Nonterminal
 copyNewNodes n = do

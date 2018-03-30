@@ -66,3 +66,13 @@ toGrammar2 :: Symbol -> Graph -> Grammar
 toGrammar2 start gr =
   let rs = nub $ concat $ M.elems $ graphBackward gr
   in Grammar start rs
+
+theNextId :: Graph -> Int
+theNextId g = 
+  let allSymbols = map (_nonterminalSymbol) (S.toList (terminals g))
+    in findNextId 0 allSymbols
+  where
+    findNextId currentValue allSymbols = case allSymbols of
+      [] -> currentValue
+      x:xs -> if currentValue > x then findNextId currentValue xs
+                 else findNextId (x+1) xs

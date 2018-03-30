@@ -111,9 +111,9 @@ test4 = do
   let r4 = Rule n4 (LBool True) [n3]
   let r5 = Rule n5 (LBool True) [n4]
   let r6 = Rule n1 (LBool True) [n4]
-  let g = mkGraph (Grammar 0 [r1,r2,r3,r4,r5,r6])
-  print (backEdges g)
-  plot "./dotfile2" g
+  let (g1,g2) = buildGraph (Grammar 0 [r1,r2,r3,r4,r5,r6])
+  plot "./dotfile1" g1
+  plot "./dotfile2" g2
 
 shortPrint :: [Nonterminal] -> String
 shortPrint l = case l of

@@ -276,3 +276,6 @@ esub :: Map Var Expr -> Expr -> Expr
 esub m = transform (\case
   V v -> M.findWithDefault (V v) v m
   e -> e)
+
+substitute :: Map Var Var -> Expr -> Expr
+substitute = undefined
