@@ -36,7 +36,7 @@ solve grammar@(Grammar symbol rules) = do
 
 solveAux :: [Rule] -> CloneInfo -> Graph -> Graph -> Int -> IO (Maybe (Map Nonterminal Expr))
 solveAux backEdges cloneInfo originalGraph currentDAG nextId = do
-  solveReulst <- solveDAG currentDAG
+  solveReulst <- solveDAG currentDAG nextId
   case solveReulst of
     Nothing -> return Nothing
     Just solution -> do let s = mergeSolution cloneInfo solution
@@ -53,7 +53,7 @@ mergeSolution (CloneInfo _ oToCopy) solutions =
   where
     getConjuntion solutions list = manyOr (map (\k -> solutions M.! k) list )
 
-solveDAG :: Graph -> IO (Maybe (Map Nonterminal Expr))
+solveDAG :: Graph -> Int -> IO (Maybe (Map Nonterminal Expr))
 solveDAG = undefined
 
 mapBackSolution :: Map Nonterminal Nonterminal -> Map Nonterminal Expr -> Map Nonterminal Expr
