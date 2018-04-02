@@ -31,8 +31,8 @@ data UnwindResult = UnwindResult
 type Unwind a = State UnwindState a
 
 -- unwind the graph that part is not enough
-dagUnwind :: [Rule] ->  Int -> CloneInfo -> Map Nonterminal Expr -> Graph -> Graph -> IO (Maybe UnwindResult)
-dagUnwind backEdges nextId cloneInfo solutions originalGraph lastUnwindDag = do
+dagUnwind :: [Rule] ->  CloneInfo -> Map Nonterminal Expr -> Graph -> Graph -> Int -> IO (Maybe UnwindResult)
+dagUnwind backEdges cloneInfo solutions originalGraph lastUnwindDag nextId = do
   notInductiveBackEdges' <- (mapM (removeInductiveEdge solutions) backEdges)
   let notInductiveBackEdges = concat notInductiveBackEdges'
   if null notInductiveBackEdges then return Nothing

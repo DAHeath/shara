@@ -15,6 +15,7 @@ import           Formula.Expr
 import           Grammar.Grammar
 import           Grammar.Graph2
 
+
 data BackEdgeState = BackState
   { _node :: Set Nonterminal
    ,_backEdges :: Set Rule
@@ -54,18 +55,6 @@ stepNode  visitedNodes n = do
  manyVisited (S.insert n visitedNodes)  (concat (map _ruleRHS otherRules))
  return ()
 
--- given a pre-processing grammar, do the first unwind
-buildGraph :: Grammar -> (Graph,Graph)
-buildGraph grammar@(Grammar symbol rules) = 
-  let originalGraph = mkGraph grammar
-      removeSet = backEdges originalGraph
-      newRules = filter (\r -> S.notMember r removeSet) rules
-      firstUnwindDAG = mkGraph (Grammar symbol newRules)
-      allUseTerminas = terminals firstUnwindDAG
-      copyToO = foldr (\n m->M.insert n n m) M.empty allUseTerminas
-      oToCopy = foldr (\n m->M.insert n [n] m) M.empty allUseTerminas
-      cloneInfo = CloneInfo copyToO oToCopy
-    in (originalGraph,firstUnwindDAG)
 
 data RenameState = RenameState
   { _extraConstrains :: [Expr]
@@ -112,10 +101,10 @@ data SplitState = SplitState
 
 type Split a = State SplitState a
 
--- TODO, need to chanage 0 to the next Id
 copyDuplicates :: Grammar -> (Map Nonterminal Nonterminal, Grammar)
-copyDuplicates (Grammar symbol rules) = 
-  let (SplitState _ newRules maps ) = execState (splitRules) (SplitState 0 rules M.empty)
+copyDuplicates grammar@(Grammar symbol rules) =
+  let nextId = theNextId (mkGraph grammar)
+      (SplitState _ newRules maps ) = execState (splitRules) (SplitState nextId rules M.empty)
      in (maps,(Grammar symbol newRules))
 
 
