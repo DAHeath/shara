@@ -134,13 +134,14 @@ splitRule (Rule h expr body) = do
   return (newRule:newRules)
 
 addNewRules :: [Rule] -> Map Nonterminal Nonterminal -> [Rule]
-addNewRules oldRules newPairs = concat (map (addNewRule oldRules) (M.toList newPairs))
+addNewRules oldRules newPairs = concat (map addNewRule oldRules)
+  concat (map (addNewRule oldRules) (M.toList newPairs))
 
 addNewRule :: [Rule] -> (Nonterminal,Nonterminal) -> [Rule]
 addNewRule oldRules (new,old) = 
   let validRules = filter (\r -> (_ruleLHS r) == old ) oldRules
       newRules = map (\(Rule _ expr body) -> (Rule new expr body) ) validRules
-    in validRules
+    in validRules 
 
 splitDuplicate :: Set Nonterminal -> Map Nonterminal Nonterminal -> [Nonterminal] ->Split ([Nonterminal],Map Nonterminal Nonterminal)
 splitDuplicate visitSet nToOldN list = case list of

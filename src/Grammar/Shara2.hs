@@ -54,7 +54,8 @@ mergeSolution (CloneInfo _ oToCopy) solutions =
     getConjuntion solutions list = manyOr (map (\k -> solutions M.! k) list )
 
 solveDAG :: Graph -> Int -> IO (Maybe (Map Nonterminal Expr))
-solveDAG = undefined
+solveDAG g nextId = undefined
+
 
 mapBackSolution :: Map Nonterminal Nonterminal -> Map Nonterminal Expr -> Map Nonterminal Expr
 mapBackSolution = undefined
