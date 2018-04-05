@@ -15,6 +15,8 @@ import           Grammar.Grammar
 import           Grammar.Graph
 import           Grammar.Shara.DAGUnwind
 import           Grammar.Shara.Pre
+import           Grammar.Shara.CDD
+import           Grammar.Shara.LicketySplit
 
 solve :: Expr -> Grammar -> IO (Maybe (Map Symbol Expr))
 solve q grammar@(Grammar symbol rules) =
@@ -42,7 +44,8 @@ solveAux q backEdges cloneInfo originalGraph currentDAG nextId =
       maybeNextDAG <- dagUnwind backEdges cloneInfo s originalGraph currentDAG nextId
       case maybeNextDAG of
         Nothing -> return (Just s)
-        Just (UnwindResult ids newCloneInfo nextDAG) -> solveAux q backEdges newCloneInfo originalGraph nextDAG ids
+        Just (UnwindResult ids newCloneInfo nextDAG) ->
+          solveAux q backEdges newCloneInfo originalGraph nextDAG ids
 
 mergeSolution :: CloneInfo -> Map Symbol Expr -> Map Symbol Expr
 mergeSolution (CloneInfo _ oToCopy) solutions =
@@ -53,7 +56,11 @@ mergeSolution (CloneInfo _ oToCopy) solutions =
     conjoin solutions list = manyOr (map (\k -> solutions M.! k) list )
 
 solveDAG :: Expr -> Graph -> Int -> IO (Maybe (Map Symbol Expr))
-solveDAG = undefined
+solveDAG q g nextSym = do
+  let (g', mapping) = constructCDD nextSym g
+  licketySplit ConcurrentInterpolation q g' >>= \case
+    Left _ -> pure Nothing
+    Right m -> pure (Just $ mapBackSolution mapping m)
 
 mapBackSolution :: Map Symbol Symbol -> Map Symbol Expr -> Map Symbol Expr
 mapBackSolution aliases =
