@@ -1,0 +1,250 @@
+% technical background material:
+\section{Background}
+\label{sec:background}
+
+% interpolants:
+\subsection{Logical interpolation}
+\label{sec:itps}
+%
+\sys solves CHC systems, logic-programming problems in which a
+solution maps predicate symbols to first-order formulas.
+%
+All objects defined in this paper are defined over a fixed space of
+first-order logical variables $X$.
+%
+In particular, for theory $\mathcal{T}$, the space of $\mathcal{T}$
+formulas over $X$ is denoted $\tformulas{\mathcal{T}}$.
+%
+For each formula $\varphi \in \tformulas{\mathcal{T}}$, the set of
+variables that occur in $\varphi$ (i.e., the \emph{vocabulary} of
+$\varphi$) is denoted $\vocab(\varphi)$.
+% define models, satisfaction, entailment
+For formulas $\varphi_0, \ldots, \varphi_n, \varphi \in
+\tformulas{\mathcal{T}}$, the fact that $\varphi_0, \ldots, \varphi_n$
+\emph{entail} $\varphi$ is denoted $\varphi_0, \ldots, \varphi_n
+\entails \varphi$.
+
+% Define replacement and substitution:
+For sequences of variables $Y = [ y_0, \ldots, y_n ]$ and $Z = [ z_0,
+\ldots, z_n ]$, the $\mathcal{T}$ formula constraining the equality of
+each element in $Y$ with its corresponding element in $Z$, i.e., the
+formula $\bigland_{0 \leq i \leq n} y_i = z_i$, is denoted $Y = Z$.
+%
+The repeated replacement of variables $\varphi[ z_0 / y_0 \ldots z_{n}
+/ y_{n} ]$ is denoted $\replace{\varphi}{Y}{Z}$.
+%
+For each formula $\varphi$ defined over free variables $Y$,
+$\replace{\varphi}{Y}{Z}$ is denoted alternatively as $\varphi[ Z ]$.
+%
+The number of free variables in formula $\varphi$ is denoted
+$\degreeof{\varphi}$.
+
+% introduce interpolation:
+An interpolant of mutually inconsistent $\mathcal{T}$ formulas
+$\varphi_0$ and $\varphi_1$ is a $\mathcal{T}$ formula in their common
+vocabulary that explains their inconsistency.
+%
+\begin{defn}
+  \label{defn:itps}
+  % define:
+  For $\varphi_0, \varphi_1 \in \tformulas{\mathcal{T}}$, $I \in
+  \tformulas{\mathcal{T}}$ such that
+  %
+  \textbf{(1)} $\varphi_0 \entails I$, %
+  \textbf{(2)} $I, \varphi_1 \entails \false$, and %
+  \textbf{(3)} $\vocab(I) \subseteq \vocab(\varphi_0) \intersection
+  \vocab(\varphi_1)$,
+  %
+  $I$ is an \emph{interpolant} of $\varphi_0$ and $\varphi_1$.
+\end{defn}
+%
+All spaces of formulas in the remainder of this paper will be defined
+for a fixed, arbitrary theory $\mathcal{T}$ that supports
+interpolation, such as combinations of the theories of linear
+arithmetic and the theory of uninterpreted functions with equality.
+% introduce decision procedure:
+Although determining the satisfiability of formulas in such theories
+is NP-complete in general, decision procedures~\cite{moura08} and
+interpolating theorem provers~\cite{mcmillan04} for such theories have
+been proposed that operate on such formulas efficiently.
+%
+\sys is defined as using a decision procedure for $\mathcal{T}$ named
+\issat, and an interpolating theorem prover for $\mathcal{T}$ named
+$\solveitp$.
+
+% define CHC's:
+\subsection{Constrained Horn Clauses}
+\label{sec:chcs}
+
+\subsubsection{Structure}
+% definition of CHC
+A Constrained Horn Clause contains a body and a head.
+%
+A body consisting of a conjunctive set of uninterpreted relational predicates applied to varialbes and a formula
+that over variables.
+%
+A head can either be an uninterpreted relational predicates applied to variables or a formula 
+relational predicate.
+%
+A Clause where the head is a formula is called a query.
+\begin{defn}
+  A Constrained Horn Clause is definied as follows: \\
+  $\cc{chc} \Coloneqq \cc{head} \gets \cc{body}$ \\
+  $\cc{head} \Coloneqq \varphi \mid \cc{pred}$  \\
+  $\cc{body} \Coloneqq \varphi \wedge \cc{preds}$ \\
+  $\cc{preds} \Coloneqq \cc{True} \mid \cc{pred} \wedge \cc{preds}$ \\
+  $\cc{pred} \Coloneqq$ an uninterpreted predicate applied to variables \\
+  $\varphi \Coloneqq$ a formula that all variables are vocabulary \\
+\end{defn}
+%
+% define a body function, head function, and recursion-free
+For a given constrained horn clause $C$, $\bodyof{C}$ denotes
+the vector of uninterpreted predicates in the body of $C$.
+%
+It is possible for a uninterpreted predicate shows multiple times in the
+body of $C$.
+%
+For a given constrained horn clause $C$ that is not a query,
+$\headof{c}$ denotes the uninterpreted predicates of the head of $C$.
+%
+
+%define a CHC system
+A Constrained Horn Clauses system is a set of constrained horn clauses 
+that it has one and only one query.
+%
+For a given Constrained Horn Clauses system $S$,$\predof{S}$ denotes 
+the set of all uninterpreted predicates in this CHC system.
+
+% define dependency predicates
+\begin{defn}
+  Given a CHC system $\cc{S}$ and two uninterpreted predicates $\cc{P}$ and
+  $\cc{Q} \in \predof{S}$, if $\exists \cc{C} \in \cc{S}$ such that $\cc{P} = \headof{C}$
+  and $\cc{Q} \in \bodyof{C}$, then $\cc{Q}$ is a dependency predicate of $\cc{P}$.
+\end{defn}
+%
+Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$, $\depsof{P}$
+denotes the set of all dependency predicates of $\cc{P}$ in $\cc{S}$.
+%
+
+%define transitive dependency predicates
+\begin{defn}
+  Given a CHC system $\cc{S}$ and three uninterpreted predicates $\cc{P},
+  \cc{Q}$ and $\cc{R} \in \predof{S}$, if $\cc{Q} \in \depsof{P}$ and $\cc{R} \in \depsof {Q}$
+  , then $\cc{R}$ is a transitive dependency predicate of $\cc{P}$.
+\end{defn}
+%
+Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$, $\tdepsof{P}$
+denotes the set of all transitive dependency predicates of $\cc{P}$ in $\cc{S}$.
+%
+
+%define siblings
+\begin{defn}
+  Given a CHC system $\cc{S}$ and two uninterpreted predicates $\cc{P}$ and
+  $\cc{Q} \in \predof{S}$, if $\exists \cc{C} \in \cc{S}$ such that $\cc{P} \in \bodyof{C}$
+  and $\cc{Q} \in \bodyof{C}$, then $\cc{Q}$ and $\cc{P}$ are siblings of each other.
+\end{defn}
+%
+Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$, $\siblingof{P}$
+denotes the set of all siblings predicates of $\cc{P}$ in $\cc{S}$.
+%
+
+
+
+% define system of CHC's
+We will present \sys as a solver for recursion-free CHCs.
+%
+For a given CHC system $\cc{S}$, there is no uninterpreted predicates $\cc{P} \in \predof{S}$ 
+such that $\cc{P} \in \tdepsof{P}$, then $\cc{S}$ is a recursion-free CHCs system.
+
+\subsubsection{Solutions}
+\label{sec:chc-solns}
+%
+A solution to a CHC system $\mathcal{S}$ is an interpretation of each
+relational predicate $R$ of arity $n$ as a formula over $n$ free
+variables such that for each clause $\mathcal{C} \in \mathcal{S}$, the
+conjunction of interpretations of all relational predicates in the
+body of $\mathcal{C}$ and the constraint of $\mathcal{C}$ entail the
+interpretation of the head of $\mathcal{C}$.
+%
+Let a map from each $R \in \relsof{ \mathcal{R} }$ to a
+$\mathcal{T}$-formula over an ordered vector of $\arityof{ \mathcal{R}
+}(R)$ free variables be an \emph{interpretation} of $\mathcal{R}$;
+%
+let the space of interpretations of $\mathcal{R}$ be denoted
+$\interps{ \mathcal{R} }$.
+%
+\begin{defn}
+  \label{defn:chc-soln}
+  For $\mathcal{B} \in \bodies{ \mathcal{R} }$ and $H \in \apps{
+    \mathcal{R} }$, %
+  let $\sigma \in \interps{ \mathcal{R} }$ be such that for each $R
+  \in \mathcal{R}$, $\arityof{\mathcal{R}}(R) = \degreeof{\sigma(R)}$
+  and %
+  %
+  \[ \elts{ \sigma(\relof{ A })[ \argsof{ A } ] }_{ A \in \appsof{
+      \mathcal{B} } }, %
+  \ctrof{ \mathcal{B} } \entails %
+  \sigma( \relof{H} )[ \argsof{ H } ]
+  \]
+  Then $\sigma$ is a \emph{solution} of $(\mathcal{B}, H)$.
+\end{defn}
+% define partial solution 
+For $\mathcal{S} \in \chcs{ \mathcal{R} }$, if
+% solution respects dependence order:
+\textbf{(a)} for each $R \in \domain(\sigma)$ (where $\domain(\sigma)$
+denotes the domain of $\sigma$) and $R' \in \mathcal{R}$ a dependence
+of $R$ in $\mathcal{S}$, it holds that $R' \in \domain(\sigma)$;
+%
+\textbf{(b)} for each $\mathcal{C} \in \mathcal{S}$ such that
+$\relof{ \headof{ \mathcal{C} } } \in \domain(\sigma)$, $\sigma$ is a
+solution of $\mathcal{C}$;
+%
+then $\sigma$ is a \emph{partial solution} of $\mathcal{S}$.
+%
+If, in addition, $\sigma(\queryof{ \mathcal{S} }) \entails \false$,
+then $\sigma$ is a \emph{solution} of $\mathcal{S}$.
+%
+The problem addressed in this paper is, given a recursion-free CHC
+system $\mathcal{S}$, to synthesize a solution for $\mathcal{S}$.
+
+% define grounding of clause body:
+Each partial solution $\sigma$ of $\mathcal{S}$ defines a simpler CHC
+system in which each relational predicate in the domain of $\sigma$ is
+replaced with its interpretation in $\sigma$.
+%
+For $\mathcal{A} \subseteq \apps{\mathcal{R}}$, $\varphi \in
+\formulas$, and $\sigma \in \interps{ \mathcal{R} }$, the clause body
+\begin{align*}
+  \left( \bigunion_{ \substack{ %
+      R \in \mathcal{R} \setminus \domain(\sigma), \\
+      Y \in X^{*}, 
+      (R, Y) \in \mathcal{A} } } \elts{(R, Y)}, 
+  \varphi \land %
+  \bigland_{ \substack{ R \in \domain(\sigma) \\ 
+      Y \in X^{*},
+      (R, Y) \in \mathcal{A} } } \sigma(R)[ Y ] \right)
+\end{align*}
+%
+is the \emph{grounding} of $(\mathcal{A}, \varphi)$ on $\sigma$,
+denoted $\sigma(\mathcal{A}, \varphi)$.
+
+% groundings of systems:
+For each $\mathcal{S} \in \chcs{ \mathcal{R} }$ and $\sigma \in
+\interps{ \mathcal{R} }$ a partial solution of $\mathcal{S}$, the
+grounding of $\mathcal{S}$ on $\sigma$ is a CHC system in which each
+clause is a grounding of a clause in $\mathcal{S}$ with a head
+relational predicate not in the domain of $\sigma$.
+%
+In particular, let $\mathcal{S}' \subseteq \chc{ \mathcal{R} \setminus
+  \domain(\sigma) }$ be such that for each $\mathcal{B} \in \bodies{
+  \mathcal{R} }$ and $H \in \apps{ \mathcal{R} }$ with $\relof{H}
+\notin \domain(\sigma)$, the clause $(\sigma(\mathcal{B}), H)$ is in
+$\mathcal{S}'$.
+%
+Then $\mathcal{S}'$ is the \emph{grounding} of $\mathcal{S}$ on
+$\sigma$, denoted $\sigma(\mathcal{ S })$.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "p"
+%%% End: 

@@ -1,0 +1,482 @@
+% walk through the approach in technical detail
+\section{Technical Approach}
+\label{sec:approach}
+%
+This section presents the technical details of our approach.
+%
+\autoref{sec:CDD-defn} presents the class of Clause-Dependence Disjoint
+systems and its key properties.
+%
+\autoref{sec:solve-cdd} describes how \sys solves CDD systems
+directly.
+%
+\autoref{sec:core-solver} describes how \sys solves a given
+recursion-free system by solving an equivalent CDD system.
+%
+Proofs of all theorems stated in this section are contained in appendix
+\autoref{app:char} and \autoref{app:corr}.
+
+\subsection{Clause-Dependence Disjoint Systems}
+\label{sec:CDD-defn}
+%
+The key contribution of our work is the introduction of the class of
+Clause-Dependence Disjoint (CDD) systems.
+%
+Solving an CHC system in CDD is coNP time.
+%
+CDD strictly contains
+the union of classes of recursion-free systems that can be solved
+in coNP time that have been introduced in previous work.
+%
+\begin{defn}
+  \label{defn:cdds}
+  For a given recursion-free CHC system $\cc{S}$,
+  %
+  if for all pair of uninterpreted predicates $P, Q \in \predof{S}$ that are siblings(\autoref{sec:chcs}), the 
+  transitive dependences of $P$ and $Q$ are disjoint $\tdepsof{P} \cap \tdepsof{Q} = \emptyset$, and there is 
+  no uninterpreted predicate shows more than once in a body of clause, then $\cc{S}$ is
+  \emph{Clause-Dependence-Disjoint (CDD)}.
+\end{defn}
+%
+CDD systems model hierarchical programs with branching and
+procedure calls that in each execution path that each statments be
+exected at most once.
+%
+\QZ{rework example}
+\begin{ex}
+  The CHC system $\mcchc$ (given in \autoref{sec:solve-ex}) is a CDD
+  system.
+  %
+  The only clauses in $\mcchc$ that contain multiple uninterpreted
+  predicates are \autoref{eqn:then} and \autoref{eqn:else}, which both
+  contain $\cc{L4}$ and $\cc{dbl}$.
+  %
+  The dependences of $\cc{L4}$ and $\cc{dbl}$ are disjoint.
+\end{ex}
+
+% talk about body disjoint
+The class of CDD systems contains body-disjoint and linear
+systems introduced in previous work.
+%
+For recursion-free system $\cc{S}$, if for each uninterpreted predicate
+$Q \in \predof{S}$, there is at most one caluse $\cc{C}$ that $Q \in \bodyof{C}$,
+and there is no uninterpreted predicate shows more than once in a body of clause, then
+$\cc{S}$ is \emph{body-disjoint}~\cite{rummer13a,rummer13b}.
+%
+If the body of each clause in $\cc{S}$ contains at most
+relational predicate, then $\cc{S}$ is
+\emph{linear}~\cite{albarghouthi12a}.
+
+
+% talk about linear system
+\begin{thm}
+	\label{thm:cdd-contains}
+  The class of CDD systems strictly contains the union of the classes
+  of body-disjoint and linear systems.
+\end{thm}
+%
+The CHC system $\mcchc$ (\autoref{sec:solve-ex}) is not body-disjoint
+or linear, but is CDD.
+%
+A proof that both the classes of body-disjoint and linear systems are
+contained in the class of CDD systems is given in \autoref{app:char}.
+
+% describe how to solve a CDD system
+\subsection{Solving a CDD system}
+\label{sec:solve-cdd}
+
+% algorithm for constructing a CDD system:
+\begin{algorithm}[t]
+  % Declare IO markers.
+  \SetKwInOut{Input}{Input}
+  %
+  \SetKwInOut{Output}{Output}
+  % Declare sub-program (procedure) markers.
+  \SetKwProg{myproc}{Procedure}{}{}
+  % Inputs: a heap program and an error location.
+  \Input{A CDD System $\cc{S}$.}
+  % Output: inductive invariants.
+  \Output{If $\cc{S}$ is solvable, then a solution of
+    $\cc{S}$; %
+    otherwise, the value $\nosoln$.}
+  % 
+  \myproc{$\solvecdd{ \mathcal{R} }(\mathcal{S})$ %
+    \label{line:solve-begin}}{ %
+    % recurse on a partial solution to the CHC system:
+    \myproc{$\solveaux( \mathcal{ \sigma } )$ %
+      \label{line:aux-begin}}{
+      % construct predicates that:
+      $\mathcal{R}' \assign \setformer{ R }{ %
+        % are not defined by sigma,
+        R \notin \domainof{ \sigma }, %
+        \bigland_{ (R, R') \in \depsof{ \mathcal{S} } } 
+        R' \in \domainof{ \sigma } }$ \label{line:cons-nodeps} \;
+      % case split: on D:
+      \Switch{$\mathcal{R}'$ \label{line:case-deps}}{ %
+        \lCase{$\emptyset$:}{ %
+          % D is empty: return sigma as solution
+          \Return{$\sigma$} \label{line:ret-soln} } %
+        \Case{$\elts{ R } \disjunion \mathcal{R}''$: %
+          \label{line:case-frontier}}{ %
+          % D contains an element R. Update sigma to map R to result
+          % of interpolation query on suitable formulas.
+          \Return{$\solveaux( %
+            \upd{\sigma}{R}{ %
+              \solveitp(\prectr{ \mathcal{R} }( %
+              \mathcal{S}, \sigma, R), %
+              \postctr{ \mathcal{R} }(\mathcal{S}, \sigma, R))})$} %
+          \label{line:ret-recurse} \;
+        } %
+      } %
+    \label{line:solve-aux-end} } %
+    % check if query is feasible:
+    \lIf{$\issat(\vc{ \mathcal{R} }(\mathcal{S}))$}{ % 
+      \Return{$\nosoln$} \label{line:check-sat} }
+    % return result of calling aux on base case:
+    \Return{$\solveaux(\emptyset)$} \label{line:aux-empty}
+    \; }
+  %
+  \caption{$\solvecdd{ \mathcal{R} }$: for $\mathcal{R} \in \relpreds$
+    and CDD system $\mathcal{S} \in \chcs{ \mathcal{R} }$, returns a
+    solution to $\mathcal{S}$ or the value $\none$ to denote that
+    $\mathcal{S}$ has no solution.}
+  \label{alg:solve-cdd}
+\end{algorithm}
+%
+For $\mathcal{R} \in \relpreds$, the procedure $\solvecdd{ \mathcal{R}
+}$ (\autoref{alg:solve-cdd}) is a solver for CDD systems in $\chcs{
+  \mathcal{R} }$.
+%
+$\solvecdd{ \mathcal{R} }$, given $\mathcal{S} \in \chcs{ \mathcal{R}
+}$, defines a procedure $\solveaux$ that, given a partial solution
+$\sigma$ of $\mathcal{S}$, returns an extension of $\sigma$ that is a
+solution of $\mathcal{S}$
+(\autoref{line:aux-begin}---\autoref{line:solve-aux-end}).
+%
+$\solvecdd{ \mathcal{R} }$ runs a procedure $\vc{ \mathcal{R} }$ that,
+given a CDD system $\mathcal{S} \in \chcs{ \mathcal{R} }$, returns a
+formula that is satisfiable if and only if $\mathcal{S}$ has no
+solution, which we refer to as a \emph{counterexample
+  characterization} of $\mathcal{S}$ (\autoref{line:check-sat};
+%
+the implementation of $\vc{ \mathcal{R} }$ is given below).
+%
+$\solvecdd{ \mathcal{R} }$ runs $\issat$ (\autoref{sec:itps}) on $\vc{
+  \mathcal{R} }(\mathcal{S})$;
+%
+if $\issat$ returns that $\vc{ \mathcal{R} }(\mathcal{S})$ is
+satisfiable, then $\solvecdd{ \mathcal{R} }$ returns that
+$\mathcal{S}$ has no solution (\autoref{line:check-sat}).
+% how the aux function is used:
+Otherwise, $\solvecdd{ \mathcal{R} }$ runs $\solveaux$ on the empty
+partial solution and returns the result (\autoref{line:aux-empty}).
+
+% walk through the aux function:
+$\solveaux$, given partial solution $\sigma$, constructs the set
+$\mathcal{R}'$ of each relational predicate $R$ such that $R$ is not
+in the domain of $\sigma$ and all dependents of $R$ in $\mathcal{S}$
+are in the domain of $\sigma$ (\autoref{line:cons-nodeps}).
+%
+If $\mathcal{R}'$ is empty, then $\solveaux$ returns $\sigma$ as a
+solution of $\mathcal{S}$ (\autoref{line:ret-soln}).
+%
+Otherwise, if there is some $R \in \mathcal{R}'$
+(\autoref{line:case-frontier}), then $\solveaux$ extends $\sigma$ to
+map $R$ to an interpolant of the formulas $\prectr{ \mathcal{R}
+}(\mathcal{S}, \sigma, R)$ and $\postctr{ \mathcal{R} }(\mathcal{S},
+\sigma, R)$, defined below.
+%
+The interpolant of the two formulas is synthesized by running the
+procedure $\solveitp$ (\autoref{sec:itps}).
+%
+$\solveaux$ recurses on the extended partial solution and returns the
+result (\autoref{line:ret-recurse}).
+%
+\begin{ex}
+  $\solvecdd{ \mcpreds }$, given $\mcchc$, may generate
+  interpretations of $\mcpreds$ in any topological ordering of the
+  dependency relation of $\mcchc$, depending on the relational
+  predicates that it chooses at \autoref{line:case-deps}.
+  %
+  One such ordering is \cc{L3}, \cc{L4}, \cc{dbl}, \cc{L9}, \cc{main},
+  $\mathsf{Err}$.
+\end{ex}
+
+\subsubsection{Constructing the Counterexample Characterization of a
+  CDD}
+%
+For $\mathcal{S'} \in \chcs{ \mathcal{R} }$, the formula $\vc{
+  \mathcal{R} }(\mathcal{S'})$ is a compact representation of the
+counterexample characterization of $\mathcal{S'}$, defined as follows.
+% introduce the isused predicates:
+For each $R \in \mathcal{R}$, let there be a Boolean predicate
+$\used{R}$.
+% for each relational predicate, define constraint:
+The constraint of $R$, denoted $\ctrof{R} \in \formulas$, constrains
+that if $R$ occurs in a derivation of $\mathcal{S'}$, then there is
+some $\mathcal{C} \in \mathcal{S'}$ in which $R$ is the head such that
+\textbf{(1)} each $R' \in \mathcal{R}$ in an application in the body
+of $\mathcal{C}$ is used and \textbf{(2)} the values assigned to each
+application of $R'$ are equal to the values assigned to the head
+variables of $R'$ in $\mathcal{S'}$.
+%
+I.e., $\ctrof{R}$ is
+\begin{align*}
+% for each clause with R as a head:
+\biglor_{ \substack{ \mathcal{B} \in \bodies{ \mathcal{R} }, %
+    R \in \mathcal{R}, \\
+  (\mathcal{B}, (R, \varsof{ \mathcal{S'} }(R))) \in
+  \mathcal{S'} } } %
+\left( \ctrof{ \mathcal{B} } \land %
+\bigland_{ \substack{R' \in \mathcal{R}, Y \in X^{*}, \\
+    (R', Y) \in \appsof{ \mathcal{B} } } } %
+\used{R'} \land \varsof{ \mathcal{S'} }(R') = Y \right)
+\end{align*}
+%
+The counterexample characterization of $\mathcal{S'}$ constrains that
+\textbf{(1)} the query predicate of $\mathcal{S'}$ must be used in a
+derivation and %
+\textbf{(2)} for $R \in \mathcal{R}$, if $R$ is used, then its
+constraint must hold.
+%
+I.e., $\vc{ \mathcal{R} }(\mathcal{S'})$ is $\used{
+  \queryof{\mathcal{S'} } } \land %
+\bigland_{R \in \mathcal{R} } \left( \used{R} \implies \ctrof{R}
+\right)$.
+
+\begin{ex}
+  % 
+  $\vc{ \mcpreds }(\mcchc)$ characterizes all runs of \cc{multiCall}
+  that result in an error.
+  %
+  Although the relational predicates \cc{L4} and \cc{dbl} occur in the
+  bodies of multiple clauses, they are each modeled with only a single
+  instance of logical variables.
+  % 
+  Such a collection is sufficient because each run of \cc{multiCall}
+  reaches \cc{L4} and \cc{dbl} at most once.
+  %
+  Correspondingly, each derivation of $\mcchc$ contains at most one
+  occurrence of relational predicates \cc{L4} and \cc{dbl}.
+\end{ex}
+
+% pre-constraint:
+\subsubsection{Constructing the pre-constraint of a relational predicate}
+\label{sec:cons-pre}
+%
+For partial solution $\sigma : \mathcal{R} \to \formulas$ of
+$\mathcal{S}$, and $R \in \mathcal{R}$ for which each dependency is in
+the domain of $\sigma$, the pre-constraint $\prectr{ \mathcal{R}
+}(\mathcal{S}, \sigma, R)$ is a formula that is entailed by the
+interpretation of $R$ in each solution of $\mathcal{S}$ that extends
+$\sigma$.
+%
+In particular, $\prectr{ \mathcal{R} }(\mathcal{S}, \sigma, R)$ is:
+\[
+\biglor_{ \substack{ \mathcal{B} \in \bodies{ \mathcal{R} } \\
+  (\mathcal{B}, (R, \varsof{ \mathcal{S} }(R) ) ) \in \mathcal{S} } }
+\left( \ctrof{ \mathcal{ B } } \land %
+\bigland_{ A \in \appsof{ \mathcal{B} } } %
+\sigma( \relof{A} )[ \argsof{ A } ] \right)
+\]
+%
+\begin{ex}
+  \label{ex:pre-ctr}
+  Assume that $\mcsolve$, given $\mcchc$, synthesizes a partial
+  solution $\sigma \in \interps{ \mcpreds }$ that interprets \cc{L3}
+  as $\true$, and chooses to then find an interpretation of \cc{L4}.
+  %
+  The pre-constraint of \cc{L4} is $\true \land \cc{res}_{\cc{4}} =
+  0$, where $\cc{res}_{\cc{4}}$ is a logical variable that models the
+  value of \cc{res} at line \cc{4}.
+\end{ex}
+
+\subsubsection{Constructing the post-constraint of a relational
+  predicate}
+\label{sec:cons-ctx}
+%
+For $\sigma \in \interps{ \mathcal{R} }$ a partial solution of
+$\mathcal{S}$ and $R \in \mathcal{R}$, the post-constraint $\postctr{
+  \mathcal{R} }(\mathcal{S}, \sigma, R) \in \formulas$ is mutually
+inconsistent with the interpretation of $R$ in each solution of
+$\mathcal{S}$ that extends $\sigma$.
+% dependents of R:
+In particular, let $\mathcal{D}_0$ be the reflexive dependents of $R$
+in $\mathcal{S}$,
+% clause siblings of dependents:
+let $\mathcal{D}_1$ be the siblings in $\mathcal{S}$ of
+$\mathcal{D}_0$,
+%
+let $\mathcal{D}_2$ be all dependences of $\mathcal{D}_1$, and
+% collect all predicates that we define a constraint over:
+let $\mathcal{D} = \mathcal{D}_0 \union \mathcal{D}_1 \union
+\mathcal{D}_2$.
+% define constraint for each predicate
+Let $\restrict{ \mathcal{S} }{ \mathcal{D} }$ be $\mathcal{S}$
+restricted to clauses whose head's relational predicate is in
+$\mathcal{D}$.
+% define instantiation of C
+The post constraint for $\mathcal{S}$ under $\sigma$ at $R$ is the
+counterexample characterization of $\restrict{ \mathcal{S} }{
+  \mathcal{D} }$ grounded on $\sigma$ (defined in \autoref{sec:chcs}).
+%
+I.e., $\postctr{ \mathcal{R} }(\mathcal{S}, \sigma, R) = \vc{
+  \mathcal{R} }(\sigma( \restrict{ \mathcal{S} }{ \mathcal{D} }))$.
+% example post constraint:
+\begin{ex}
+  \label{ex:ctx-ctr}
+  Consider the case in which $\mcsolve$, given $\mcchc$, generates an
+  interpretation of \cc{L4}, introduced in \autoref{ex:pre-ctr}.
+  %
+  $\mcsolve$ collects relational predicates $\mathcal{D}_0 = \elts{
+    \cc{L4}, \cc{L9}, \cc{main}, \mathsf{Err} }$, $\mathcal{D}_1 =
+  \elts{ \cc{dbl} }$, and $\mathcal{D}_2 = \emptyset$.
+  %
+  $\mcsolve$ constructs $\postctr{ \mcpreds }(\mcchc, \sigma,
+  \cc{L4})$ to be the counterexample characterization of $\mcchc$
+  restricted to clauses whose head relational predicate is in
+  $\mathcal{D} = \elts{ \cc{L4}, \cc{L9}, \cc{main}, \mathsf{Err} }$.
+\end{ex}
+
+\subsection{Solving recursion-free systems using CDD systems}
+\label{sec:core-solver}
+
+% give the general procedure:
+$\shara{ \mathcal{R} }$, given $\mathcal{S} \in \chcs{ \mathcal{R} }$,
+constructs a CDD system $\mathcal{S'}$ equivalent to $\mathcal{S}$.
+%
+\sys then directly solves $\mathcal{S'}$ and from its solution,
+constructs a solution of $\mathcal{S}$.
+% define an expansion of a CHC system:
+For $\mathcal{R}, \mathcal{R}' \in \relpreds$, $\mathcal{S} \in \chcs{
+  \mathcal{R} }$ and $\mathcal{S}' \in \chcs{ \mathcal{R}' }$, if
+there is a homomorphism from $\mathcal{R}'$ to $\mathcal{R}$ that
+preserves the relationship between the clauses of $\mathcal{S}'$ in
+the clauses of $\mathcal{S}$, then $\mathcal{S}'$ is an expansion of
+$\mathcal{S}$ (all definitions in this section will be over fixed
+$\mathcal{R}$, $\mathcal{R}'$, $\mathcal{S}$, and $\mathcal{S}'$).
+% formal defn:
+\begin{defn}
+  \label{defn:expansion}
+  Let $f : \mathcal{R}' \to \mathcal{R}$ be such that
+  % preserves arity:
+  \textbf{(1)} for all $R' \in \mathcal{R}'$, $\arityof{f(R')} =
+  \arityof{R'}$;
+  % preserves clause structure:
+  \textbf{(2)} for all $H \in \apps{\mathcal{R}}$, $\mathcal{B}
+  \subseteq \apps{ \mathcal{R} }$, and $\varphi \in \formulas$ such
+  that $((\mathcal{B}, \varphi), H) \in \mathcal{S}'$, clause
+  %
+  \[ \left( \left( \bigunion_{ A \in \mathcal{B} } %
+        \{ (f(\relof{A}), \argsof{A}) \}, \varphi \right), %
+      ( f(\relof{H}), \argsof{H} ) \right)
+  \]
+  %
+  is in $\mathcal{S}$.
+  %
+  Then $f$ is a \emph{correspondence} from $\mathcal{S}'$ to
+  $\mathcal{S}$.
+\end{defn}
+%
+If there is a correspondence from $\mathcal{S}'$ to $\mathcal{S}$,
+$\mathcal{S}'$ is an \emph{expansion} of $\mathcal{S}$, denoted
+$\mathcal{S} \expandsto \mathcal{S}'$.
+%
+\begin{defn}
+  \label{defn:min-cdd-expansion}
+  If $\mathcal{S}'$ is CDD, %
+  $\mathcal{S} \expandsto \mathcal{S}'$, and %
+  there is no CDD system $\mathcal{S}''$ such that $\mathcal{S}
+  \expandsto \mathcal{S}'' \expandsto \mathcal{S}$ and $\mathcal{S}''
+  \not= \mathcal{S}'$, then $\mathcal{S}'$ is a \emph{minimal} CDD
+  expansion of $\mathcal{S}$.
+\end{defn}
+
+% core algorithm
+\begin{algorithm}[t]
+  % Declare IO markers.
+  \SetKwInOut{Input}{Input}
+  %
+  \SetKwInOut{Output}{Output}
+  % Declare sub-program (procedure) markers.
+  \SetKwProg{myproc}{Procedure}{}{}
+  % Inputs: a heap program and an error location.
+  \Input{For $\mathcal{R} \in \relpreds$, $\mathcal{S} \in \chcs{
+      \mathcal{R} }$.}
+  % Output: inductive invariants.
+  \Output{A solution to $\mathcal{S}$ or $\none$.}
+  % expand procedure:
+  \myproc{$\sys[ \mathcal{R} ](\mathcal{S})$ %
+    \label{line:shara-begin}}{ %
+    % construct expansion of C:
+    $(\mathcal{S}', \eta) \assign %
+    \expand{\mathcal{R}}(\mathcal{S})$ \label{line:shara-expand} \; %
+    % expand, solve, case split:
+    \Switch{ $\solvecdd{ \ctxs{ \mathcal{R} } }( \mathcal{S}' )$ %
+      \label{line:shara-case} }{
+      % case: result is no solution:
+      \lCase{ $\none$: }{ \Return{$\none$} \label{line:shara-ret-none} } %
+      % case: result is a solution:
+      \lCase{ $\sigma' \in \interps{ \ctxs{ \mathcal{R} } }$: }{ %
+        \Return{ $\collapse{ \eta }{ \sigma' }$ } %
+        \label{line:shara-ret-collapse}
+      } %
+    } %
+  } %
+  %
+  \caption{\sys: a solver for recursion-free CHCs, which uses
+    procedures $\expand{\mathcal{R}}$ (see \autoref{app:cons-cdd}) and
+    $\solvecdd{ \ctxs{ \mathcal{R} } }$ (see
+    \autoref{sec:solve-cdd}). }
+  \label{alg:shara}
+\end{algorithm}
+% walk through the sys algorithm:
+$\shara{ \mathcal{R} }$ (\autoref{alg:shara}), given $\mathcal{S} \in
+\chcs{\mathcal{R}}$ (\autoref{line:shara-begin}), returns a solution
+to $\mathcal{S}$ or the value $\none$ to denote that $\mathcal{S}$ is
+unsolvable.
+%
+$\shara{ \mathcal{R} }$ first runs a procedure $\expand{ \mathcal{R}
+}$ on $\mathcal{S}$ to obtain a minimal CDD expansion $\mathcal{S}'
+\in \chcs{ \ctxs{ \mathcal{R} } }$ (\autoref{defn:min-cdd-expansion})
+of $\mathcal{S}$ (where $\ctxs{ \mathcal{R} }$ is a space of
+relational predicates defined by $\mathcal{R}$, defined in
+\autoref{app:cons-cdd}), and a correspondence $\eta : \ctxs{
+  \mathcal{R} } \to \mathcal{R}$ (\autoref{line:shara-expand}).
+%
+$\shara{ \mathcal{R} }$ then runs a procedure $\solvecdd{ \ctxs{
+    \mathcal{R} } }$ on $\mathcal{S}'$, which either returns the value
+$\none$ to denote that $\mathcal{S}'$ has no solution or a solution
+$\sigma'$ (\autoref{line:shara-case}).
+%
+If $\solvecdd{ \ctxs{ \mathcal{R} } }$ returns that $\mathcal{S}'$ has
+no solution, then \sys returns that $\mathcal{S}$ has no solution
+(\autoref{line:shara-ret-none}).
+%
+Otherwise, if $\solvecdd{ \ctxs{ \mathcal{R} } }$ returns a solution
+$\sigma'$, then $\sys$ returns, as a solution to $\mathcal{S}$,
+$\collapse{ \eta }{ \sigma' }$, defined below
+(\autoref{line:shara-ret-collapse}).
+
+% define collapse:
+For $\sigma \in \interps{ \ctxs{ \mathcal{R} } }$ and %
+correspondence $\eta$ from $\mathcal{S}'$ to $\mathcal{S}$,
+$\collapse{\eta}{\sigma} \in \interps{ \mathcal{R} }$ maps each $R \in
+\mathcal{R}$ to
+%
+$\bigland_{ \substack{R' \in \mathcal{R}' \\ \eta(R') = R} }
+\sigma(R')$.
+%
+$\expand{ \mathcal{R} }$ is given in \autoref{app:cons-cdd}.
+
+% shara correctness
+\begin{thm}
+  \label{thm:corr}
+  $\mathcal{S}$ is solvable if and only if $\shara{ \mathcal{R}
+  }(\mathcal{S}) \in \interps{ \mathcal{R} }$.
+\end{thm}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "p"
+%%% End: 

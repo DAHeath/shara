@@ -1,0 +1,114 @@
+\section{Related Work}
+\label{sec:related-work}
+% different classes of CHC solvers:
+A significant body of previous work has presented solvers for
+different classes of Constrained Horn Clauses, or finding inductive
+invariants of programs that correspond to solutions of CHCs.
+% solving linear systems:
+\impact attempts to verify a given sequential procedure, which
+corresponds to solving a recursive linear CHC
+system~\cite{mcmillan06}.
+%
+\impact attempts to verify a given procedure by iteratively selecting
+paths and synthesizing invariants for each path.
+%
+Such an approach corresponds to iteratively and selecting and solving
+derivations of a corresponding linear CHC system.
+
+% interprocedural verification:
+Previous work also proposed a verifier for recursive
+programs~\cite{heizmann10}.
+%
+The proposed approach selects interprocedural paths of a program and
+synthesizes invariants for each as nested interpolants.
+%
+Such an approach corresponds to attempting to solve a recursive CHC
+system $\mathcal{S}$ by selecting derivation trees of $\mathcal{S}$
+and solving each tree.
+
+% solving recursive systems:
+Previous work has proposed solvers for recursive systems that, given a
+system $\mathcal{S}$, attempt to solve $\mathcal{S}$ by generating and
+solving a series of recursion-free unwindings of $\mathcal{S}$.
+%
+In particular, \duality attempts to solve each unwinding
+$\mathcal{S}'$ by selecting and solving derivation-trees of
+$\mathcal{S}'$~\cite{bjorner13}.
+%
+Other optimizations selects derivation trees to solve using symbolic
+symbolic analogs of Prolog evaluation with
+tabling~\cite{jaffar09,mcmillan14}.
+%
+\eldarica attempts to solve each recursion-free CHC system by lazily
+copying its subsystems to form a body-disjoint
+over-approximation~\cite{rummer13a,rummer13b}.
+
+% DAG interpolation:
+\whale attempts to verify a sequential recursive program by generating
+and solving hierarchical programs (i.e., programs that may contain
+conditional branches and procedure calls, but do not contain loops or
+recursion), which correspond to recursion-free CHC
+systems~\cite{albarghouthi12b}.
+%
+To solve a particular recursion-free system $\mathcal{S}$, \whale
+generates a linear inlining $\mathcal{S}'$ of $\mathcal{S}$ and solves
+it using a procedure \vinta~\cite{albarghouthi12a}.
+%
+In general, $\mathcal{S}'$ may have size exponential in the size of
+$\mathcal{S}$.
+
+% compare sys to all of the previous work:
+\sys is similar to all of the approaches given above for solving
+recursion-free CHC systems in that it reduces the problem of solving a
+given recursion-free CHC system $\mathcal{S}$ to solving a CHC system
+in a directly-solvable class.
+%
+\sys is distinct from all of the approaches given above in that it
+reduces solving a recursion-free CHC system to solving a
+Clause-Dependent Disjoint (CDD) system.
+%
+CDD systems strictly contain the union of all classes of
+directly-solvable CHC systems used by the above approaches, and can
+themselves be solved directly.
+
+% bullshit CADE papers:
+Previous work has given solvers for non-linear Horn clauses over
+particular theories.
+%
+In particular, verifiers have been proposed for recursion-free systems
+over the theory of linear arithmetic~\cite{komuravelli14}.
+%
+Because the verifier relies on quantifier elimination, it is not clear
+if it can be extended to richer theories that support interpolation,
+such as the combination of linear arithmetic with uninterpreted
+functions.
+%
+Other work gives a solver for the class of \emph{timed pushdown
+  systems}, a subclass of CHC systems over the theory of linear real
+arithmetic~\cite{hoder12}.
+%
+Unlike both approaches, \sys can solve systems over any theory that
+supports interpolation.
+
+% DAG inlining:
+DAG inlining, given a hierarchical program $P$, attempts to generate a
+compact verification condition for $P$~\cite{lal-qadeer15}.
+%
+\sys contains a procedure that, given a recursion-free Horn Clause
+system $\mathcal{S}$, attempts to construct a compact CDD system
+$\mathcal{S}'$ such that each solution of $\mathcal{S}'$ defines a
+solution of $\mathcal{S}$.
+%
+Because hierarchical programs and recursion-free Horn Clauses
+correspond closely to each other, algorithms that operate on
+hierarchical programs directly correspond to algorithms that operate
+on recursion-free Horn Clauses.
+%
+However, an algorithm for constructing a verification condition of
+hierarchical programs cannot apparently be directly used to synthesize
+a solution of a recursion-free CHC system.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "p"
+%%% End: 
