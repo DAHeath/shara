@@ -16,7 +16,7 @@ import           Grammar.Graph
 import           Grammar.Shara.DAGUnwind
 import           Grammar.Shara.Pre
 
-solve :: Expr -> Grammar -> IO (Maybe (Map Nonterminal Expr))
+solve :: Expr -> Grammar -> IO (Maybe (Map Symbol Expr))
 solve q grammar@(Grammar symbol rules) =
   let (oldMaps,noDuplicates) = copyDuplicates grammar
       newGrammar = renameVariables noDuplicates
@@ -28,16 +28,14 @@ solve q grammar@(Grammar symbol rules) =
       copyToO = foldr (\n m -> M.insert n n m) M.empty allUseTerminals
       oToCopy = foldr (\n m -> M.insert n [n] m) M.empty allUseTerminals
       cloneInfo = CloneInfo copyToO oToCopy
-  in do
-    solveReulst <- solveAux q (S.toList removeSet) cloneInfo originalGraph firstUnwindDAG (theNextId originalGraph)
-    case solveReulst of
+  in solveAux q (S.toList removeSet) 
+    cloneInfo originalGraph firstUnwindDAG (theNextId originalGraph) >>= \case
       Nothing -> return Nothing
       Just solution -> return (Just (mapBackSolution oldMaps solution))
 
-solveAux :: Expr -> [Rule] -> CloneInfo -> Graph -> Graph -> Int -> IO (Maybe (Map Nonterminal Expr))
-solveAux q backEdges cloneInfo originalGraph currentDAG nextId = do
-  solveReulst <- solveDAG q currentDAG nextId
-  case solveReulst of
+solveAux :: Expr -> [Rule] -> CloneInfo -> Graph -> Graph -> Int -> IO (Maybe (Map Symbol Expr))
+solveAux q backEdges cloneInfo originalGraph currentDAG nextId =
+  solveDAG q currentDAG nextId >>= \case
     Nothing -> return Nothing
     Just solution -> do
       let s = mergeSolution cloneInfo solution
@@ -46,16 +44,17 @@ solveAux q backEdges cloneInfo originalGraph currentDAG nextId = do
         Nothing -> return (Just s)
         Just (UnwindResult ids newCloneInfo nextDAG) -> solveAux q backEdges newCloneInfo originalGraph nextDAG ids
 
-mergeSolution :: CloneInfo -> Map Nonterminal Expr -> Map Nonterminal Expr
-mergeSolution (CloneInfo _ oToCopy) solutions = 
+mergeSolution :: CloneInfo -> Map Symbol Expr -> Map Symbol Expr
+mergeSolution (CloneInfo _ oToCopy) solutions =
   let mapList = M.toList oToCopy
       newList = map (second (conjoin solutions)) mapList
     in M.fromList newList
   where
     conjoin solutions list = manyOr (map (\k -> solutions M.! k) list )
 
-solveDAG :: Expr -> Graph -> Int -> IO (Maybe (Map Nonterminal Expr))
+solveDAG :: Expr -> Graph -> Int -> IO (Maybe (Map Symbol Expr))
 solveDAG = undefined
 
-mapBackSolution :: Map Nonterminal Nonterminal -> Map Nonterminal Expr -> Map Nonterminal Expr
-mapBackSolution = undefined
+mapBackSolution :: Map Symbol Symbol -> Map Symbol Expr -> Map Symbol Expr
+mapBackSolution aliases =
+  M.foldrWithKey (\k e -> M.insertWith mkOr (M.findWithDefault k k aliases) e) M.empty

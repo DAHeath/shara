@@ -61,13 +61,14 @@ unwindNewRule rule = do
 copyRule :: Rule -> Unwind ()
 copyRule r@(Rule h expr bodys) = do
   (UnwindState _ cloneInfo _ _ _ _ _) <- get
-  let newH = head (oToCopy cloneInfo M.! h)
+  let newHs = head (oToCopy cloneInfo M.! view nonterminalSymbol h)
+  let newH = h & nonterminalSymbol .~ newHs
   newBodys <- mapM constructNewNode bodys
   let newRule = Rule newH expr newBodys
   UnwindState nextId cloneInfo2 newNodes graph visitedRules originalGraph nextUnwindRules <- get
   let (Graph forwardRules backwardRules) = graph
-  let newForwardRules = updateRule newRule newH forwardRules
-  let newBackwardRules = foldr (updateRule newRule) backwardRules newBodys
+  let newForwardRules = updateRule newRule newHs forwardRules
+  let newBackwardRules = foldr (updateRule newRule . view nonterminalSymbol) backwardRules newBodys
   let newVisitedRules = S.insert r visitedRules
   let newGraph = Graph newForwardRules newBackwardRules
   put (UnwindState nextId cloneInfo2 newNodes newGraph newVisitedRules originalGraph nextUnwindRules)
@@ -92,7 +93,7 @@ getHeadNode n = do
   let oToCopyMaps = oToCopy cloneInfo
   case M.lookup (view nonterminalSymbol n) oToCopyMaps of
     Nothing -> copyNewNodes n
-    Just (r:_) -> pure r
+    Just (r:_) -> pure (n & nonterminalSymbol .~ r)
 
 copyNewNodes :: Nonterminal -> Unwind Nonterminal
 copyNewNodes n = do
