@@ -30,15 +30,14 @@ data InterpolationStrategy
 -- maximally in parallel by cutting the DAG consideration at each iteration.
 licketySplit :: MonadIO m
              => InterpolationStrategy
-             -> Expr -> Grammar -> m (Either Model (Map Symbol Expr))
-licketySplit strategy q g = do
-  let m = M.singleton (g ^. grammarStart) q
+             -> Expr -> Graph -> m (Either Model (Map Symbol Expr))
+licketySplit strategy q gr = do
+  let m = M.singleton 0 q
   -- Kick off the core loop with a restricted version of the graph that
   -- includes everything except the query.
   liftIO (loop strategy gr initRestricted m)
   where
-    gr = mkGraph g
-    restriction = S.delete (view grammarStart g) (symbols gr)
+    restriction = S.delete 0 (symbols gr)
     initRestricted = restrict restriction gr
 
 -- | The core loop for interpolating a DAG. The loop requires two versions of

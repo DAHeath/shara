@@ -1,7 +1,7 @@
-{-# LANGUAGE QuasiQuotes #-}
 module Grammar.Shara where
 
 import           Control.Monad.IO.Class
+import           Control.Arrow (second)
 
 import           Data.Map (Map)
 import qualified Data.Map as M
@@ -12,50 +12,56 @@ import           Formula hiding (Rule)
 import           Formula.Expr
 import           Grammar.Grammar
 
-import           Grammar.Graph2
+import           Grammar.Graph
 import           Grammar.Shara.DAGUnwind
 import           Grammar.Shara.Pre
+import           Grammar.Shara.CDD
+import           Grammar.Shara.LicketySplit
 
-solve :: Grammar ->IO (Maybe (Map Nonterminal Expr))
-solve grammar@(Grammar symbol rules) = do
+solve :: Expr -> Grammar -> IO (Maybe (Map Symbol Expr))
+solve q grammar@(Grammar symbol rules) =
   let (oldMaps,noDuplicates) = copyDuplicates grammar
-  let newGrammar = renameVariables noDuplicates
-  let originalGraph = mkGraph newGrammar
-  let removeSet = backEdges originalGraph
-  let newRules = filter (\r -> S.notMember r removeSet) rules
-  let firstUnwindDAG = mkGraph (Grammar symbol newRules)
-  let allUseTerminas = terminals firstUnwindDAG
-  let copyToO = foldr (\n m->M.insert n n m) M.empty allUseTerminas
-  let oToCopy = foldr (\n m->M.insert n [n] m) M.empty allUseTerminas
-  let cloneInfo = CloneInfo copyToO oToCopy
-  solveReulst <- solveAux (S.toList removeSet) cloneInfo originalGraph firstUnwindDAG (theNextId originalGraph)
-  case solveReulst of
+      newGrammar = renameVariables noDuplicates
+      originalGraph = mkGraph newGrammar
+      removeSet = backEdges originalGraph
+      newRules = filter (`S.notMember` removeSet) rules
+      firstUnwindDAG = mkGraph (Grammar symbol newRules)
+      allUseTerminals = terminals firstUnwindDAG
+      copyToO = foldr (\n m -> M.insert n n m) M.empty allUseTerminals
+      oToCopy = foldr (\n m -> M.insert n [n] m) M.empty allUseTerminals
+      cloneInfo = CloneInfo copyToO oToCopy
+  in solveAux q (S.toList removeSet) 
+    cloneInfo originalGraph firstUnwindDAG (theNextId originalGraph) >>= \case
+      Nothing -> return Nothing
+      Just solution -> return (Just (mapBackSolution oldMaps solution))
+
+solveAux :: Expr -> [Rule] -> CloneInfo -> Graph -> Graph -> Int -> IO (Maybe (Map Symbol Expr))
+solveAux q backEdges cloneInfo originalGraph currentDAG nextId =
+  solveDAG q currentDAG nextId >>= \case
     Nothing -> return Nothing
-    Just solution -> return (Just (mapBackSolution oldMaps solution))
+    Just solution -> do
+      let s = mergeSolution cloneInfo solution
+      maybeNextDAG <- dagUnwind backEdges cloneInfo s originalGraph currentDAG nextId
+      case maybeNextDAG of
+        Nothing -> return (Just s)
+        Just (UnwindResult ids newCloneInfo nextDAG) ->
+          solveAux q backEdges newCloneInfo originalGraph nextDAG ids
 
-
-solveAux :: [Rule] -> CloneInfo -> Graph -> Graph -> Int -> IO (Maybe (Map Nonterminal Expr))
-solveAux backEdges cloneInfo originalGraph currentDAG nextId = do
-  solveReulst <- solveDAG currentDAG nextId
-  case solveReulst of
-    Nothing -> return Nothing
-    Just solution -> do let s = mergeSolution cloneInfo solution
-                        maybeNextDAG <- (dagUnwind backEdges cloneInfo s originalGraph currentDAG nextId)
-                        case maybeNextDAG of
-                          Nothing -> return (Just s)
-                          Just (UnwindResult ids newCloneInfo nextDAG) -> solveAux backEdges newCloneInfo originalGraph nextDAG ids
-
-mergeSolution :: CloneInfo -> Map Nonterminal Expr -> Map Nonterminal Expr
-mergeSolution (CloneInfo _ oToCopy) solutions = 
+mergeSolution :: CloneInfo -> Map Symbol Expr -> Map Symbol Expr
+mergeSolution (CloneInfo _ oToCopy) solutions =
   let mapList = M.toList oToCopy
-      newList = map (\(k,list) -> (k,getConjuntion solutions list)) mapList
+      newList = map (second (conjoin solutions)) mapList
     in M.fromList newList
   where
-    getConjuntion solutions list = manyOr (map (\k -> solutions M.! k) list )
+    conjoin solutions list = manyOr (map (\k -> solutions M.! k) list )
 
-solveDAG :: Graph -> Int -> IO (Maybe (Map Nonterminal Expr))
-solveDAG g nextId = undefined
+solveDAG :: Expr -> Graph -> Int -> IO (Maybe (Map Symbol Expr))
+solveDAG q g nextSym = do
+  let (g', mapping) = constructCDD nextSym g
+  licketySplit ConcurrentInterpolation q g' >>= \case
+    Left _ -> pure Nothing
+    Right m -> pure (Just $ mapBackSolution mapping m)
 
-
-mapBackSolution :: Map Nonterminal Nonterminal -> Map Nonterminal Expr -> Map Nonterminal Expr
-mapBackSolution = undefined
+mapBackSolution :: Map Symbol Symbol -> Map Symbol Expr -> Map Symbol Expr
+mapBackSolution aliases =
+  M.foldrWithKey (\k e -> M.insertWith mkOr (M.findWithDefault k k aliases) e) M.empty
