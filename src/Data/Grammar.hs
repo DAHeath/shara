@@ -5,6 +5,7 @@ import           Control.Monad.State
 import           Control.Monad.Writer (Writer, runWriter, tell)
 import           Control.Applicative
 
+import           Data.Foldable (asum)
 import           Data.Data (Data)
 import           Data.Map (Map)
 import qualified Data.Map as M
@@ -104,29 +105,8 @@ mkGrammar :: Rule a -> Map NT (Rule a) -> Grammar a
 mkGrammar st rs =
   let g = Grammar st rs
       r = reaching g
-      rs' = M.filterWithKey (\k _ -> k `elem` r) rs
-      g' = Grammar st rs'
-  in clean g'
-
-clean :: Grammar a -> Grammar a
-clean (Grammar st rs) =
-  let (g', Any change) = runWriter (Grammar <$> go rs st <*> traverse (go rs) rs)
-      g'' = case g' of
-        Grammar st' rs' ->
-          Grammar st' (M.filter (\r -> not (isNull r || isEps r)) rs')
-  in if change then clean g'' else g''
-  where
-    go :: Map NT (Rule a) -> Rule a -> Writer Any (Rule a)
-    go m = \case
-      Null -> pure Null
-      Eps -> pure Eps
-      Alt r1 r2 -> alt <$> go m r1 <*> go m r2
-      Seq r1 r2 -> seq <$> go m r1 <*> go m r2
-      Nonterminal nt -> case M.findWithDefault Null nt m of
-        Null -> tell (Any True) >> pure Null
-        Eps -> tell (Any True) >> pure Eps
-        _ -> pure (Nonterminal nt)
-      Terminal t -> pure (Terminal t)
+      rs' = M.filter (not . isNull) $ M.filterWithKey (\k _ -> k `elem` r) rs
+  in Grammar st rs'
 
 reaching :: Grammar a -> Set NT
 reaching (Grammar st rs) = execState (go S.empty) (S.fromList $ ruleNonterminals st)
@@ -182,11 +162,11 @@ instance Monad Grammar where
 
 product :: Grammar a -> Grammar a -> Grammar a
 product (Grammar st rs) (Grammar st' rs') =
-  Grammar (seq st st') (M.unionWith alt rs rs')
+  mkGrammar (seq st st') (M.unionWith alt rs rs')
 
 sum :: Grammar a -> Grammar a -> Grammar a
 sum (Grammar st rs) (Grammar st' rs') =
-  Grammar (alt st st') (M.unionWith alt rs rs')
+  mkGrammar (alt st st') (M.unionWith alt rs rs')
 
 instance Semigroup (Grammar a)
 
@@ -233,11 +213,31 @@ ruleNonterminals  = \case
   Nonterminal nt -> [nt]
 
 nonterminals :: Grammar a -> Set NT
-nonterminals = undefined -- TODO
+nonterminals (Grammar st rs) =
+  S.fromList $
+    ruleNonterminals st ++
+    concatMap ruleNonterminals (M.elems rs) ++
+    M.keys rs
 
 abstract :: NT -> Grammar a -> Grammar a
 abstract nt (Grammar st rs) =
-  Grammar (Nonterminal nt) (M.insert nt st rs)
+  mkGrammar (Nonterminal nt) (M.insert nt st rs)
+
+topologicalOrder :: Grammar a -> [NT]
+topologicalOrder g = evalState (topo (start g))  S.empty
+  where
+    topo :: Rule a -> State (Set NT) [NT]
+    topo = \case
+      Null -> pure []
+      Eps -> pure []
+      Seq x y -> (++) <$> topo x <*> topo y
+      Alt x y -> (++) <$> topo x <*> topo y
+      Terminal _ -> pure []
+      Nonterminal nt -> (nt `elem`) <$> get >>= \case
+        False -> do
+          modify (S.insert nt)
+          (nt:) <$> topo (ruleFor nt g)
+        True -> pure []
 
 drawRule :: Show a => Rule a -> String
 drawRule = \case
@@ -256,6 +256,48 @@ draw (Grammar st rs) =
 
 drawNT :: NT -> String
 drawNT (NT nt) = show nt
+
+-- forall g nts, uncurry (connect nts) (partition nts g) = g
+
+-- | Partition a grammar into two halves: Those which reach the given list of
+-- nonterminals and those that are strictly reached by the list.
+partition :: [NT] -> Grammar a -> (Grammar a, Grammar a)
+partition nts g = (reaching, reached)
+  where
+    reaching = evalState (go (start g)) (S.fromList nts)
+    reached =
+      evalState (asum <$> mapM (go . (`ruleFor` g)) nts)
+        (nonterminals reaching S.\\ S.fromList nts)
+    go = \case
+      Null -> pure empty
+      Eps -> pure mempty
+      Seq x y -> (<>) <$> go x <*> go y
+      Alt x y ->
+        (\(Grammar st rs) (Grammar st' rs') ->
+          mkGrammar (Alt st st') (M.unionWith Alt rs rs')) <$> go x <*> go y
+      Terminal t -> pure $ singleton t
+      Nonterminal nt -> do
+        vis <- get
+        r <- if nt `elem` vis
+             then pure empty
+             else go (ruleFor nt g)
+        modify (S.insert nt)
+        pure (abstract nt r)
+
+-- | Connect two graphs by mapping each start alternative to a different
+-- nonterminal and adding this mapping to the first graph.
+connect :: [NT] -> Grammar a -> Grammar a -> Grammar a
+connect nts reaching (Grammar st rs) = reaching <|> reached'
+  where
+    reduce nts r =
+      case nts of
+        [] -> mkGrammar r M.empty
+        [nt] -> mkGrammar Null (M.singleton nt r)
+        (nt:nts') -> case r of
+          Alt x y -> mkGrammar Null (M.singleton nt x) <|> reduce nts' y
+          x -> mkGrammar Null (M.singleton nt x)
+    reached' = case reduce nts st of
+      Grammar st' rs' -> mkGrammar st' (M.unionWith alt rs rs')
 
 test :: Grammar Int
 test =

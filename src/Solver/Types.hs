@@ -1,4 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
 module Solver.Types where
 
 import           Control.Lens
@@ -14,4 +13,6 @@ type ProofStructure = Grammar Proof
 data Proof = Continue | Entails NT NT
   deriving (Show, Read, Eq, Ord)
 
-data DirectState = DirectState
+class Monad m => Expandable m where
+  getProof :: m ProofStructure
+  getClones :: m (Map NT (Set NT))
