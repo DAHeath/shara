@@ -41,6 +41,8 @@ dependencies:
 - extra
 - async
 - stm
+- QuickCheck
+- hspec
 
 library:
   source-dirs: src

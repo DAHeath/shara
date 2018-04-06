@@ -1,4 +1,4 @@
-module Grammar.Shara where
+module Grammar.Shara2 where
 
 import           Control.Monad.IO.Class
 import           Control.Arrow (second)
