@@ -99,7 +99,8 @@ A Clause where the head is a formula is called a query.
 %
 % define a body function, head function, and recursion-free
 For a given constrained horn clause $C$, $\bodyof{C}$ denotes
-the vector of uninterpreted predicates in the body of $C$.
+the vector of uninterpreted predicates in the body of $C$, $\consof{C}$
+denotes the formula in the body.
 %
 It is possible for a uninterpreted predicate shows multiple times in the
 body of $C$.
@@ -156,93 +157,10 @@ We will present \sys as a solver for recursion-free CHCs.
 For a given CHC system $\cc{S}$, there is no uninterpreted predicates $\cc{P} \in \predof{S}$ 
 such that $\cc{P} \in \tdepsof{P}$, then $\cc{S}$ is a recursion-free CHCs system.
 
-\subsubsection{Solutions}
-\label{sec:chc-solns}
 %
-A solution to a CHC system $\mathcal{S}$ is an interpretation of each
-relational predicate $R$ of arity $n$ as a formula over $n$ free
-variables such that for each clause $\mathcal{C} \in \mathcal{S}$, the
-conjunction of interpretations of all relational predicates in the
-body of $\mathcal{C}$ and the constraint of $\mathcal{C}$ entail the
-interpretation of the head of $\mathcal{C}$.
-%
-Let a map from each $R \in \relsof{ \mathcal{R} }$ to a
-$\mathcal{T}$-formula over an ordered vector of $\arityof{ \mathcal{R}
-}(R)$ free variables be an \emph{interpretation} of $\mathcal{R}$;
-%
-let the space of interpretations of $\mathcal{R}$ be denoted
-$\interps{ \mathcal{R} }$.
-%
-\begin{defn}
-  \label{defn:chc-soln}
-  For $\mathcal{B} \in \bodies{ \mathcal{R} }$ and $H \in \apps{
-    \mathcal{R} }$, %
-  let $\sigma \in \interps{ \mathcal{R} }$ be such that for each $R
-  \in \mathcal{R}$, $\arityof{\mathcal{R}}(R) = \degreeof{\sigma(R)}$
-  and %
-  %
-  \[ \elts{ \sigma(\relof{ A })[ \argsof{ A } ] }_{ A \in \appsof{
-      \mathcal{B} } }, %
-  \ctrof{ \mathcal{B} } \entails %
-  \sigma( \relof{H} )[ \argsof{ H } ]
-  \]
-  Then $\sigma$ is a \emph{solution} of $(\mathcal{B}, H)$.
-\end{defn}
-% define partial solution 
-For $\mathcal{S} \in \chcs{ \mathcal{R} }$, if
-% solution respects dependence order:
-\textbf{(a)} for each $R \in \domain(\sigma)$ (where $\domain(\sigma)$
-denotes the domain of $\sigma$) and $R' \in \mathcal{R}$ a dependence
-of $R$ in $\mathcal{S}$, it holds that $R' \in \domain(\sigma)$;
-%
-\textbf{(b)} for each $\mathcal{C} \in \mathcal{S}$ such that
-$\relof{ \headof{ \mathcal{C} } } \in \domain(\sigma)$, $\sigma$ is a
-solution of $\mathcal{C}$;
-%
-then $\sigma$ is a \emph{partial solution} of $\mathcal{S}$.
-%
-If, in addition, $\sigma(\queryof{ \mathcal{S} }) \entails \false$,
-then $\sigma$ is a \emph{solution} of $\mathcal{S}$.
-%
-The problem addressed in this paper is, given a recursion-free CHC
-system $\mathcal{S}$, to synthesize a solution for $\mathcal{S}$.
-
-% define grounding of clause body:
-Each partial solution $\sigma$ of $\mathcal{S}$ defines a simpler CHC
-system in which each relational predicate in the domain of $\sigma$ is
-replaced with its interpretation in $\sigma$.
-%
-For $\mathcal{A} \subseteq \apps{\mathcal{R}}$, $\varphi \in
-\formulas$, and $\sigma \in \interps{ \mathcal{R} }$, the clause body
-\begin{align*}
-  \left( \bigunion_{ \substack{ %
-      R \in \mathcal{R} \setminus \domain(\sigma), \\
-      Y \in X^{*}, 
-      (R, Y) \in \mathcal{A} } } \elts{(R, Y)}, 
-  \varphi \land %
-  \bigland_{ \substack{ R \in \domain(\sigma) \\ 
-      Y \in X^{*},
-      (R, Y) \in \mathcal{A} } } \sigma(R)[ Y ] \right)
-\end{align*}
-%
-is the \emph{grounding} of $(\mathcal{A}, \varphi)$ on $\sigma$,
-denoted $\sigma(\mathcal{A}, \varphi)$.
-
-% groundings of systems:
-For each $\mathcal{S} \in \chcs{ \mathcal{R} }$ and $\sigma \in
-\interps{ \mathcal{R} }$ a partial solution of $\mathcal{S}$, the
-grounding of $\mathcal{S}$ on $\sigma$ is a CHC system in which each
-clause is a grounding of a clause in $\mathcal{S}$ with a head
-relational predicate not in the domain of $\sigma$.
-%
-In particular, let $\mathcal{S}' \subseteq \chc{ \mathcal{R} \setminus
-  \domain(\sigma) }$ be such that for each $\mathcal{B} \in \bodies{
-  \mathcal{R} }$ and $H \in \apps{ \mathcal{R} }$ with $\relof{H}
-\notin \domain(\sigma)$, the clause $(\sigma(\mathcal{B}), H)$ is in
-$\mathcal{S}'$.
-%
-Then $\mathcal{S}'$ is the \emph{grounding} of $\mathcal{S}$ on
-$\sigma$, denoted $\sigma(\mathcal{ S })$.
+A solution to a CHC system $S$ is an interpretation of each
+uninterpreted predicate $\cc{Q} \in \predof{S}$ that each clause holds
+after substitute all predicates by its interpretation.
 
 %%% Local Variables: 
 %%% mode: latex
