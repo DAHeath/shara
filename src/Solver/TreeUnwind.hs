@@ -5,6 +5,7 @@ module Solver.TreeUnwind where
 import           Control.Lens hiding (mapping)
 import           Control.Monad.State
 import           Control.Monad.Reader
+import           Control.Arrow (second)
 import           Control.Applicative
 
 import           Data.Data (Data)
@@ -24,6 +25,7 @@ import           Formula hiding (Rule, Chc)
 
 import           Solver.Types hiding (DirectState(..))
 import           Solver.Chc
+import           Solver.Interpolate
 
 import Data.Text.Prettyprint.Doc
 
@@ -69,6 +71,10 @@ emptyCtxt = UnwindCtxt
 instance Monad m => Expandable (StateT UnwindState m) where
   getProof = G.mkGrammar <$> use proofStart <*> use proofRules
   getClones = use clones
+
+instance Expandable m => Expandable (ReaderT UnwindCtxt m) where
+  getProof = lift getProof
+  getClones = lift getClones
 
 -- | Unwind the given CHC system to a tree.
 -- In addition, generate a proof structure which indicates what an inductive
@@ -203,7 +209,7 @@ subst' vs = subst (foldr (uncurry M.insert) M.empty vs)
 test :: Chc
 test =
   G.mkGrammar
-  (  G.Terminal (Fact [expr|x = 41|])
+  (  G.Terminal (Fact [expr|x = 5|])
   <> G.Terminal (Apply x)
   <> G.Nonterminal 0
   ) $
@@ -225,6 +231,12 @@ experiment = runReaderT (evalStateT ( do
   g' <- IG.unroll S.empty g
   liftIO $ putStrLn "\n\n"
   liftIO (putStr $ G.draw $ (show . pretty) <$> IG.finite g')
+
+  -- itp <- topologicalInterpolation (IG.finite g')
+  -- case itp of
+  --   Left m -> liftIO $ print $ pretty (M.toList m)
+  --   Right m -> liftIO $ print (map (second pretty) (M.toList m))
+
   g'' <- IG.unroll S.empty g'
   liftIO $ putStrLn "\n\n"
   liftIO (putStr $ G.draw $ (show . pretty) <$> IG.finite g'')
@@ -233,8 +245,18 @@ experiment = runReaderT (evalStateT ( do
   liftIO $ putStrLn "\n\n"
   liftIO (putStr $ G.draw $ (show . pretty) <$> IG.finite g''')
 
+  g'''' <- IG.unroll S.empty g'''
+  liftIO $ putStrLn "\n\n"
+  liftIO (putStr $ G.draw $ (show . pretty) <$> IG.finite g'''')
+
   p <- getProof
   liftIO $ print $ G.topologicalOrder p
   liftIO $ putStrLn "\n\n"
   liftIO (putStr $ G.draw p)
+
+  itp <- topologicalInterpolation (IG.finite g''')
+
+  case itp of
+    Left m -> liftIO $ print $ pretty (M.toList m)
+    Right m -> liftIO $ print (map (second pretty) (M.toList m))
   ) emptyState) emptyCtxt

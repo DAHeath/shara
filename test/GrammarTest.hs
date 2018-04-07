@@ -1,4 +1,3 @@
-import           Control.Lens
 import           Control.Monad
 import           Control.Applicative
 import           Data.Grammar as G

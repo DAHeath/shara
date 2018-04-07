@@ -2,6 +2,7 @@ module Solver.Shara where
 
 import           Control.Lens
 import           Control.Monad.State
+import           Control.Monad.Reader
 import           Control.Applicative
 
 import           Data.Map (Map)
@@ -10,8 +11,10 @@ import           Data.Set (Set)
 import qualified Data.Set as S
 import           Data.Maybe (isJust, fromJust)
 import           Data.Semigroup
+import           Data.List.Split
 
-import           Formula.Expr
+import           Formula hiding (Chc)
+import qualified Formula.Z3 as Z3
 
 import           Data.Grammar (Grammar, Rule, NT)
 import qualified Data.Grammar as G
@@ -20,35 +23,37 @@ import           Data.InfGrammar (InfGrammar)
 import qualified Data.InfGrammar as IG
 
 import           Solver.Types
+import           Solver.Interpolate
+import           Solver.Chc
+import           Solver.TreeUnwind
 
 -- | Encode the CHC as a (possibly infinite) unrollable grammar such that each
 -- unrolling is a directly solvable CHC system.
-directlySolvable :: MonadState DirectState m => Chc -> m (InfGrammar m Expr)
-directlySolvable = undefined
+-- directlySolvable :: Expandable m => Chc -> m (InfGrammar m Expr)
+-- directlySolvable = treeUnwind
 
 -- | Apply the interpolator to the given directly solvable system and yield
 -- either a counterexample model or solutions for the nonterminals.
 solveDirect :: MonadIO m => Grammar Expr -> m (Either Model (Map NT Expr))
-solveDirect = undefined
-
--- | Interpolate the given nonterminal in the context of the directly solvable grammar.
-interpolateNT :: MonadIO m => NT -> Grammar Expr -> Map NT Expr -> m (Either Model (Map NT Expr))
-interpolateNT = undefined
+solveDirect = topologicalInterpolation
 
 -- | Solve the Relational Post Fixed-Point Problem as encoded by the given CHC
 -- system.
-solveChc :: (MonadState DirectState m, MonadIO m) => Chc -> m (Either Model (Map NT Expr))
-solveChc chc = solve =<< directlySolvable chc
+-- solveChc :: (Expandable m, MonadIO m) => Chc -> m (Either Model (Map NT Expr))
+solveChc chc = solve =<< treeUnwind chc
 
-solve :: (MonadState DirectState m, MonadIO m) => InfGrammar m Expr -> m (Either Model (Map NT Expr))
+treeSolve :: Chc -> IO (Either Model (Map NT Expr))
+treeSolve chc = evalStateT (runReaderT (solve =<< treeUnwind chc) emptyCtxt) emptyState
+
+solve :: (Expandable m, MonadIO m) => InfGrammar m Expr -> m (Either Model (Map NT Expr))
 solve g = solveDirect (IG.finite g) >>= \case
   Left m -> pure (Left m)
   Right sol -> do
-    ps <- use proofStructure
+    ps <- getProof
     (mproof, indSet) <- inductive ps sol
     case mproof of
       Just proof -> do
-        cs <- use clones
+        cs <- getClones
         let sol' = M.filterWithKey (\k _ -> k `elem` G.nonterminals proof) sol
         pure (Right (collapse cs sol'))
       Nothing -> IG.unroll indSet g >>= solve
@@ -77,7 +82,7 @@ inductive ps sols = do
       G.Alt x y -> (<|>) <$> ind x <*> ind y
       -- If a portion of the proof is rolled, it is not inductive.
       G.Terminal Continue -> pure Nothing
-      -- The terminal's inductiveness is contingent some logical entailment.
+      -- The terminal's inductiveness is contingent on some logical entailment.
       G.Terminal (Entails nt nt') ->
         entails (M.findWithDefault (LBool True) nt sols)
                 (M.findWithDefault (LBool False) nt' sols) >>= \case
@@ -98,14 +103,13 @@ inductive ps sols = do
 cut :: Grammar a -> (Set NT, Set NT, Set NT)
 cut = undefined
 
-partition :: Map NT (Rule a) -> Grammar a -> (Grammar a, Grammar a)
-partition = undefined
-
-interpolate :: MonadIO m => Expr -> Expr -> m (Either Model Expr)
-interpolate = undefined
-
 entails :: MonadIO m => Expr -> Expr -> m Bool
-entails = undefined
+entails e1 e2 = unalias e1 `Z3.entails` unalias e2
+  where
+    unalias :: Expr -> Expr
+    unalias e = e & vars . varName %~ unal
+    unal :: String -> String
+    unal n = head (splitOn "%" n)
 
-collapse :: Set (Set NT) -> Map NT Expr -> Map NT Expr
-collapse = undefined
+collapse :: Map NT (Set NT) -> Map NT Expr -> Map NT Expr
+collapse _ = id -- TODO
