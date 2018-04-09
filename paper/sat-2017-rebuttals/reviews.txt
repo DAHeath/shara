@@ -1,0 +1,97 @@
+----------------------- REVIEW 1 ---------------------
+PAPER: 27
+TITLE: Solving Constrained Horn Clauses Using Dependence-Disjoint Expansions
+AUTHORS: Qi Zhou and William Harris
+
+Overall evaluation: 1 (weak accept)
+
+----------- Overall evaluation -----------
+The paper introduces a subclass of recursion-free horn clauses called
+clause-dependence-disjoint (CDD). The second part of the paper shows how to
+solve general recursion-free horn by expanding them into CDD.
+
+The results seem to be competitive and the ideas sufficiently novel so I think
+this is a valuable contribution. However, the presentation could be improved.
+The paper is quite notation-heavy and the English is somewhat contrived in places;
+please ask for help if English is not your first language.
+The expansion procedure is in the appendix, which I'm not sure is acceptable
+because the paper would be published without it.
+
+DETAILED COMMENTS
+
+I'm not sure if all the square brackets are really necessary.
+For instance, my impression is that it would be fine to say A instead of Rel[A].
+
+pg. 8 "Query_S that is the dependency of no relation predicate" ... I'm having trouble parsing this
+
+Definition 6: Does it mean that the dependency graph of a body forms a forest?
+
+Beginning of Section 4.2, the pseudocode of the algorithm is fairly simple but
+its description is extremely hard to read.
+
+Page 10, Constructing counterexample:
+ It is not explained what Use[R] is. Like so it's hard to  understand what's going on.
+ Why use T, why not S like everywhere else?
+
+Constructing the pre-constraint and post-constraint. The definition talks about
+things that are true in each solution of S. I'm not sure if this is technically
+correct. It's probably true that these things are true in all solutions of S
+but some other things might be also. I have the impression that the informal description could be written more clearly and more precisely.
+
+If Expand is not in the main paper, it's something that is done in some other work that you could cite?
+
+You probably should comment on why your tool does not parse benchmarks from SeaHorn.
+Is it because it's buggy for instance?
+
+Figures 3 and 4 could use labels on the axes.
+
+A table summarizing all the results would be useful.
+
+----------------------- REVIEW 2 ---------------------
+PAPER: 27
+TITLE: Solving Constrained Horn Clauses Using Dependence-Disjoint Expansions
+AUTHORS: Qi Zhou and William Harris
+
+Overall evaluation: 1 (weak accept)
+
+----------- Overall evaluation -----------
+The paper contribution can be divided in two parts. In the first part, a new class of directly solvable
+systems, called Clause-Dependent Disjoint (CDD), is presented as a subclass of recursion-free CHC
+(Constrained Horn Clauses) systems. In the second part, the authors introduce an algorithm for solving
+CDD systems. Given a recursion-free system, the algorithm first transform it into an equivalent CDD
+system and then call a specific procedure for solving it. The size of the transformed system could be
+exponential with respect to the size of the original CHC system. However, a procedure for computing a
+minimal expansion of a CHC system seems to provide a way to mitigate the possible negative effects on
+performance.
+
+Coming from a different background, I found it difficult to read the paper. A background of the basic
+terminology is just provided in Section 3 (page 6), when many terms have been already extensively
+used. Some terms like "control location" (Section 2) are not defined and this makes comprehension hard
+for somebody not familiar with their meaning.
+
+The algorithm in Section 4 is clearly defined and to the best of my knowledge is sound.
+
+The results presented in section 5 are satisfactory and solid. The algorithms SHARA and DUALITY
+look complementary to each other and this suggests the possibility to use a portfolio approach.
+However, it's not clear if DUALITY represents the current state-of-the-art solver or if there are other
+tools to compare with that have not been considered. In the second case an explanation should be
+provided in order to justify the choice.
+
+The paper is also missing a conclusion section and a discussion about possible future works, including
+optimization techniques.
+
+Overall, apart from my concern about the way the paper has been structured, I think that the ideas
+presented are interesting and I find the experimental section satisfactory.
+
+----------------------- REVIEW 3 ---------------------
+PAPER: 27
+TITLE: Solving Constrained Horn Clauses Using Dependence-Disjoint Expansions
+AUTHORS: Qi Zhou and William Harris
+
+Overall evaluation: -1 (weak reject)
+
+----------- Overall evaluation -----------
+This paper is in a specialized area of program verification that is unlikely
+to be interesting or understandable to most of the SAT audience.
+
+------------------------------------------------------

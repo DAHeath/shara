@@ -1,0 +1,41 @@
+\begin{center} 
+  \begin{table*} 
+    \centering
+    \begin{tabular}{| r| r | r | r | r |} 
+      \hline
+      \multicolumn{1}{|c }{ \textbf{Benchmarks}}
+       & \multicolumn{2}{|c|}{\sys} & 
+       \multicolumn{2}{c|}{\duality} \\
+       \hline
+       \multicolumn{1}{|c|}{\textbf{Number}} 
+       &  \multicolumn{1}{|c|}{\textbf{2 X}} 
+       &  \multicolumn{1}{c|}{\textbf{TO}} 
+       &  \multicolumn{1}{|c|}{\textbf{2 X}} 
+       &  \multicolumn{1}{c|}{\textbf{TO}} 
+       \\
+      \hline
+       670 & 194 & 19 & 24 & 8\\
+      \hline
+    \end{tabular}
+    % 
+    \caption{The results of our evaluation of \sys.
+      % 
+      "Benchmarks'' contains features of the
+      benchmarks, in particular the 
+       number of CHC problems ("Number")
+      % 
+      "\sys" contains features of the
+      performance of \sys, in particular  ("2 X") contains the number of 
+      CHC problems that at least two times faster than \duality , ("TO") contains the 
+      number of CHC problems that time out.
+      %
+       " \duality " contains features of the
+      performance of a, in particular  ("2 X") contains the number of 
+      CHC problems that at least two times faster than \sys, ("TO") contains the 
+      number of CHC problems that time out.
+      %
+      When we compare the running time, we eliminate all cases if both solver can solve it under 0.1 second
+      }
+    \label{table:bench}
+  \end{table*} 
+\end{center}

@@ -1,0 +1,167 @@
+% intro:
+\section{Introduction}
+\label{sec:intro}
+% context, problem defn:
+Many critical problems in program verification, such as the
+verification of safety properties of sequential recursive programs and
+concurrent programs, can be reduced to solving systems of
+\emph{Constrained Horn Clauses} (CHCs), a class of logic-programming
+problems~\cite{bjorner13,flanagan03,rummer13a,rummer13b}.
+
+
+% general introduce chc system
+A CHC consists of a body of applications of uninterpreted relational
+predicates, a constraint in a first-order theory, and a head
+application of a relational-predicate.
+%
+A CHC system consists of a set of CHCs and a query relational
+predicate.
+% 
+A solution of a system is an interpretation of each relational
+predicate as a formula such that each clause body with predicate
+symbols substituted with their interpretation entails the interpreted
+clause head.
+
+% introduce the problem of solving recursion-free systems:
+Recursion-free CHC systems, in which each
+relational-predicate does not occur in a derivation (i.e., is not
+a \emph{dependency}) of itself, is an important subclass of general
+CHC systems for two reasons.
+%
+First, many modern solvers solves general CHC systems by solving 
+a series of recursion-free systems from bounded unwindings of given
+recursive CHC system and combining their solutions~\cite{bjorner13}.
+%
+The performance of the solver for recursive systems critically depends
+on the performance of the solver for recursion-free systems that it
+uses. 
+%
+Second, solving recursion-free systems formulates proving safety of
+hierarchical programs~\cite{lal-qadeer15,lal-qadeer-lahiri12}, i.e.,
+programs with control branches and procedure calls, but only bounded
+iteration and recursion.
+
+% current general techniques for solving recursion-free systems
+Many efficient CHC solvers, solve a recursion-free CHC system 
+by reducing it to one or a series of subclass of 
+recursion-free CHC system.
+%
+Then solvers solve these subclass of recursion-free CHC systems by
+issuing an interpolation query for each relational predicate.
+%
+We refer to such subclass of systems as \emph{directly solvable}.
+%
+
+% state the complexity of solving general problem,and explain the 
+% why it is fast
+In general, solving a recursion-free CHC system for the theory of
+integer linear arithmetic is co-NEXPTIME-complete~\cite{rummer13b}.
+%
+In contrast, solving a directly solvalbe system for the theory of
+integer linear arithmetic is co-NP~~\cite{rummer13b}.
+%
+Therefore, the performance of a CHC solver for a recursion-free CHC system 
+typically is directly determined by the size(i.e the number of predicates) 
+of the subclass systems it reduces to.
+
+% current subclass
+Previous work has introduced three classes of directly solvable systems,
+% derivation trees:
+\textbf{(1)} tree structure systems~\cite{heizmann10,bjorner13,mcmillan14}, %
+% disjunctive trees:
+\textbf{(2)} body-disjoint systems, which represent multiple
+derivation trees with a single disjunctive tree
+system~\cite{rummer13a,rummer13b}, and
+% linear systems:
+\textbf{(3)} linear CHC systems, which can compactly represent
+multiple linear derivations with a single system structured as a
+Directed Acyclic Graph (DAG)~\cite{albarghouthi12a}.
+%
+The class of body-disjoint systems strictly contains the class of
+derivation trees, and is independent of the class of linear systems
+(i.e., the classes overlap, and neither contains the
+other)~\cite{rummer13a,rummer13b}.
+
+
+% contribution of this paper: CDD systems:
+The first contribution of this paper is the introduction of a novel
+class of directly solvable systems that strictly
+contains the union of the classes of body-disjoint and linear systems.
+%
+In particular, the class consists of all recursion-free CHC systems such that, 
+for each clause $C$, the dependences of all distinct relational
+predicates in the body of $C$ are disjoint;
+%
+we thus refer to such systems as \emph{Clause-Dependent Disjoint
+  (CDD)} systems.
+%
+We present a symbolic algorithm that demonstrates that CDD is directly solvable.
+%
+
+% a new solver
+The second contribution of this paper is a novel solver for
+CHC systems, named \sys.
+%
+Given recursion-free system $S$, \sys reduces the problem
+of solving $S$ to solving an equivalent CDD system
+$S'$.
+%
+In the worst case, the size of $S'$ may be exponential in the size of
+$S$.
+%
+In our experience, the size of $S'$ is usually close enough
+to the size of $S$ for \sys to perform significantly better
+than the best known CHC solvers.
+%
+Because CDD strictly contains the union of the classes 
+of body-disjoint and linear systems, the size of an equivalent minimum 
+CDD system is equal or less then the size of equivalent body-disjoint and
+linear system.
+%
+The procedure implemented in \sys to construct $S'$ is a
+generalization of existing procedures for generating compact
+verification conditions of hierarchical
+programs~\cite{flanagan01,lal-qadeer15}.
+%
+Given a recursion system, \sys solves a series recursion-free systems 
+from bounded unwinding the original system and combines the solutions
+of recursion-free systems to generate the solution for the recursion system
+as previous work proposed~\cite{rummer13b}.
+%
+
+% experience:
+\QZ{need to change if need}
+We implemented \sys within the \duality CHC solver~\cite{bjorner13},
+which is implemented within the \zthree automatic theorem
+prover~\cite{moura08}.
+%
+We evaluated the effectiveness of \sys on standard benchmarks drawn
+from SVCOMP15~\cite{svcomp15}.
+%
+The results indicate that in a strong majority of practical cases,
+\sys performs better than modern solvers.
+%
+The results indicate that solvers that perform better than both modern
+solvers and \sys could be designed by combining the strengths of both
+approaches (discussed in \autoref{sec:evaluation}).
+
+% paper outline:
+The rest of this paper is organized as follows.
+%
+\autoref{sec:overview} illustrates the operation of \sys using an
+example hierarchical program and corresponding CHC system.
+%
+\autoref{sec:background} reviews technical work on which \sys is
+based.
+%
+\autoref{sec:approach} describes \sys in technical detail.
+%
+\autoref{sec:evaluation} gives the results of our empirical evaluation
+of \sys.
+%
+\autoref{sec:related-work} compares \sys to related work.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "p"
+%%% End: 

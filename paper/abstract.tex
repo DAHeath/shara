@@ -1,0 +1,26 @@
+\begin{abstract}
+  % problem, context
+  Recursion-free Constrained Horn Clauses (CHCs) are logic-programming
+  problems that formulate verifying safety of programs with bounded
+  iteration and recursion.
+  %
+  They both formulate bounded verification problems and are generated
+  by solvers that attempt to verify safety of unbounded iterative or
+  recursive systems.
+  %
+  Efficient solvers of recursion-free systems reduce the problem to
+  solving a series of systems that can each be solved tractably.
+  
+  % contribution:
+  In this paper, we define a novel tractable class of recursion-free
+  systems, named \emph{Clause-Dependence Disjoint (CDD)} systems, that
+  strictly generalizes tractable classes defined in previous work.
+  %  
+  We implemented a novel solver for recursion-free CHCs, named \sys,
+  that reduces the problem of solving a given recursion-free system to
+  solving an equivalent CDD system.
+  %
+  Our evaluation of \sys on standard benchmarks indicates that, in
+  many practical cases, it performs significantly better than a
+  state-of-the-art implementation.
+\end{abstract}
