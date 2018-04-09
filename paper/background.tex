@@ -83,14 +83,13 @@ A Constrained Horn Clause contains a body and a head.
 A body consisting of a conjunctive set of uninterpreted relational predicates applied to varialbes and a formula
 that over variables.
 %
-A head can either be an uninterpreted relational predicates applied to variables or a formula 
-relational predicate.
+A head can either be an uninterpreted relational predicates applied to variables or \cc{False}.
 %
-A Clause where the head is a formula is called a query.
+A Clause where the head is \cc{False} is called query.
 \begin{defn}
   A Constrained Horn Clause is definied as follows: \\
   $\cc{chc} \Coloneqq \cc{head} \gets \cc{body}$ \\
-  $\cc{head} \Coloneqq \varphi \mid \cc{pred}$  \\
+  $\cc{head} \Coloneqq \cc{False} \mid \cc{pred}$  \\
   $\cc{body} \Coloneqq \varphi \wedge \cc{preds}$ \\
   $\cc{preds} \Coloneqq \cc{True} \mid \cc{pred} \wedge \cc{preds}$ \\
   $\cc{pred} \Coloneqq$ an uninterpreted predicate applied to variables \\
@@ -123,6 +122,11 @@ the set of all uninterpreted predicates in this CHC system.
   and $\cc{Q} \in \bodyof{C}$, then $\cc{Q}$ is a dependency predicate of $\cc{P}$.
 \end{defn}
 %
+\begin{ex}
+  Because uninterpreted predicates \cc{L4} is in the body of clause (4) and uninterpreted predicates \cc{L8}
+  is the head of clause (4), \cc{L4} is a dependency predicate of \cc{L8}.\autoref{chc}
+\end{ex}
+%
 Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$, $\depsof{P}$
 denotes the set of all dependency predicates of $\cc{P}$ in $\cc{S}$.
 %
@@ -130,9 +134,20 @@ denotes the set of all dependency predicates of $\cc{P}$ in $\cc{S}$.
 %define transitive dependency predicates
 \begin{defn}
   Given a CHC system $\cc{S}$ and three uninterpreted predicates $\cc{P},
-  \cc{Q}$ and $\cc{R} \in \predof{S}$, if $\cc{Q} \in \depsof{P}$ and $\cc{R} \in \depsof {Q}$
-  , then $\cc{R}$ is a transitive dependency predicate of $\cc{P}$.
+  \cc{Q}$ and $\cc{R} \in \predof{S}$, if $\cc{Q} \in \depsof{P}$ then \cc{Q} is a transitive dependency
+  predicate of \cc{P}. 
+  %
+  if \cc{Q} is a transitive dependency predicate of \cc{P}, and \cc{R} is a transitive dependency predicate
+  of \cc{Q},then $\cc{R}$ is a transitive dependency predicate of $\cc{P}$.
 \end{defn}
+%
+\begin{ex}
+  Because uninterpreted predicates \cc{L4} is a dependency predicate of \cc{L8}, 
+  \cc{L4} is a transitive dependency predicate of \cc{L8}.
+  %
+  And because \cc{L8} is an transitive dependency predicate of \cc{L9}, 
+  \cc{L4} is a transitive dependency predicate of \cc{L9}.\autoref{chc}
+\end{ex}
 %
 Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$, $\tdepsof{P}$
 denotes the set of all transitive dependency predicates of $\cc{P}$ in $\cc{S}$.
@@ -144,6 +159,12 @@ denotes the set of all transitive dependency predicates of $\cc{P}$ in $\cc{S}$.
   $\cc{Q} \in \predof{S}$, if $\exists \cc{C} \in \cc{S}$ such that $\cc{P} \in \bodyof{C}$
   and $\cc{Q} \in \bodyof{C}$, then $\cc{Q}$ and $\cc{P}$ are siblings of each other.
 \end{defn}
+%
+\begin{ex}
+  Because uninterpreted predicates \cc{L9} and \cc{db} both shows in the body of
+  clause (6), \cc{L9} and \cc{db} are siblings of each other.
+  %
+\end{ex}
 %
 Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$, $\siblingof{P}$
 denotes the set of all siblings predicates of $\cc{P}$ in $\cc{S}$.

@@ -42,60 +42,54 @@ previous work.
 \end{figure}
 % walk through code of running example:
 %
-\cc{multiCall} includes a procedure \cc{dbl} that, given an integer
-variable \cc{n}, returns the value of \cc{n} doubled (line 1).
+\cc{multiCall} includes a procedure \cc{db} that, given an integer
+variable \cc{m}, returns the value of \cc{m} doubled (line 1).
 %
 \cc{main}, the entry procedure of \cc{multiCall}, given integer \cc{n}
-(line 3), first binds variable \cc{res} to $0$ (line 4).
+(line 3), first binds variable \cc{abs} to $0$ (line 4).
 %
-\cc{main} then tests if \cc{n} is greater than or equal to $0$ (line
+\cc{main} tests if \cc{n} is greater than or equal to $0$ (line
 5).
 %
-If so, \cc{main} doubles the value in \cc{n} and binds the result to
-\cc{res} (line 6).
+If so, \cc{main} binds the value of \cc{n} to \cc{res} (line 6).
 %
-If not, \cc{main} doubles the value in \cc{n}, negates the result, and
-binds the final result to \cc{res} (line 8).
+If not, \cc{main} binds the negation value of \cc{n} to \cc{res} (line 8).
 %
-\cc{main} then returns the value stored in \cc{res} (line 9).
+\cc{main} then calles \cc{dbl} on \cc{abs} and binds the return value to \cc{res} (line 9)
+%
+\cc{main} then returns the value stored in \cc{res} (line 10).
 
 % state the safety problem:
-The problem that we address in this work, in the context of
-\cc{multiCall}, is to verify that for each input, \cc{multiCall}
+The property to be verified in \cc{multiCall} is, for each input, 
+\cc{multiCall}
 returns a value greater than or equal to $0$.
 % talk about solving Horn Clauses:
 Verifying that \cc{multiCall} satisfies such a property can be reduced
 to solving a recursion-free CHC system over a set of uninterpreted predicates
-$\mcpreds$ that each represents a control location and
+that each represents a control location and
 procedure name in \cc{multiCall}.
-%
-A solution interprets each control location \cc{L} as a summary that
-relates the arguments in each active call of the function containing
-\cc{L} to the program state at \cc{L}, and interprets each procedure
-name \cc{f} as a summary of \cc{f}.
-%
-For each step of \cc{multiCall} to \cc{L}, there is a corresponding
-clause with head predicate \cc{L}.
-%
-For each procedure \cc{f}, there is a clause relating state at return
-locations of \cc{multiCall} to a summary of their procedure.
 %
 In particular, one such system $\mcchc$ is
 %
 \QZ{left allign}
 \begin{gather}
+\label{chc}
   % semantic constraint of dbl:
-  \cc{dbl}(\cc{n}, \cc{res}) \gets \cc{res} = 2 * \cc{n} \\
+  \cc{db}(\cc{m}, \cc{d}) \gets \cc{d} = 2 * \cc{m} \\
   % semantic constraint of line 3:
-   \cc{L4}(\cc{n}, \cc{res}) \gets  \cc{L3}(\cc{n}) \land \cc{res} = 0 \\
+   \cc{L4}(\cc{n}, \cc{abs}) \gets  \cc{abs} = 0 \\
   % semantic constraint of line 5 (then branch)
-   \cc{L9}(\cc{n}, \cc{res'}) \gets \cc{L4}(\cc{n}, \cc{res}) \land \cc{dbl}(\cc{n}, \cc{res}') \land
-   \cc{n} \geq 0 \\
+   \cc{L6}(\cc{n}, \cc{abs}) \gets \cc{L4}(\cc{n}, \cc{abs}) \land \cc{n} \ge 0 \\
   % semantic constraint of line 6 (else branch)
-   \cc{L9}(\cc{n}, \cc{res_1}) \gets \cc{L4}(\cc{n}, \cc{res}) \land \cc{dbl}(\cc{n}, \cc{res_0}) \land
-   \cc{n} < 0  \land \cc{res_1} = -\cc{res_0} \\
+   \cc{L8}(\cc{n}, \cc{abs}) \gets \cc{L4}(\cc{n}, \cc{abs}) \land \cc{n} < 0 \\
+  % assign branch
+   \cc{L9}(\cc{n}, \cc{abs'}) \gets \cc{L6}(\cc{n},\cc{abs}) \land \cc{abs'} = \cc{n} \\
+   \cc{L9}(\cc{n}, \cc{abs'}) \gets \cc{L8}(\cc{n},\cc{abs}) \land \cc{abs'} = -\cc{n} \\
   % semantic constraint of main procedure:
-   False \gets \cc{L9}(\cc{n}, \cc{res}) \land \cc{res} < 0 
+    \cc{main}(\cc{n},\cc{res}) \gets \cc{L9}(\cc{n}, \cc{abs'}) \land \cc{db}(\cc{m}, \cc{d})
+    \land \cc{abs'} = \cc{m} \land \cc{res} = \cc{d} \\
+  %
+   False \gets \cc{main}(\cc{n}, \cc{res}) \land \cc{res} < 0 
 \end{gather}
 %
 While $\mcchc$ has been presented as the result
@@ -111,19 +105,20 @@ the result of translation from a program at all.
 The recursion-free CHC system \cc{multiCall} is a \emph{Clause-Dependent-Disjoint (CDD)}) system.
 % state the defn of CDD:
 \emph{Clause-Dependent-Disjoint (CDD)}) system is an recursion-free CHC system such that
-for any puninterpreted predictes in the body of the same clause, their transitive dependencies
+for any uninterpreted predictes in the body of the same clause, their transitive dependencies
 are disjoint(i.e,they do not have common predicates).
 %
 The formal definition of CDD and its key properties are given in
 \autoref{sec:CDD-defn}.
+
 % give a example
-In particular, for clauses $(3)$ and $(5)$, uninterpreted predicates \cc{L4} and \cc{dbl} shows in
+In particular, for clause $(7)$, uninterpreted predicates \cc{L6} and \cc{db} shows in
 the body of same clause.
 %
-The transitive dependency of \cc{L4} is \{\cc{L3}\}, and the transitive dependency of \cc{dbl}
-is $\varnothing$.
+The transitive dependency of \cc{L6} is \{\cc{L6}\,\cc{L8}\,\cc{L4}\}, 
+and the transitive dependency of \cc{db} is $\varnothing$.
 %
-Their transitive dependencies are disjoint, because \{\cc{L3}\} $\cap \varnothing = \varnothing$.
+Their transitive dependencies are disjoint, because \{\cc{L6}\,\cc{L8}\,\cc{L4}\} $\cap \varnothing = \varnothing$.
 %
 The formal definition of transitive dependency is given in\QZ{reference}.
 %
@@ -131,72 +126,134 @@ And the other clauses in \cc{multiCall} only has one uninterpreted predicates in
 \cc{multiCall} is a CDD system.
 %
 The fact that $\mcchc$ is CDD corresponds to the fact that there no statements executed more than
-once in one execution path.
+once within one execution path.
 %
 
 % restate defn of CDD systems:
 \sys solves $\mcchc$ directly by issuing a binary 
 interpolation queriey for each uninterpreted predicates in $\mcchc$ in a topological order.
-% walk through how a CDD system is solved directly:
-A solution of an arbitrary CDD system $\mathcal{S}$ can be constructed
-from the results of a series of interpolation queries, each one issued
-to find an interpretation of a relational predicate of $\mathcal{S}$
-in the topological order of dependences between relational predicates.
 %
-For relational predicate $R$ in $\mathcal{S}$, the interpretation of
-$R$ is the interpolant of two formulas: %
-\textbf{(1)} a Boolean combination of the interpretations found for
-each dependence of $R$ in $\mathcal{S}$ and constraints in
-$\mathcal{S}$ and %
-\textbf{(2)} a Boolean combination of constraints that occur in
-$\mathcal{S}$.
+For each uninterpreted predicate $P$ in $\mathcal{S}$, the solution of
+$P$ is the interpolant of two formulas: %
+\textbf{(1)} a \emph{pre}-formula, constructed as 
+the solution of each uninterpreted predicate in dependence of $P$, constraints
+in corresponding clauses and boolean indicator variable for 
+each uninterpreted predicates in $\mcchc$%
+\textbf{(2)} a \emph{post}-formula, constructed as  
+all constraints that occur after $P$ and boolean indicator variable for 
+each uninterpreted predicates in $\mcchc$.
+%
 
-% talk performance:
-The performance of the solver is thus largely determined by the
-ability of the interpolating theorem prover that it uses \textbf{(1)}
-to generate interpolants quickly and %
-\textbf{(2)} to generate interpolants of size close to that of their
-input formulas.
+% walk through the example
+E.g., when \sys solving $\mcchc$, \sys issues interpolation queries of 
+each uninterpreted predicates in the order \cc{L4}, \cc{L6}, \cc{L8}, 
+\cc{L9}, \cc{db} and \cc{main}.
 %
-In the worst case, all interpolating theorem provers given in previous
-work may use exponential time to generate interpolants of size
-exponential in the size of their inputs.
+In particular, when \sys issues interpolation query for uninterpreted predicates \cc{L9},
+\sys has generated solutions for \cc{L4}, \cc{L6}, \cc{L8} which shows in\QZ{refer to graph}.
 %
-However, when given formulas that model practical verification
-problems, modern theorem provers generate interpolants efficiently,
-which have size close to the size of the given formulas.
 
-% walk through multiCall
-E.g., when solving $\mcchc$, \sys generates interpretations of
-relational predicates in the order \cc{L3}, \cc{L4}, \cc{dbl},
-\cc{L9}, and \cc{main}.
-%
-It generates an interpretation of \cc{L9} in particular as the
-interpolant of \textbf{(1)} a \emph{pre}-formula, constructed as a
-Boolean combination of interpretations generated for \cc{L4}, \cc{dbl}
-and the constraints in \autoref{eqn:then} and \autoref{eqn:else} and %
+The solution of \cc{L9} is an interpolant of \textbf{(1)} 
+a \emph{pre}-formula, constructed as solutions generated for \cc{L4}, \cc{L6}
+the constraints in clauses (5) and (6) and boolean variables%
 \textbf{(2)} a \emph{post}-formula constructed from constraints in
-$\mcchc$ that model the steps of execution of \cc{multiCall} following
-\cc{9}.
+$\mcchc$ that all constrains after \cc{L9}, constrains for \cc{db}
+and boolean variables.
 %
-A procedure for solving a CDD system directly is given in
+In particular, the \emph{pre}-formula for \cc{L9} is 
+\begin{gather}
+((b_{L8}\land abs'= -n) \lor (b_{L6} \land abs=n))\land (\neg b_{L6} \lor n \ge 0) \land (\neg b_{L8} \lor n<0)
+\end{gather}
+%
+, $b_{L8}$ and $b_{L6}$ are boolean variables corresponding to predicates \cc{L8} and \cc{L6}.
+%
+The \emph{post}-formula for \cc{L9} is
+\begin{gather}
+(b_{main} \land res' < 0 ) \land (\neg b_{main} \lor (b_{db} \land abs'= m \land res =d )) 
+\land (\neg b_{db} \lor d = 2*m)
+\end{gather}
+, $b_{main}$ and $b_{db}$ are boolean variables corresponding to predicates \cc{main} and \cc{db}.
+%
+A detailed and formal description for the procedure of solving a CDD system is given in
 \autoref{sec:solve-cdd}.
 
-% talk about expansion:
-The class of CDD systems strictly contains all directly-solvable
-classes introduced in previous work, but does not contain all
+
+\subsection{\cc{multiCall} is not in other system}
+\label{sec:not-in}
+%
+There are three classes of directly solvable systems has been introduced
+in previous work(as described in \autoref{sec:intro}).
+%
+However, $\mcchc$ does not belong to any of these three classes.
+%
+
+% tree solver 
+In particular, previous work has introduced tree structure systems\cite{bjorner13,heizmann10},
+which each uninterpreted predicate in the system is the head of at most one clause.
+%
+Such systems do not include $\mcchc$, because predicate \cc{L9} is the head 
+of clause (5) and (6).
+%
+CHC solvers based on tree structure system has to reduce solving $\mcchc$ to
+solving two tree strucutre systems that contains by $\mcchc$, that one corresponds
+to the tree branch and the other corresponds to the false branch.
+% not that bad 
+There are works has been proposed which in some cases enumerating 
+and solving all derivation trees 
+of a given recursion-free
+system~\cite{mcmillan14}.
+%
+However, such solvers may enumerate all derivations tree of a given system
+in the worst case.
+
+% Body-Disjoint:
+Previous work has introduced \emph{body-disjoint}
+systems~\cite{rummer13a,rummer13b}, 
+which each uninterpreted predicate shows in the body of at most one
+clause, and shows in the body of such a clause at most once;
+%
+However, such systems cannot model a program with multiple
+control paths that share a common subpath, typically modeled as a CHC
+system with a uninterpreted predicate that occurs in the body of multiple clauses.
+%
+$\mcchc$ is not a body-disjoint system because the uninterpreted
+predicates \cc{L4} shows in the body of both clauses (3) and (4).
+%
+Such a solver, given $\mcchc$, generates a body-disjoint system
+consisting of two copies of the sub-systems with head relational
+predicates \cc{L4}.
+
+%linear systems:
+Previous work also introduced linear system~\cite{albarghouthi12a}, 
+which each clause's body has at most one uninterpreted predicate.
+%
+However, such systems cannot directly model the control flow of a
+program that contains procedure calls.
+%
+$\mcchc$ is not a linear system because the body of clause (7) has two
+predicates \cc{L9} and \cc{db}.
+%
+CHC solvers that solve linear systems, $\mcchc$, effectively inline constraints on
+relational predicates that occur in non-linear clauses~\cite{albarghouthi12b}.
+%
+Such approaches can, in general, generate an inlined system that is
+exponentially larger than a given system.
+
+%% talk about expansion:
+The class of CDD systems strictly contains these three classes, 
+but does not contain all
 recursion-free systems.
 %
-E.g., a recursion-free system that models \cc{multiCall} mutated to
-call \cc{dbl} in sequence, instead of in alternate branches, would not
+E.g., a recursion-free system that models \cc{multiCall} 
+call \cc{dbl} twice on \cc{abs} in sequence would not
 be CDD.
 %
-\sys, given an arbitrary recursion-free CHC system $\mathcal{S}$,
-solves it by generating an equivalent CDD system $\mathcal{S}'$ and
-solving $\mathcal{S}'$ directly.
+\sys, given an arbitrary recursion-free CHC system $S$,
+solves it by generating an equivalent CDD system $S'$ and
+solving $S'$ directly.
 %
-In general, $\mathcal{S}'$ may have size exponential in the size of
-$\mathcal{S}$.
+In general, $S'$ may have size exponential in the size of
+$S$.
 %
 In practice, a suitable equivalent system can be generated using
 heuristics analogous to those used to generate compact verification
@@ -204,87 +261,6 @@ conditions of hierarchical programs~\cite{flanagan01,lal-qadeer15}.
 %
 A general procedure for constructing a CDD expansion of a given CHC
 system is given in \autoref{app:cons-cdd}.
-
-\subsection{\cc{multiCall} is not in other system}
-\label{sec:not-in}
-% walk through the zoo of CHC systems:
-Competitive solvers of recursion-free CHC systems reduce the problem
-of solving a given CHC system $\mathcal{S}$ to solving multiple
-systems, constructed as copies of sub-systems of $\mathcal{S}$, each
-of which is directly solvable (as described in \autoref{sec:intro}).
-%
-In particular, CHC solvers based on tree interpolation reduce solving
-$\mathcal{S}$ to solving copies of subsystems of $\mathcal{S}$ in
-which each relational predicate in $\mathcal{S}$ is the head of at
-most one clause~\cite{bjorner13,heizmann10}.
-%
-Such systems do not include $\mcchc$, which contains multiple clauses
-with the same head.
-
-% consequences for solvers:
-As a result, CHC solvers that synthesize tree interpolants may, in the
-worst case, solve systems that correspond to each derivation of a
-given CHC system.
-%
-Such solvers, given $\mcchc$, would solve it by generating two
-tree-interpolation problems, one of which corresponds to the \cc{then}
-branch of \cc{multiCall} and the other which corresponds to the
-\cc{else} branch of \cc{multiCall}.
-%
-CHC solvers have been proposed which can in many cases avoid
-enumerating and solving all derivation trees of a given recursion-free
-system~\cite{mcmillan14}.
-%
-However, such solvers may enumerate all derivations of a given system
-in the worst case.
-
-% Body-Disjoint: 
-CHC solvers that synthesize disjunctive interpolants reduce solving a
-given recursion-free system to solving a series of CHC systems in
-which each relational predicate occurs in the body of at most one
-clause, and occurs in the body of such a clause at most once;
-%
-such systems are referred to as \emph{body-disjoint}
-systems~\cite{rummer13a,rummer13b}.
-%
-However, such systems cannot compactly model a program with multiple
-control paths that share a common subpath, typically modeled as a CHC
-system with a relational predicate that occurs in multiple clauses
-(i.e., a relational predicate that is \emph{shared}).
-%
-E.g., $\mcchc$ is not a body-disjoint system because the relational
-predicates \cc{L4} and \cc{dbl} occur in both clauses
-\autoref{eqn:then} and \autoref{eqn:else}.
-
-% consequences for relational predicates:
-CHC solvers that solve body-disjoint systems, given a general recursion-free CHC system,
-generate multiple copies of sub-systems that body has shared
-relational predicates.
-%
-Such a solver, given $\mcchc$, generates a body-disjoint system
-consisting of multiple copies of the sub-systems with head relational
-predicates \cc{L4} and \cc{dbl}.
-
-% solving linear systems:
-CHC solvers that synthesize DAG interpolants~\cite{albarghouthi12a}
-reduce the problem of solving a given CHC system to solving a series
-of systems in which each clause contains at most one relational
-predicate (i.e., \emph{linear} systems).
-%
-However, such systems cannot directly model the control flow of a
-program that contains procedure calls, such as \cc{multiCall}.
-%
-Calls can only be compactly modeled using non-linear clauses, such as
-clauses \autoref{eqn:then} and \autoref{eqn:else}.
-
-% solvers based on linear systems:
-CHC solvers that solve linear systems, given an arbitrary
-recursion-free system $\mathcal{S}$, effectively inline constraints on
-relational predicates that occur in non-linear clauses of
-$\mathcal{S}$~\cite{albarghouthi12b}.
-%
-Such approaches can, in general, generate an inlined system that is
-exponentially larger than a given system.
 
 %%% Local Variables: 
 %%% mode: latex
