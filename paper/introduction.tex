@@ -88,9 +88,9 @@ The first contribution of this paper is the introduction of a novel
 class of directly solvable systems that strictly
 contains the union of the classes of body-disjoint and linear systems.
 %
-In particular, the class consists of all CHC systems such that, for
-each clause $\mathcal{C}$, the dependences of all distinct relational
-predicates in $\mathcal{C}$ are disjoint;
+In particular, the class consists of all recursion-free CHC systems such that, 
+for each clause $C$, the dependences of all distinct relational
+predicates in the body of $C$ are disjoint;
 %
 we thus refer to such systems as \emph{Clause-Dependent Disjoint
   (CDD)} systems.
@@ -102,15 +102,15 @@ We present a symbolic algorithm that demonstrates that CDD is directly solvable.
 The second contribution of this paper is a novel solver for
 CHC systems, named \sys.
 %
-Given recursion-free system $\mathcal{S}$, \sys reduces the problem
-of solving $\mathcal{S}$ to solving an equivalent CDD system
-$\mathcal{S}'$.
+Given recursion-free system $S$, \sys reduces the problem
+of solving $S$ to solving an equivalent CDD system
+$S'$.
 %
-In the worst case, the size of $\mathcal{S}'$ may be exponential in the size of
-$\mathcal{S}$.
+In the worst case, the size of $S'$ may be exponential in the size of
+$S$.
 %
-In our experience, the size of $\mathcal{S}'$ is usually close enough
-to the size of $\mathcal{S}$ for \sys to perform significantly better
+In our experience, the size of $S'$ is usually close enough
+to the size of $S$ for \sys to perform significantly better
 than the best known CHC solvers.
 %
 Because CDD strictly contains the union of the classes 
@@ -118,7 +118,7 @@ of body-disjoint and linear systems, the size of an equivalent minimum
 CDD system is equal or less then the size of equivalent body-disjoint and
 linear system.
 %
-The procedure implemented in \sys to construct $\mathcal{S}'$ is a
+The procedure implemented in \sys to construct $S'$ is a
 generalization of existing procedures for generating compact
 verification conditions of hierarchical
 programs~\cite{flanagan01,lal-qadeer15}.

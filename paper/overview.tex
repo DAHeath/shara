@@ -1,21 +1,26 @@
 \section{Overview}
 \label{sec:overview}
 
-%first section
+%first introduce the question
 In \autoref{sec:running-ex}, we describe a recursion-free CHC system,
 $\mcchc$, that formulates verifying the safety of the program
-\cc{multiCall} (\autoref{fig:multicall-code}), and illustrate that
+\cc{multiCall} (\autoref{fig:multicall-code}).
+%
+In \autoref{sec:solve-ex}, we show that $\mcchc$ is a
+\emph{Clause-Dependent Disjoint (CDD)} system and how \sys can solve it by 
+encoding it into binary interpolants.
+%
+In \autoref{sec:not-in}, we illustrate that
 $\mcchc$ is not in the directly solvable classes introduced in
 previous work.
 %
-In \autoref{sec:solve-ex}, we show that $\mcchc$ is a
-\emph{Clause-Dependent Disjoint (CDD)} system and how \sys solves it.
 
 
 % introduce running example program
 \subsection{Verifying \cc{multiCall}: an example hierarchical program}
 \label{sec:running-ex}
 
+\QZ{remake the graph}
 % include code of running example and some figure:
 \begin{figure}[t]
   \centering
@@ -60,8 +65,8 @@ The problem that we address in this work, in the context of
 returns a value greater than or equal to $0$.
 % talk about solving Horn Clauses:
 Verifying that \cc{multiCall} satisfies such a property can be reduced
-to solving a recursion-free CHC system over a set of relational
-predicates $\mcpreds$ that contains each control location and
+to solving a recursion-free CHC system over a set of uninterpreted predicates
+$\mcpreds$ that each represents a control location and
 procedure name in \cc{multiCall}.
 %
 A solution interprets each control location \cc{L} as a summary that
@@ -77,27 +82,20 @@ locations of \cc{multiCall} to a summary of their procedure.
 %
 In particular, one such system $\mcchc$ is
 %
+\QZ{left allign}
 \begin{gather}
   % semantic constraint of dbl:
-  \cc{dbl}(\cc{n}, 2 \cdot \cc{n}) \qquad
+  \cc{dbl}(\cc{n}, \cc{res}) \gets \cc{res} = 2 * \cc{n} \\
   % semantic constraint of line 3:
-  \cc{L3}(\cc{n}) \implies 
-  % semantic constraint of line 4:
-  \cc{L4}(\cc{n}, 0) \notag \\
+   \cc{L4}(\cc{n}, \cc{res}) \gets  \cc{L3}(\cc{n}) \land \cc{res} = 0 \\
   % semantic constraint of line 5 (then branch)
-  \cc{L4}(\cc{n}, \cc{res}), \cc{dbl}(\cc{n}, \cc{res}'), %
-  \cc{n} \geq 0 \implies %
-  \cc{L9}(\cc{n}, \cc{res}') \label{eqn:then} \\
+   \cc{L9}(\cc{n}, \cc{res'}) \gets \cc{L4}(\cc{n}, \cc{res}) \land \cc{dbl}(\cc{n}, \cc{res}') \land
+   \cc{n} \geq 0 \\
   % semantic constraint of line 6 (else branch)
-  \cc{L4}(\cc{n}, \cc{res}), \cc{dbl}(\cc{n}, \cc{res}'), %
-  \cc{n} < 0 \implies %
-  \cc{L9}(\cc{n}, -\cc{res}') \label{eqn:else} \\
+   \cc{L9}(\cc{n}, \cc{res_1}) \gets \cc{L4}(\cc{n}, \cc{res}) \land \cc{dbl}(\cc{n}, \cc{res_0}) \land
+   \cc{n} < 0  \land \cc{res_1} = -\cc{res_0} \\
   % semantic constraint of main procedure:
-  \cc{L9}(\cc{n}, \cc{res}) \implies %
-  \cc{main}(\cc{n}, \cc{res}) \qquad
-  % errors:
-  \cc{main}(\cc{n}, \cc{res}), \cc{res} < 0 \implies \mathsf{Err}()
-  \notag
+   False \gets \cc{L9}(\cc{n}, \cc{res}) \land \cc{res} < 0 
 \end{gather}
 %
 While $\mcchc$ has been presented as the result
@@ -106,6 +104,109 @@ purely a solver for CHC systems: it does not require access to the
 concrete representation of a program, or for a given CHC system to be
 the result of translation from a program at all.
 
+% solving the running example
+\subsection{\cc{multiCall} as a Clause-Dependent Disjoint system}
+\label{sec:solve-ex}
+% state it is CDD
+The recursion-free CHC system \cc{multiCall} is a \emph{Clause-Dependent-Disjoint (CDD)}) system.
+% state the defn of CDD:
+\emph{Clause-Dependent-Disjoint (CDD)}) system is an recursion-free CHC system such that
+for any puninterpreted predictes in the body of the same clause, their transitive dependencies
+are disjoint(i.e,they do not have common predicates).
+%
+The formal definition of CDD and its key properties are given in
+\autoref{sec:CDD-defn}.
+% give a example
+In particular, for clauses $(3)$ and $(5)$, uninterpreted predicates \cc{L4} and \cc{dbl} shows in
+the body of same clause.
+%
+The transitive dependency of \cc{L4} is \{\cc{L3}\}, and the transitive dependency of \cc{dbl}
+is $\varnothing$.
+%
+Their transitive dependencies are disjoint, because \{\cc{L3}\} $\cap \varnothing = \varnothing$.
+%
+The formal definition of transitive dependency is given in\QZ{reference}.
+%
+And the other clauses in \cc{multiCall} only has one uninterpreted predicates in the body, so
+\cc{multiCall} is a CDD system.
+%
+The fact that $\mcchc$ is CDD corresponds to the fact that there no statements executed more than
+once in one execution path.
+%
+
+% restate defn of CDD systems:
+\sys solves $\mcchc$ directly by issuing a binary 
+interpolation queriey for each uninterpreted predicates in $\mcchc$ in a topological order.
+% walk through how a CDD system is solved directly:
+A solution of an arbitrary CDD system $\mathcal{S}$ can be constructed
+from the results of a series of interpolation queries, each one issued
+to find an interpretation of a relational predicate of $\mathcal{S}$
+in the topological order of dependences between relational predicates.
+%
+For relational predicate $R$ in $\mathcal{S}$, the interpretation of
+$R$ is the interpolant of two formulas: %
+\textbf{(1)} a Boolean combination of the interpretations found for
+each dependence of $R$ in $\mathcal{S}$ and constraints in
+$\mathcal{S}$ and %
+\textbf{(2)} a Boolean combination of constraints that occur in
+$\mathcal{S}$.
+
+% talk performance:
+The performance of the solver is thus largely determined by the
+ability of the interpolating theorem prover that it uses \textbf{(1)}
+to generate interpolants quickly and %
+\textbf{(2)} to generate interpolants of size close to that of their
+input formulas.
+%
+In the worst case, all interpolating theorem provers given in previous
+work may use exponential time to generate interpolants of size
+exponential in the size of their inputs.
+%
+However, when given formulas that model practical verification
+problems, modern theorem provers generate interpolants efficiently,
+which have size close to the size of the given formulas.
+
+% walk through multiCall
+E.g., when solving $\mcchc$, \sys generates interpretations of
+relational predicates in the order \cc{L3}, \cc{L4}, \cc{dbl},
+\cc{L9}, and \cc{main}.
+%
+It generates an interpretation of \cc{L9} in particular as the
+interpolant of \textbf{(1)} a \emph{pre}-formula, constructed as a
+Boolean combination of interpretations generated for \cc{L4}, \cc{dbl}
+and the constraints in \autoref{eqn:then} and \autoref{eqn:else} and %
+\textbf{(2)} a \emph{post}-formula constructed from constraints in
+$\mcchc$ that model the steps of execution of \cc{multiCall} following
+\cc{9}.
+%
+A procedure for solving a CDD system directly is given in
+\autoref{sec:solve-cdd}.
+
+% talk about expansion:
+The class of CDD systems strictly contains all directly-solvable
+classes introduced in previous work, but does not contain all
+recursion-free systems.
+%
+E.g., a recursion-free system that models \cc{multiCall} mutated to
+call \cc{dbl} in sequence, instead of in alternate branches, would not
+be CDD.
+%
+\sys, given an arbitrary recursion-free CHC system $\mathcal{S}$,
+solves it by generating an equivalent CDD system $\mathcal{S}'$ and
+solving $\mathcal{S}'$ directly.
+%
+In general, $\mathcal{S}'$ may have size exponential in the size of
+$\mathcal{S}$.
+%
+In practice, a suitable equivalent system can be generated using
+heuristics analogous to those used to generate compact verification
+conditions of hierarchical programs~\cite{flanagan01,lal-qadeer15}.
+%
+A general procedure for constructing a CDD expansion of a given CHC
+system is given in \autoref{app:cons-cdd}.
+
+\subsection{\cc{multiCall} is not in other system}
+\label{sec:not-in}
 % walk through the zoo of CHC systems:
 Competitive solvers of recursion-free CHC systems reduce the problem
 of solving a given CHC system $\mathcal{S}$ to solving multiple
@@ -184,110 +285,6 @@ $\mathcal{S}$~\cite{albarghouthi12b}.
 %
 Such approaches can, in general, generate an inlined system that is
 exponentially larger than a given system.
-
-% solving the running example
-\subsection{\cc{multiCall} as a Clause-Dependent Disjoint system}
-\label{sec:solve-ex}
-% restate defn of CDD systems:
-\sys solves $\mcchc$ directly by issuing a series of
-interpolation queries, each of which generates an interpretation for a
-relational predicate in $\mcchc$.
-%
-The key observation behind the design of \sys is that for CHC system
-$\mathcal{S}$, if the dependences of each relational predicate in
-each clause of $\mathcal{S}$ are disjoint (in which we case we say
-that $\mathcal{S}$ is \emph{Clause-Dependent-Disjoint (CDD)}), then
-$\mathcal{S}$ is directly solvable.
-%
-The formal definition of CDD and its key properties are given in
-\autoref{sec:CDD-defn}.
-
-% example system is CDD and can be easily solved:
-E.g., $\mcchc$ is CDD because for each clause $\mathcal{C}$ of
-$\mcchc$, the dependences of all distinct relational predicates in the
-body of $\mathcal{C}$ are disjoint.
-%
-In particular, for clauses \autoref{eqn:then} and \autoref{eqn:else},
-the dependences of relational predicates \cc{L4} and \cc{dbl} are
-disjoint.
-%
-The dependences of \cc{L4} is \{\cc{L3}\}, and the dependneces of \cc{dbl}
-is $\varnothing$.
-%
-\autoref{fig:ex-deps} contains a hypergraph $H_{\cc{MC}}$ that depicts
-the dependences induced by the clauses of $\mcchc$.
-%
-The fact that $\mcchc$ is CDD corresponds to the fact that no node in
-$H_{\cc{MC}}$ reaches distinct sources of a common hyperedge.
-
-% walk through how a CDD system is solved directly:
-A solution of an arbitrary CDD system $\mathcal{S}$ can be constructed
-from the results of a series of interpolation queries, each one issued
-to find an interpretation of a relational predicate of $\mathcal{S}$
-in the topological order of dependences between relational predicates.
-%
-For relational predicate $R$ in $\mathcal{S}$, the interpretation of
-$R$ is the interpolant of two formulas: %
-\textbf{(1)} a Boolean combination of the interpretations found for
-each dependence of $R$ in $\mathcal{S}$ and constraints in
-$\mathcal{S}$ and %
-\textbf{(2)} a Boolean combination of constraints that occur in
-$\mathcal{S}$.
-
-% talk performance:
-The performance of the solver is thus largely determined by the
-ability of the interpolating theorem prover that it uses \textbf{(1)}
-to generate interpolants quickly and %
-\textbf{(2)} to generate interpolants of size close to that of their
-input formulas.
-%
-In the worst case, all interpolating theorem provers given in previous
-work may use exponential time to generate interpolants of size
-exponential in the size of their inputs.
-%
-However, when given formulas that model practical verification
-problems, modern theorem provers generate interpolants efficiently,
-which have size close to the size of the given formulas.
-
-% walk through multiCall
-E.g., when solving $\mcchc$, \sys generates interpretations of
-relational predicates in the order \cc{L3}, \cc{L4}, \cc{dbl},
-\cc{L9}, and \cc{main}.
-%
-It generates an interpretation of \cc{L9} in particular as the
-interpolant of \textbf{(1)} a \emph{pre}-formula, constructed as a
-Boolean combination of interpretations generated for \cc{L4}, \cc{dbl}
-and the constraints in \autoref{eqn:then} and \autoref{eqn:else} and %
-\textbf{(2)} a \emph{post}-formula constructed from constraints in
-$\mcchc$ that model the steps of execution of \cc{multiCall} following
-\cc{9}.
-%
-A procedure for solving a CDD system directly is given in
-\autoref{sec:solve-cdd}.
-
-% talk about expansion:
-The class of CDD systems strictly contains all directly-solvable
-classes introduced in previous work, but does not contain all
-recursion-free systems.
-%
-E.g., a recursion-free system that models \cc{multiCall} mutated to
-call \cc{dbl} in sequence, instead of in alternate branches, would not
-be CDD.
-%
-\sys, given an arbitrary recursion-free CHC system $\mathcal{S}$,
-solves it by generating an equivalent CDD system $\mathcal{S}'$ and
-solving $\mathcal{S}'$ directly.
-%
-In general, $\mathcal{S}'$ may have size exponential in the size of
-$\mathcal{S}$.
-%
-In practice, a suitable equivalent system can be generated using
-heuristics analogous to those used to generate compact verification
-conditions of hierarchical programs~\cite{flanagan01,lal-qadeer15}.
-%
-A general procedure for constructing a CDD expansion of a given CHC
-system is given in \autoref{app:cons-cdd}.
-
 
 %%% Local Variables: 
 %%% mode: latex
