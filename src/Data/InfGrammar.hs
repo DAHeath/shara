@@ -54,21 +54,3 @@ unroll noUnroll (G.Grammar st rs) =
         G.Grammar st' rs' <- lift ac
         modify (M.unionWith (<|>) rs')
         pure st'
-
-fin :: a -> InfRule m a
-fin = G.Terminal . Finite
-
-inf :: m (InfGrammar m a) -> InfRule m a
-inf = G.Terminal . Infinite
-
-testInf :: InfGrammar IO Int
-testInf =
-  G.mkGrammar
-    (fin 1 <> G.Nonterminal 1)
-    (M.fromList
-      [(1, inf readRs <|> fin 2) ])
-  where
-    readRs :: IO (InfGrammar IO Int)
-    readRs = do
-      n <- read <$> getLine
-      pure (pure (Finite n))

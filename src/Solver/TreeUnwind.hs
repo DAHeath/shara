@@ -1,4 +1,3 @@
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Solver.TreeUnwind where
 
@@ -27,24 +26,23 @@ import           Solver.Types hiding (DirectState(..))
 import           Solver.Chc
 import           Solver.Interpolate
 
-import Data.Text.Prettyprint.Doc
-
 import Debug.Trace
 
 data UnwindState = UnwindState
   { _ntCounter :: Int
-  , _varCounter :: Int
   , _clones :: Map NT (Set NT)
   , _proofStart :: Rule Proof
   , _proofRules :: Map NT (Rule Proof)
-  , _varQueue :: Seq Var
-  , _varMapping :: [(Var, Var)]
+  , _chcState :: ChcState
   , _descendants :: Map NT (Map NT (Set NT))
   } deriving (Show, Read, Eq, Ord)
 
 data UnwindCtxt = UnwindCtxt
   { _visited :: Set NT
   , _branchClones :: Map NT (Set NT)
+  , _left :: Maybe (NT, NT)
+  , _currentRule :: Rule Fragment
+  , _chcSystem :: Chc
   } deriving (Show, Read, Eq, Ord)
 
 makeLenses ''UnwindState
@@ -53,12 +51,10 @@ makeLenses ''UnwindCtxt
 emptyState :: UnwindState
 emptyState = UnwindState
   { _ntCounter = 0
-  , _varCounter = 0
   , _clones = M.empty
   , _proofStart = G.Null
   , _proofRules = M.empty
-  , _varQueue = Seq.empty
-  , _varMapping = []
+  , _chcState = emptyChcState
   , _descendants = M.empty
   }
 
@@ -66,6 +62,9 @@ emptyCtxt :: UnwindCtxt
 emptyCtxt = UnwindCtxt
   { _visited = S.empty
   , _branchClones = M.empty
+  , _left = Nothing
+  , _currentRule = mempty
+  , _chcSystem = mempty
   }
 
 instance Monad m => Expandable (StateT UnwindState m) where
@@ -82,15 +81,17 @@ instance Expandable m => Expandable (ReaderT UnwindCtxt m) where
 -- The proof structure is encoded in the state. As the user unwind
 treeUnwind :: (MonadReader UnwindCtxt m, MonadState UnwindState m)
            => Chc -> m (InfGrammar m Expr)
-treeUnwind chc = unwindFrom Nothing chc (G.start chc)
+treeUnwind chc =
+  local ((chcSystem .~ chc) . (currentRule .~ G.start chc)) (unwindFrom (G.start chc))
 
 unwindFrom :: (MonadReader UnwindCtxt m, MonadState UnwindState m)
-           => Maybe NT -> Chc -> Rule Fragment -> m (InfGrammar m Expr)
-unwindFrom nt chc r = do
-  (g, p) <- unw r
-  case nt of
+           => Rule Fragment -> m (InfGrammar m Expr)
+unwindFrom r = do
+  (g, p) <- local (currentRule .~ r) (unw r)
+  lhs <- view left
+  case lhs of
     Nothing -> proofStart .= p
-    Just nt' -> proofRules %= M.insertWith G.alt nt' p
+    Just (_, nt') -> proofRules %= M.insertWith G.alt nt' p
   pure g
   where
     unw :: (MonadReader UnwindCtxt m, MonadState UnwindState m)
@@ -109,38 +110,18 @@ unwindFrom nt chc r = do
       G.Alt x y -> do
         -- Unwinding an alternation requires unwinding both parts with the same
         -- vocabulary.  A proof must show both branches.
-        q <- use varQueue
+        q <- use (chcState . varQueue)
         (x', px) <- unw x
-        varQueue .= q
+        chcState . varQueue .= q
         (y', py) <- unw y
         pure (x' <|> y', px <> py)
-      G.Terminal (Apply v) -> do
-        -- Applying a variable adds the variable to the vocabulary and has a
-        -- trivial proof.
-        m <- use varMapping
-        varQueue %= (Seq.<|) (subst' m v)
-        pure mempty
-      G.Terminal (Capture v) -> do
-        -- Capturing a variable either yields fresh variables or pops the
-        -- vocabulary. The proof is trivial.
-        Seq.viewr <$> use varQueue >>= \case
-          Seq.EmptyR -> do
-            v' <- freshVar v
-            varMapping %= (:) (v, v')
-          (xs Seq.:> x) -> do
-            varQueue .= xs
-            varMapping %= (:) (v, x)
-        pure mempty
-      G.Terminal Uncapture -> do
-        -- Uncapture does nothing but change the vocabulary context. The proof
-        -- is trivial.
-        varMapping %= tail
-        pure mempty
-      G.Terminal (Fact e) -> do
-        -- A single fact unwinds by applying the current vocabulary to the
-        -- fact. The proof is trivial.
-        m <- use varMapping
-        pure (G.singleton (IG.Finite (subst' m e)), mempty)
+      G.Terminal x -> do
+        st <- use chcState
+        let (x', st') = runState (resolve x) st
+        chcState .= st'
+        pure (case x' of
+          LBool True -> G.epsGrammar
+          _ -> G.singleton (IG.Finite x'), mempty)
       G.Nonterminal nt -> do
         -- Nonterminals are the most complex rules to unwind.
         -- First, there are two possibilities:
@@ -152,49 +133,49 @@ unwindFrom nt chc r = do
         -- showing its rule is inductive.
 
         -- Construct a fresh copy of the nonterminal.
+        chc <- view chcSystem
         nt' <- freshNT nt
         -- Add proof branches which allow the prover to show a descendant entails this.
-        handleDescs nt nt'
+        addDescs nt nt'
         vis <- view visited
-        context nt nt' $
+        g <- context nt nt' $
           if nt `elem` vis
           -- We've seen the base nonterminal before in the current branch,
           -- so construct a recursive, rolled subgrammar.
           then do
-            ps <- M.findWithDefault G.Null nt' <$> use proofRules
-            proofRules %= M.delete nt'
-            let ac = context nt nt' $ do
-                  proofRules %= M.insertWith G.alt nt' ps
-                  unwindFrom (Just nt') chc (G.ruleFor nt chc)
-            pure (G.abstract nt' $ G.singleton (IG.Infinite ac), G.Nonterminal nt')
+            view left >>= \case
+              Nothing -> pure ()
+              Just (lhs, lhs') -> do
+                descs <- M.findWithDefault M.empty nt' <$> use descendants
+                rule <- view currentRule
+                proofRules %= M.insertWith G.alt nt' (pure (Entails descs lhs rule))
+            -- ps <- M.findWithDefault G.Null nt' <$> use proofRules
+            let ac = local (chcSystem .~ chc) ((proofRules %= M.delete nt') >> context nt nt' (unwindFrom (G.ruleFor nt chc)))
+            -- let ac = local (visited .~ mempty) (context nt nt' (unwindFrom (G.ruleFor nt chc)))
+            pure (G.singleton (IG.Infinite ac))
           -- We have not seen the base nonterminal in the current branch,
           -- so unwind it now and add its unwinding as a possible
           -- proof strategy.
           else do
-            (g', p) <- unw (G.ruleFor nt chc)
+            (g', p) <- local ( (currentRule .~ G.ruleFor nt chc)
+                             . (left .~ Just (nt, nt'))
+                             ) (unw (G.ruleFor nt chc))
             proofRules %= M.insertWith G.alt nt' p
-            pure (G.abstract nt' g', G.Nonterminal nt')
+            pure g'
+        pure (G.abstract nt' g, G.Nonterminal nt')
     -- Perform the action in a context where the given base nonterminal has been visited and
     -- where the current branch has a clone for the base nonterminal as specified.
     context nt nt' ac = do
       ds <- use descendants
       local ( (visited %~ S.insert nt)
-            . (branchClones .~ M.findWithDefault M.empty nt' ds)) ac
+            . (branchClones .~ M.findWithDefault M.empty nt' ds)
+            . (left .~ Just (nt, nt'))) ac
 
-handleDescs :: (MonadReader UnwindCtxt m, MonadState UnwindState m) => NT -> NT -> m ()
-handleDescs nt nt' = do
+addDescs :: (MonadReader UnwindCtxt m, MonadState UnwindState m) => NT -> NT -> m ()
+addDescs nt nt' = do
   preds <- view branchClones
   descendants %= M.unionWith (M.unionWith S.union) (M.singleton nt' preds)
-  descs <- use descendants
   descendants %= M.unionWith (M.unionWith S.union) (M.singleton nt' (M.singleton nt (S.singleton nt')))
-  ds <- pure (M.findWithDefault S.empty nt (M.findWithDefault M.empty nt' descs))
-  mapM_ (\d -> proofRules %= M.insertWith G.alt nt' (pure (Entails d nt'))) ds
-
-freshVar :: MonadState UnwindState m => Var -> m Var
-freshVar v = do
-  c <- use varCounter
-  varCounter += 1
-  pure (v & varName <>~ ("%" ++ show c))
 
 freshNT :: MonadState UnwindState m => NT -> m NT
 freshNT (G.NT nt) = do
@@ -202,61 +183,3 @@ freshNT (G.NT nt) = do
   ntCounter += 1
   clones %= M.insertWith S.union (G.NT nt) (S.singleton (G.NT new))
   pure (G.NT new)
-
-subst' :: Data a => [(Var, Var)] -> a -> a
-subst' vs = subst (foldr (uncurry M.insert) M.empty vs)
-
-test :: Chc
-test =
-  G.mkGrammar
-  (  G.Terminal (Fact [expr|x = 5|])
-  <> G.Terminal (Apply x)
-  <> G.Nonterminal 0
-  ) $
-  M.fromList
-    [ (0, scope x (G.Terminal (Fact [expr|x = 0|]))
-      <|> scope x' (scope x $ G.Terminal (Fact [expr|x' = x+2|])
-                               <> G.Terminal (Apply x)
-                               <> G.Nonterminal 0))
-    ]
-  where
-    x = Var "x" Int
-    x' = Var "x'" Int
-
-experiment :: IO ()
-experiment = runReaderT (evalStateT ( do
-  g <- treeUnwind test
-  liftIO (putStr $ G.draw $ (show . pretty) <$> IG.finite g)
-
-  g' <- IG.unroll S.empty g
-  liftIO $ putStrLn "\n\n"
-  liftIO (putStr $ G.draw $ (show . pretty) <$> IG.finite g')
-
-  -- itp <- topologicalInterpolation (IG.finite g')
-  -- case itp of
-  --   Left m -> liftIO $ print $ pretty (M.toList m)
-  --   Right m -> liftIO $ print (map (second pretty) (M.toList m))
-
-  g'' <- IG.unroll S.empty g'
-  liftIO $ putStrLn "\n\n"
-  liftIO (putStr $ G.draw $ (show . pretty) <$> IG.finite g'')
-
-  g''' <- IG.unroll S.empty g''
-  liftIO $ putStrLn "\n\n"
-  liftIO (putStr $ G.draw $ (show . pretty) <$> IG.finite g''')
-
-  g'''' <- IG.unroll S.empty g'''
-  liftIO $ putStrLn "\n\n"
-  liftIO (putStr $ G.draw $ (show . pretty) <$> IG.finite g'''')
-
-  p <- getProof
-  liftIO $ print $ G.topologicalOrder p
-  liftIO $ putStrLn "\n\n"
-  liftIO (putStr $ G.draw p)
-
-  itp <- topologicalInterpolation (IG.finite g''')
-
-  case itp of
-    Left m -> liftIO $ print $ pretty (M.toList m)
-    Right m -> liftIO $ print (map (second pretty) (M.toList m))
-  ) emptyState) emptyCtxt

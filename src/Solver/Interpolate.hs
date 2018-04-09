@@ -3,6 +3,8 @@ module Solver.Interpolate where
 import           Control.Lens
 import           Control.Monad.State
 import           Control.Monad.Reader
+import           Control.Monad.Except
+import           Control.Concurrent.Async (concurrently)
 
 import           Data.Map (Map)
 import qualified Data.Map as M
@@ -11,31 +13,79 @@ import qualified Data.Set as S
 import           Data.Grammar (Grammar, Rule, NT)
 import qualified Data.Grammar as G
 import           Data.Maybe (fromMaybe)
+import           Data.Foldable
 
 import           Formula
 import qualified Formula.Z3 as Z3
 
+import           Solver.Graph
+import           Solver.Cut
+
+import Debug.Trace
 import Data.Text.Prettyprint.Doc
+
+data InterpolationStrategy
+  = SequentialInterpolation
+  | ConcurrentInterpolation
+  deriving (Show, Read, Eq, Ord)
+
+-- | `licketySplit` computes interpolants of a DAG. It attempts to do this
+-- maximally in parallel by cutting the DAG consideration at each iteration.
+licketySplit :: MonadIO m
+             => InterpolationStrategy
+             -> Grammar Expr -> m (Either Model (Map NT Expr))
+licketySplit strategy g = liftIO (loop strategy g M.empty)
+
+-- | The core loop for interpolating a DAG. The loop requires two versions of
+-- the DAG, one which is a full representation and another which is a
+-- restricted version that only contains a subset of the vertices.
+-- On each iteration, the loop cuts the restricted subset using a minimum cut
+-- algorithm. Those vertices along the cut are interpolated as a part of the
+-- current iteration. The two subgraphs on either side of the cut are the new
+-- restrictions which can be interpolated in parallel.
+loop :: InterpolationStrategy
+     -> Grammar Expr -> Map NT Expr -> IO (Either Model (Map NT Expr))
+loop strategy g@(G.Grammar st rs) m =
+  if null (M.keysSet rs S.\\ M.keysSet m)
+  then pure (Right m)
+  else do
+    let gr = grammarToGraph g
+    let (now, _, _) = cut gr
+    runStateT (runExceptT $ mapM_ (`interpolateNT'` g) (S.map G.NT now)) m >>= \case
+      -- We only proceed when none of the solved symbols failed.
+      (Left m', _) -> pure (Left m')
+      (_, m') -> do
+        let (g1, g2) = G.partition (map G.NT $ S.toList now) g
+        (m1, m2) <- evaluator (loop strategy g1 m') (loop strategy g2 m')
+        -- A simple union of the two maps suffices since there should be no
+        -- possibility that the two subiterations computed interpolants for the 
+        -- same vertices.
+        pure (M.union <$> m1 <*> m2)
+  where
+    evaluator = case strategy of
+      SequentialInterpolation -> sequentially
+      ConcurrentInterpolation -> concurrently
+
+-- Replace `concurrently` by this to perform the same action without parallelism.
+sequentially :: IO a -> IO b -> IO (a, b)
+sequentially a b = do
+  a' <- a
+  b' <- b
+  pure (a', b')
 
 topologicalInterpolation :: MonadIO m => Grammar Expr -> m (Either Model (Map NT Expr))
 topologicalInterpolation g =
   let nts = G.topologicalOrder g
-  in runStateT (loop nts) M.empty >>= \case
+  in runStateT (runExceptT $ mapM_ (`interpolateNT'` g) nts) M.empty >>= \case
     (Left m, _) -> pure (Left m)
     (_, m) -> pure (Right m)
-  where
-    loop :: MonadIO m => [NT] -> StateT (Map NT Expr) m (Either Model ())
-    loop [] = pure (Right ())
-    loop (nt:nts) = interpolateNT' nt g >>= \case
-      Left m -> pure (Left m)
-      _ -> loop nts
 
-interpolateNT' :: MonadIO m => NT -> Grammar Expr -> StateT (Map NT Expr) m (Either Model ())
+interpolateNT' :: MonadIO m => NT -> Grammar Expr -> ExceptT Model (StateT (Map NT Expr) m) ()
 interpolateNT' target g = do
   solns <- get
   interpolateNT target solns g >>= \case
-    Left m -> pure (Left m)
-    Right phi -> modify (M.insert target phi) >> pure (Right ())
+    Left m -> throwError m
+    Right phi -> modify (M.insert target phi)
 
 -- | Interpolate the given nonterminal in the context of the directly solvable grammar.
 interpolateNT :: MonadIO m => NT -> Map NT Expr -> Grammar Expr -> m (Either Model Expr)
@@ -43,29 +93,36 @@ interpolateNT target solns g =
   let (phi1, phi2) = interpolationForms target solns g
   in Z3.interpolate phi1 phi2
 
+data Polarity = Positive | Negative
+  deriving (Show, Read, Eq, Ord)
+
 -- | Find the two formulas on either side of the target nonterminal. The two
 -- formulas are found by partitioning the grammar at the location of the
 -- nonterminal.
 interpolationForms :: NT -> Map NT Expr -> Grammar Expr -> (Expr, Expr)
 interpolationForms target solns g =
-  let (reaching, reached) = G.partition [target] g
-  in ( grammarExpr target solns reaching
-     , grammarExpr target solns reached)
+  let (G.Grammar st rs, reached) = G.partition [target] g
+  in ( grammarExpr Negative target solns (G.Grammar st (M.insertWith G.seq target G.Eps rs))
+     , grammarExpr Positive target solns reached)
+
+knownInterpolant :: NT -> NT -> Expr -> Expr
+knownInterpolant target nt e = nontermMark target nt `mkImpl` e
 
 -- | Find the formula for the given grammar.
-grammarExpr :: NT -> Map NT Expr -> Grammar Expr -> Expr
-grammarExpr target solns g =
-  let nts = S.toList $ S.delete target $ G.nonterminals g
-      ntPhi = map (\nt -> productionExpr solns nt (G.ruleFor nt g)) nts
-  in manyAnd (ruleExpr solns (G.start g) : ntPhi)
+grammarExpr :: Polarity -> NT -> Map NT Expr -> Grammar Expr -> Expr
+grammarExpr pol target solns g =
+  let nts = S.toList $ G.nonterminals g
+      ntPhi = map (\nt -> productionExpr pol target solns nt (G.ruleFor nt g)) nts
+  in manyAnd (ruleExpr pol target solns (G.start g) : ntPhi)
 
 -- | Find the formula for the given production.
-productionExpr :: Map NT Expr -> NT -> Rule Expr -> Expr
-productionExpr solns nt r = mkImpl (nontermExpr solns nt) (ruleExpr solns r)
+productionExpr :: Polarity -> NT -> Map NT Expr -> NT -> Rule Expr -> Expr
+productionExpr pol target solns nt r =
+  mkImpl (nontermExpr Negative target solns nt) (ruleExpr pol target solns r)
 
 -- | Find the formula for the given rule.
-ruleExpr :: Map NT Expr -> Rule Expr -> Expr
-ruleExpr solns = go
+ruleExpr :: Polarity -> NT -> Map NT Expr -> Rule Expr -> Expr
+ruleExpr pol target solns = go
   where
     go = \case
       G.Null -> LBool False
@@ -73,11 +130,19 @@ ruleExpr solns = go
       G.Alt a b -> mkOr (go a) (go b)
       G.Seq a b -> mkAnd (go a) (go b)
       G.Terminal t -> t
-      G.Nonterminal nt -> nontermExpr solns nt
+      G.Nonterminal nt -> nontermExpr pol target solns nt
 
 -- | Find the formula for the given nonterminal. If the definition is known,
 -- the formula is the definition. Otherwise, it is a representative boolean
 -- variable.
-nontermExpr :: Map NT Expr -> NT -> Expr
-nontermExpr solns nt@(G.NT c) =
-  fromMaybe (V $ Var ("__b" ++ show c) Bool) (mkNot <$> M.lookup nt solns)
+nontermExpr :: Polarity -> NT -> Map NT Expr -> NT -> Expr
+nontermExpr pol target solns nt@(G.NT c) =
+  let mod = case pol of
+        Positive -> id
+        Negative -> mkNot
+  in fromMaybe (nontermMark target nt) (mod <$> M.lookup nt solns)
+
+nontermMark :: NT -> NT -> Expr
+nontermMark target n@(G.NT nt) =
+  if target == n then LBool True
+  else V $ Var ("__b" ++ show nt) Bool

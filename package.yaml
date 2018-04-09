@@ -29,7 +29,6 @@ dependencies:
 - pretty
 - array
 - mtl
-- process
 - monad-loops
 - lens
 - prettyprinter
@@ -39,17 +38,30 @@ dependencies:
 - z3 >=4.1
 - turtle
 - extra
-- async
+- async >=2.1
 - stm
 - QuickCheck
 - hspec
 
 library:
-  source-dirs: src
-
   ghc-options: -Wall
+  source-dirs: src
 
   exposed-modules:
   - Formula
   - Formula.Z3
   - Grammar
+  - Solver.Shara
+  - Solver.Chc
+  - Solver.Types
+  - Solver.Interpolate
+  - Solver.TreeUnwind
+  - Data.Grammar
+  - Data.InfGrammar
+
+executable:
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  main: Main.hs
+  source-dirs: app
+  dependencies:
+    - shara

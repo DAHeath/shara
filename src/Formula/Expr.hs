@@ -147,6 +147,9 @@ appMany = foldl (:@)
 mkImpl :: Expr -> Expr -> Expr
 mkImpl = app2 Impl
 
+mkIff :: Expr -> Expr -> Expr
+mkIff = app2 Iff
+
 mkAdd :: Type -> Expr -> Expr -> Expr
 mkAdd _ (LInt a) (LInt b) = LInt (a + b)
 mkAdd t e e' = app2 (Add t) e e'

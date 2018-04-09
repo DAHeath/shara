@@ -9,6 +9,8 @@ import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Set (Set)
 import qualified Data.Set as S
+import           Data.Sequence (Seq)
+import qualified Data.Sequence as Seq
 import           Data.Maybe (isJust, fromJust)
 import           Data.Semigroup
 import           Data.List.Split
@@ -27,6 +29,13 @@ import           Solver.Interpolate
 import           Solver.Chc
 import           Solver.TreeUnwind
 
+import Data.Text.Prettyprint.Doc
+
+data SolveKind
+  = Topological
+  | LicketySplit InterpolationStrategy
+  deriving (Show, Read, Eq, Ord)
+
 -- | Encode the CHC as a (possibly infinite) unrollable grammar such that each
 -- unrolling is a directly solvable CHC system.
 -- directlySolvable :: Expandable m => Chc -> m (InfGrammar m Expr)
@@ -34,19 +43,24 @@ import           Solver.TreeUnwind
 
 -- | Apply the interpolator to the given directly solvable system and yield
 -- either a counterexample model or solutions for the nonterminals.
-solveDirect :: MonadIO m => Grammar Expr -> m (Either Model (Map NT Expr))
-solveDirect = topologicalInterpolation
+solveDirect :: MonadIO m => SolveKind -> Grammar Expr -> m (Either Model (Map NT Expr))
+solveDirect = \case
+  Topological -> topologicalInterpolation
+  LicketySplit strat -> licketySplit strat
 
 -- | Solve the Relational Post Fixed-Point Problem as encoded by the given CHC
 -- system.
 -- solveChc :: (Expandable m, MonadIO m) => Chc -> m (Either Model (Map NT Expr))
-solveChc chc = solve =<< treeUnwind chc
+-- solveChc chc = solveLoop =<< treeUnwind chc
 
-treeSolve :: Chc -> IO (Either Model (Map NT Expr))
-treeSolve chc = evalStateT (runReaderT (solve =<< treeUnwind chc) emptyCtxt) emptyState
+solve :: SolveKind -> Chc -> IO (Either Model (Map NT Expr))
+solve sk chc =
+  evalStateT (runReaderT (solveLoop sk =<< treeUnwind chc) emptyCtxt) emptyState
 
-solve :: (Expandable m, MonadIO m) => InfGrammar m Expr -> m (Either Model (Map NT Expr))
-solve g = solveDirect (IG.finite g) >>= \case
+solveLoop :: (Expandable m, MonadIO m)
+      => SolveKind
+      -> InfGrammar m Expr -> m (Either Model (Map NT Expr))
+solveLoop sk g = solveDirect sk (IG.finite g) >>= \case
   Left m -> pure (Left m)
   Right sol -> do
     ps <- getProof
@@ -56,7 +70,7 @@ solve g = solveDirect (IG.finite g) >>= \case
         cs <- getClones
         let sol' = M.filterWithKey (\k _ -> k `elem` G.nonterminals proof) sol
         pure (Right (collapse cs sol'))
-      Nothing -> IG.unroll indSet g >>= solve
+      Nothing -> IG.unroll indSet g >>= solveLoop sk
 
 -- | Given the solution to an interpolation of the grammar and the proof structure,
 -- determine which nonterminals are inductive.
@@ -83,11 +97,10 @@ inductive ps sols = do
       -- If a portion of the proof is rolled, it is not inductive.
       G.Terminal Continue -> pure Nothing
       -- The terminal's inductiveness is contingent on some logical entailment.
-      G.Terminal (Entails nt nt') ->
-        entails (M.findWithDefault (LBool True) nt sols)
-                (M.findWithDefault (LBool False) nt' sols) >>= \case
+      G.Terminal (Entails descs lhs r) ->
+        entails sols descs lhs r >>= \case
           False -> pure Nothing
-          True -> pure (Just $ G.Terminal (Entails nt nt'))
+          True -> pure (Just $ G.Terminal (Entails descs lhs r))
       -- The nonterminal is inductive if it was previously found to be or if
       -- its rule is inductive.
       G.Nonterminal nt ->
@@ -100,16 +113,36 @@ inductive ps sols = do
               Nothing -> pure Nothing
               Just _ -> pure (Just $ G.Nonterminal nt)
 
-cut :: Grammar a -> (Set NT, Set NT, Set NT)
-cut = undefined
-
-entails :: MonadIO m => Expr -> Expr -> m Bool
-entails e1 e2 = unalias e1 `Z3.entails` unalias e2
+entails :: MonadIO m => Map NT Expr -> Map NT (Set NT) -> NT -> Rule Fragment-> m Bool
+entails sols descs lhs rhs =
+  let lhs' = nonterm (LBool False) lhs
+      rhs' = evalState (go rhs) emptyChcState
+  in rhs' `Z3.entails` lhs'
   where
+    go :: Rule Fragment -> State ChcState Expr
+    go = \case
+      G.Null -> pure (LBool False)
+      G.Eps -> pure (LBool True)
+      G.Alt a b -> mkOr <$> go a <*> go b
+      G.Seq a b -> mkAnd <$> go a <*> go b
+      G.Nonterminal nt -> applyMapping (nonterm (LBool True) nt)
+      G.Terminal x -> resolve x
+
+    nonterm :: Expr -> NT -> Expr
+    nonterm def nt =
+      let ds = M.findWithDefault S.empty nt descs
+          phis = map (\d -> unalias (M.findWithDefault def d sols)) (S.toList ds)
+      in manyOr phis
+
     unalias :: Expr -> Expr
     unalias e = e & vars . varName %~ unal
     unal :: String -> String
     unal n = head (splitOn "%" n)
+
+    freshVar v = do
+      c <- use _3
+      _3 += 1
+      pure (v & varName <>~ ("%" ++ show c))
 
 collapse :: Map NT (Set NT) -> Map NT Expr -> Map NT Expr
 collapse _ = id -- TODO

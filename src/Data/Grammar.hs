@@ -196,8 +196,8 @@ partition nts g = (before, after)
   where
     before = evalState (go (start g)) (S.fromList nts)
     after =
-      evalState (asum <$> mapM (go . (`ruleFor` g)) nts)
-        (nonterminals before S.\\ S.fromList nts)
+      evalState (asum <$> mapM (\nt -> fmap (abstract nt) $ go $ ruleFor nt g) nts)
+        (nonterminals before)
     go = \case
       Null -> pure empty
       Eps -> pure mempty
