@@ -2,76 +2,6 @@
 \section{Background}
 \label{sec:background}
 
-% interpolants:
-\subsection{Logical interpolation}
-\label{sec:itps}
-%
-\sys solves CHC systems, logic-programming problems in which a
-solution maps predicate symbols to first-order formulas.
-%
-All objects defined in this paper are defined over a fixed space of
-first-order logical variables $X$.
-%
-In particular, for theory $\mathcal{T}$, the space of $\mathcal{T}$
-formulas over $X$ is denoted $\tformulas{\mathcal{T}}$.
-%
-For each formula $\varphi \in \tformulas{\mathcal{T}}$, the set of
-variables that occur in $\varphi$ (i.e., the \emph{vocabulary} of
-$\varphi$) is denoted $\vocab(\varphi)$.
-% define models, satisfaction, entailment
-For formulas $\varphi_0, \ldots, \varphi_n, \varphi \in
-\tformulas{\mathcal{T}}$, the fact that $\varphi_0, \ldots, \varphi_n$
-\emph{entail} $\varphi$ is denoted $\varphi_0, \ldots, \varphi_n
-\entails \varphi$.
-
-% Define replacement and substitution:
-For sequences of variables $Y = [ y_0, \ldots, y_n ]$ and $Z = [ z_0,
-\ldots, z_n ]$, the $\mathcal{T}$ formula constraining the equality of
-each element in $Y$ with its corresponding element in $Z$, i.e., the
-formula $\bigland_{0 \leq i \leq n} y_i = z_i$, is denoted $Y = Z$.
-%
-The repeated replacement of variables $\varphi[ z_0 / y_0 \ldots z_{n}
-/ y_{n} ]$ is denoted $\replace{\varphi}{Y}{Z}$.
-%
-For each formula $\varphi$ defined over free variables $Y$,
-$\replace{\varphi}{Y}{Z}$ is denoted alternatively as $\varphi[ Z ]$.
-%
-The number of free variables in formula $\varphi$ is denoted
-$\degreeof{\varphi}$.
-
-% introduce interpolation:
-An interpolant of mutually inconsistent $\mathcal{T}$ formulas
-$\varphi_0$ and $\varphi_1$ is a $\mathcal{T}$ formula in their common
-vocabulary that explains their inconsistency.
-%
-\begin{defn}
-  \label{defn:itps}
-  % define:
-  For $\varphi_0, \varphi_1 \in \tformulas{\mathcal{T}}$, $I \in
-  \tformulas{\mathcal{T}}$ such that
-  %
-  \textbf{(1)} $\varphi_0 \entails I$, %
-  \textbf{(2)} $I, \varphi_1 \entails \false$, and %
-  \textbf{(3)} $\vocab(I) \subseteq \vocab(\varphi_0) \intersection
-  \vocab(\varphi_1)$,
-  %
-  $I$ is an \emph{interpolant} of $\varphi_0$ and $\varphi_1$.
-\end{defn}
-%
-All spaces of formulas in the remainder of this paper will be defined
-for a fixed, arbitrary theory $\mathcal{T}$ that supports
-interpolation, such as combinations of the theories of linear
-arithmetic and the theory of uninterpreted functions with equality.
-% introduce decision procedure:
-Although determining the satisfiability of formulas in such theories
-is NP-complete in general, decision procedures~\cite{moura08} and
-interpolating theorem provers~\cite{mcmillan04} for such theories have
-been proposed that operate on such formulas efficiently.
-%
-\sys is defined as using a decision procedure for $\mathcal{T}$ named
-\issat, and an interpolating theorem prover for $\mathcal{T}$ named
-$\solveitp$.
-
 % define CHC's:
 \subsection{Constrained Horn Clauses}
 \label{sec:chcs}
@@ -80,12 +10,12 @@ $\solveitp$.
 % definition of CHC
 A Constrained Horn Clause contains a body and a head.
 %
-A body consisting of a conjunctive set of uninterpreted relational predicates applied to varialbes and a formula
-that over variables.
+A body consisting of a conjunction of a formula that over variables and a vector of uninterpreted predicates applied to varialbes.
 %
-A head can either be an uninterpreted relational predicates applied to variables or \cc{False}.
+A head can either be an uninterpreted predicates applied to variables or \cc{False}.
 %
 A Clause where the head is \cc{False} is called query.
+\QZ{make it looks nice}
 \begin{defn}
   A Constrained Horn Clause is definied as follows: \\
   $\cc{chc} \Coloneqq \cc{head} \gets \cc{body}$ \\
@@ -170,18 +100,87 @@ Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$, $\siblingof
 denotes the set of all siblings predicates of $\cc{P}$ in $\cc{S}$.
 %
 
-
-
-% define system of CHC's
-We will present \sys as a solver for recursion-free CHCs.
 %
 For a given CHC system $\cc{S}$, there is no uninterpreted predicates $\cc{P} \in \predof{S}$ 
-such that $\cc{P} \in \tdepsof{P}$, then $\cc{S}$ is a recursion-free CHCs system.
+such that $\cc{P} \in \tdepsof{P}$, then $\cc{S}$ is a \emph{recursion-free} CHCs system.
+%
 
 %
-A solution to a CHC system $S$ is an interpretation of each
-uninterpreted predicate $\cc{Q} \in \predof{S}$ that each clause holds
-after substitute all predicates by its interpretation.
+A solution to a CHC system $S$ is a map that maps each each
+uninterpreted predicate $\cc{P} \in \predof{S}$ to its interpretation which is a formula.
+%
+All clauses in $S$ holds
+after substitute all uninterpreted predicates by its interpretation.
+
+% interpolants:
+\subsection{Logical interpolation}
+\label{sec:itps}
+%
+\sys solves CHC systems, logic-programming problems in which a
+solution maps predicate symbols to first-order formulas.
+%
+All objects defined in this paper are defined over a fixed space of
+first-order logical variables $X$.
+%
+In particular, for theory $\mathcal{T}$, the space of $\mathcal{T}$
+formulas over $X$ is denoted $\tformulas{\mathcal{T}}$.
+%
+For each formula $\varphi \in \tformulas{\mathcal{T}}$, the set of
+variables that occur in $\varphi$ (i.e., the \emph{vocabulary} of
+$\varphi$) is denoted $\vocab(\varphi)$.
+% define models, satisfaction, entailment
+For formulas $\varphi_0, \ldots, \varphi_n, \varphi \in
+\tformulas{\mathcal{T}}$, the fact that $\varphi_0, \ldots, \varphi_n$
+\emph{entail} $\varphi$ is denoted $\varphi_0, \ldots, \varphi_n
+\entails \varphi$.
+
+% Define replacement and substitution:
+For sequences of variables $Y = [ y_0, \ldots, y_n ]$ and $Z = [ z_0,
+\ldots, z_n ]$, the $\mathcal{T}$ formula constraining the equality of
+each element in $Y$ with its corresponding element in $Z$, i.e., the
+formula $\bigland_{0 \leq i \leq n} y_i = z_i$, is denoted $Y = Z$.
+%
+The repeated replacement of variables $\varphi[ z_0 / y_0 \ldots z_{n}
+/ y_{n} ]$ is denoted $\replace{\varphi}{Y}{Z}$.
+%
+For each formula $\varphi$ defined over free variables $Y$,
+$\replace{\varphi}{Y}{Z}$ is denoted alternatively as $\varphi[ Z ]$.
+%
+The number of free variables in formula $\varphi$ is denoted
+$\degreeof{\varphi}$.
+
+% introduce interpolation:
+An interpolant of mutually inconsistent $\mathcal{T}$ formulas
+$\varphi_0$ and $\varphi_1$ is a $\mathcal{T}$ formula in their common
+vocabulary that explains their inconsistency.
+%
+\begin{defn}
+  \label{defn:itps}
+  % define:
+  For $\varphi_0, \varphi_1 \in \tformulas{\mathcal{T}}$, $I \in
+  \tformulas{\mathcal{T}}$ such that
+  %
+  \textbf{(1)} $\varphi_0 \entails I$, %
+  \textbf{(2)} $I, \varphi_1 \entails \false$, and %
+  \textbf{(3)} $\vocab(I) \subseteq \vocab(\varphi_0) \intersection
+  \vocab(\varphi_1)$,
+  %
+  $I$ is an \emph{interpolant} of $\varphi_0$ and $\varphi_1$.
+\end{defn}
+%
+All spaces of formulas in the remainder of this paper will be defined
+for a fixed, arbitrary theory $\mathcal{T}$ that supports
+interpolation, such as combinations of the theories of linear
+arithmetic and the theory of uninterpreted functions with equality.
+% introduce decision procedure:
+Although determining the satisfiability of formulas in such theories
+is NP-complete in general, decision procedures~\cite{moura08} and
+interpolating theorem provers~\cite{mcmillan04} for such theories have
+been proposed that operate on such formulas efficiently.
+%
+\sys is defined as using a decision procedure for $\mathcal{T}$ named
+\issat, and an interpolating theorem prover for $\mathcal{T}$ named
+$\solveitp$.
 
 %%% Local Variables: 
 %%% mode: latex

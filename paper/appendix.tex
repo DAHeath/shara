@@ -9,131 +9,80 @@
   % Declare sub-program (procedure) markers.
   \SetKwProg{myproc}{Procedure}{}{}
   % Inputs: a heap program and an error location.
-  \Input{For $\mathcal{R} \in \relpreds$, %
-    $\mathcal{S} \in \chc{\mathcal{R}}$.}
+  \Input{A recruions-free CHC system $S$.}
   % Output: inductive invariants.
-  \Output{A minimal CDD expansion of $\mathcal{S}$ and
-    correspondence to $\mathcal{S}$.} %
-  \myproc{$\expand{ \mathcal{R} }(\mathcal{S})$ %
+  \Output{A minimal CDD expansion $S'$ of $S$ and
+    correspondence from $S'$ to $S$.} %
+  \myproc{$\expand(S)$ %
     \label{line:expand-begin} }{ %
     % auxiliary procedure:
-    \myproc{$\expandaux( \mathcal{S}' )$
+    \myproc{$\expandaux(S')$
       \label{line:expand-aux-begin} }{ %
       % case split: optional sharing clause:
-      \Switch{$\sharingclause( \mathcal{S}' )$}{ %
+      \Switch{$\sharingclause(S')$}{ %
         % case: no siblings with overlapping descendants
-        \lCase{$\none$:}{ \Return{$\mathcal{ S }'$} %
+        \lCase{$\none$:}{ \Return{$S'$} %
           \label{line:expand-ret} } %
         % case: siblings with 
-        \lCase{$\mathcal{C} \in \mathcal{S}', % 
-          R \in \ctxs{ \mathcal{R} }$: }{ %
+        \lCase{$C \in S', % 
+          P \in \predof{S'}$: }{ %
           % expand the return:
           \Return{$\expandaux( %
-            \copyrel{ \mathcal{R} }( %
-            \mathcal{S}', \mathcal{C}, R))$ } %
+            \copyrel(S', C, P))$ } %
           \label{line:expand-recurse}
         } %
       } %
     \label{line:expand-aux-end} } %
     % base call: 
-    \Return{$( \expandaux(\mathcal{S}), \corr{ \mathcal{R} } )$ %
+    \Return{$( \expandaux(S), \corr )$ %
       \label{line:expand-base-call}}
   } %
   %
-  \caption{$\expand{ \mathcal{R} }$: for $\mathcal{R} \in \relpreds$
-    given $\mathcal{S} \in \chcs{ \mathcal{R} }$, returns a minimal
-    CDD expansion of $\mathcal{S}$. }
+  \caption{$\expand$:
+    given a recursion-free CHC system $S$, returns a minimal
+    CDD expansion $S'$ of $S$ and its correspondence.}
   \label{alg:expand}
 \end{algorithm}
 % walk through top-level procedure:
-\autoref{alg:expand}, given $\mathcal{S} \in \chcs{ \mathcal{R} }$
-(\autoref{line:expand-begin}), returns an expansion $\mathcal{S}'$ of
-$\mathcal{S}$ over relational predicates $\ctxs{ \mathcal{R} }$
-(defined below) accompanied by a correspondence from $\mathcal{S}'$ to
-$\mathcal{S}$.
+\autoref{alg:expand}, given a recruion-free CHC system $S$
+(\autoref{line:expand-begin}), returns an minimal CDD expansion $S'$ of
+$S$ with a correspondence from $S'$ to
+$S$.
 %
-$\expand{ \mathcal{R} }$ defines a procedure $\expandaux$
+$\expand$ defines a procedure $\expandaux$
 (\autoref{line:expand-aux-begin}---\autoref{line:expand-aux-end}) that
-takes a CHC system $\mathcal{S}$ and returns an expansion of
-$\mathcal{S}$.
+takes a CHC system $S$ and returns an minimal CDD expansion of 
+$S$.
 %
-$\expand{ \mathcal{R} }$ runs $\expandaux$ on $\mathcal{S}$ and
-returns the result, paired with the map $\corr{ \mathcal{R} } : \ctxs{
-  \mathcal{R} } \to \mathcal{R}$ (\autoref{line:expand-base-call};
-$\corr{\mathcal{R}}$ is defined below).
+$\expand$ runs $\expandaux$ on $S$ and
+returns the result, paired with the map $\corr: \predof{S'} \to \predof{S}$ 
+(\autoref{line:expand-base-call}).
 
 % walk through aux procedure:
-$\expandaux$, given $\mathcal{S}' \in \chcs{ \ctxs{ \mathcal{R} } }$,
-runs a procedure $\sharingclause$ on $\mathcal{S}'$, which tries to
-find $\mathcal{C} \in \mathcal{S}'$ and $R \in \ctxs{ \mathcal{R} }$
-applied in the body of $\mathcal{C}$ that is a transitive dependences of
-clause siblings in $\mathcal{S}'$.
+$\expandaux$, given a recursion-free CHC system $S'$,
+runs a procedure $\sharingclause$ on $S'$, which tries to
+find clause $C \in S'$ and predicate $P \in \bodyof{C}$
+that $P$ is in both transitive dependences of two predicates $Q_0$ and $Q_1$ are siblings 
+in $\predof{S}'$.
 %
-I.e., $\expandaux$ tries to find $\mathcal{C}$ and $R$ such that for
-some siblings $R_0, R_1 \in \ctxs{ \mathcal{R} }$, $R \in \depsof{
-  \mathcal{S}' }(R_0) \intersection \depsof{ \mathcal{S}' }(R_1)$ and
-$\relof{ \headof{ \mathcal{C} }} \in \depsof{ \mathcal{S}' }(R_0)
-\setminus \depsof{ \mathcal{S}' }(R_1)$.
-%
-In such a case, we say that $(\mathcal{C}, R)$ is a
+In such a case, we say that $(C, P)$ is a
 \emph{sibling-shared dependence}.
+
+
 % case: no sibling-shares
 If $\sharingclause$ determines that no sibling-shared dependence
-exists, then $\expandaux$ returns $\mathcal{S}'$
+exists, then $\expandaux$ returns $S'$
 (\autoref{line:expand-ret}).
 
 % case: there is a sibling-shared dependence:
-Otherwise, for sibling-shared dependence $(\mathcal{C}, R)$ returned
-by $\sharingclause$, $\expandaux$ runs $\copyrel{ \mathcal{R} }$ on
-$\mathcal{S}'$, $\mathcal{C}$, and $R$, which returns an expansion of
-$\mathcal{S}'$ in which the dependents shared by $R_0$ and $R_1$ are
-those shared in $\mathcal{S}'$, without $(\mathcal{C}, R)$.
+Otherwise, for sibling-shared dependence $(C, P)$ returned
+by $\sharingclause$, $\expandaux$ runs $\copyrel $ on
+$S'$, $C$, and $P$, which returns an expansion of
+$S'$ by creates fresh copy $P'$ of $P$ and updates $\bodyof{C}$ 
+to avoid transitive dependents shared by $Q_0$ and $Q_1$.
 %
-$\expandaux$ recurses on the CHC system returned by $\copyrel{
-  \mathcal{R} }$ and returns the result
+$\expandaux$ recurses on the CHC system returned by $\copyrel $ and returns the result
 (\autoref{line:expand-recurse}).
-
-% give the representation of ctxs
-\subsubsection{Representation of $\ctxs{ \mathcal{R} }$}
-%
-$\ctxs{ \mathcal{R} }$ are relational predicates that store the
-clauses in which they occur.
-%
-\begin{defn}
-  \label{defn:ctxs}
-  $\ctxs{ \mathcal{R} }$ is the smallest space such that $\mathcal{R}
-  \subseteq \ctxs{ \mathcal{R} }$ and for $\mathcal{C} \in \clauses{
-    \mathcal{ \ctxs{R} } }$ and $A \in \appsof{ \bodyof{ \mathcal{C} }
-  }$, $(\mathcal{C}, \relof{A}) \in \ctxs{ \mathcal{R} }$.
-\end{defn}
-% give the correspondence between relational predicates:
-$\corr{ \mathcal{R} } : \ctxs{R} \to \mathcal{R}$ is such that for $R
-\in \mathcal{R}$, $\corr{ \mathcal{R} }(R) = R$ and for $\mathcal{C}
-\in \clauses{ \ctxs{R} }$ and $R \in \ctxs{R}$ such that
-$(\mathcal{C}, R) \in \ctxs{R}$, $\corr{\mathcal{R}}(\mathcal{C}, R) =
-\corr{ \mathcal{R} }(R)$.
-
-% give the function that copies instances of a relational predicate
-\subsubsection{Implementation of $\copyrel{ \mathcal{R} }$}
-%
-$\copyrel{\mathcal{R}}$, given $\mathcal{S} \in \chcs{ \mathcal{R} }$,
-$\mathcal{C} \in \mathcal{S}$, and $R \in \ctxs{ \mathcal{R} }$,
-returns the following CHC system.
-% clause: C, but the application now points to (C, A)
-Let $\mathcal{C}' \in \clauses{ \ctxs{ \mathcal{R} } }$ be
-$\mathcal{C}$, with $R$ replaced with $(\mathcal{C}, R)$ in the body
-of $\mathcal{C}$.
-%
-Let $\mathcal{S}_{ \mathcal{C} } \subseteq \clauses{ \ctxs{
-    \mathcal{R} } }$ be the clauses in $\mathcal{S}$ for which $R$ is
-the relational predicate of the clause head, and let
-$\mathcal{S}_{\mathcal{C}}'$ be each clause in $\mathcal{S}_{
-  \mathcal{C} }$, with $R$ in the clause head replaced with
-$(\mathcal{C}, R)$.
-%
-Then $\copyrel{ \mathcal{R} }$ returns $\add{ (\remove{ \mathcal{S} }{
-    \add{ \mathcal{S}_{\mathcal{C}} }{\mathcal{C} } }) }{ \mathcal{C}'
-} \union \mathcal{S}_{\mathcal{C}}'$.
 %  
 
 % CDD systems:

@@ -75,11 +75,7 @@ relational predicate, then $\cc{S}$ is
   of body-disjoint and linear systems.
 \end{thm}
 %
-The CHC system $\mcchc$ (\autoref{sec:solve-ex}) is not body-disjoint
-or linear, but is CDD.
-%
-A proof that both the classes of body-disjoint and linear systems are
-contained in the class of CDD systems is given in \autoref{app:char}.
+The proof is given in \autoref{app:char}.
 
 % describe how to solve a CDD system
 \subsection{Solving a CDD system}
@@ -124,7 +120,6 @@ contained in the class of CDD systems is given in \autoref{app:char}.
 % introduce solveCDD
 the procedure $\solvecdd$ (\autoref{alg:solve-cdd}) is a solver for CDD systems.
 %
-
 $\solvecdd$, given a CDD system $\cc{S}$, it first do a topological sort on all
 uninterpreted predicates in $\cc{S}$ based on their dependency relations.
 %
@@ -144,8 +139,8 @@ In the order of topological sort, for each uninterpreted predicates $\cc{P}$
 
 %
 \begin{ex}
-  $\solvecdd$, given $\mcchc$, may generate
-  interpretations of $\mcpreds$ in any topological ordering of the
+  $\solvecdd$, given a CDD system $\mcchc$ in \autoref{sec:running-ex}, may generate
+  interpretations queries in any topological ordering of the
   dependency relation of $\mcchc$.
   %
   One such ordering is \cc{L4}, \cc{L6}, \cc{L8}, 
