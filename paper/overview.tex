@@ -3,76 +3,59 @@
 
 %first introduce the question
 In \autoref{sec:running-ex}, we describe a recursion-free CHC system,
-$\mcchc$, that formulates verifying the safety of the program
-\cc{multiCall} (\autoref{fig:multicall-code}).
+$\mcchc$, that formulates verifying the safety of a small program,
+\cc{dblAbs} (\autoref{fig:multicall-code}).
 %
 In \autoref{sec:solve-ex}, we show that $\mcchc$ is a
-\emph{Clause-Dependent Disjoint (CDD)} system and how \sys can solve it by 
+\emph{Clause-Dependent Disjoint (CDD)} system and how \sys can solve it by
 encoding it into binary interpolants.
 %
-In \autoref{sec:not-in}, we illustrate that
-$\mcchc$ is not in the directly solvable classes introduced in
-previous work.
+In \autoref{sec:not-in}, we illustrate that $\mcchc$ is not in
+directly solvable classes introduced in previous work.
 %
 
-
 % introduce running example program
-\subsection{Verifying \cc{multiCall}: an example hierarchical program}
+\subsection{Verifying \cc{dblAbs}: an example hierarchical program}
 \label{sec:running-ex}
 
-\QZ{remake the graph}
 % include code of running example and some figure:
 \begin{figure}[t]
   \centering
   \begin{floatrow}[2]
     \ffigbox[.26\textwidth] %
-    { \caption{\cc{multiCall}: an example hierarchical program.} %
+    { \caption{\cc{dblAbs}: an example hierarchical program.} %
       \label{fig:multicall-code} }
-    { \input{code/multiCall.java} }
+    { \input{code/dblAbs.java} }
     %
     \ffigbox[.7\textwidth] %
-    {\caption{Dependencies of CHC system $\mcchc$, depicted as a
-        hypergraph.
+    {\caption{$\mcchc$ shown as a directed hypergraph.
         % 
-        Each relational predicate is a node (circle) and each clause
-        is a hyperedge (box). } %
-      \label{fig:ex-deps} }
+        Each relational predicate is depicted as a graph node
+        while each clause is represented by a hyperedge.
+        Each hyperedge is labelled by the fact in the corresponding CHC\@.
+        Each node has a valid corresponding interpretation,
+        written in braces.
+      } %
+      \label{fig:ex-graph} }
     % { \includegraphics[width=\linewidth]{fig/ex-deps.pdf} }
       {\input{fig/example}}
   \end{floatrow}
 \end{figure}
 % walk through code of running example:
 %
-\cc{multiCall} includes a procedure \cc{db} that, given an integer
-variable \cc{m}, returns the value of \cc{m} doubled (line 1).
-%
-\cc{main}, the entry procedure of \cc{multiCall}, given integer \cc{n}
-(line 3), first binds variable \cc{abs} to $0$ (line 4).
-%
-\cc{main} tests if \cc{n} is greater than or equal to $0$ (line
-5).
-%
-If so, \cc{main} binds the value of \cc{n} to \cc{res} (line 6).
-%
-If not, \cc{main} binds the negation value of \cc{n} to \cc{res} (line 8).
-%
-\cc{main} then calles \cc{dbl} on \cc{abs} and binds the return value to \cc{res} (line 9)
-%
-\cc{main} then returns the value stored in \cc{res} (line 10).
-
+\cc{dblAbs} is a small procedure that doubles the absolute value of
+its input and stores the result in \cc{res}.
 % state the safety problem:
-The property to be verified in \cc{multiCall} is, for each input, 
-\cc{multiCall}
-returns a value greater than or equal to $0$.
+The program also asserts that \cc{res} is greater than or equal to $0$
+before exiting.
 % talk about solving Horn Clauses:
-Verifying that \cc{multiCall} satisfies such a property can be reduced
-to solving a recursion-free CHC system over a set of uninterpreted predicates
-that each represents a control location and
-procedure name in \cc{multiCall}.
+Verifying this assertion can be reduced to solving a recursion-free
+CHC system over a set of uninterpreted predicates that each represents
+a control location and procedure name in \cc{dblAbs}.
 %
 In particular, one such system $\mcchc$ is
 %
-\begin{align*}
+\begin{align}
 \label{chc}
   % semantic constraint of dbl:
 \cc{dbl}(\cc{x}, \cc{d}) &\gets \cc{d} = 2 * \cc{x} \\
@@ -91,95 +74,108 @@ In particular, one such system $\mcchc$ is
     \land \cc{abs'} = \cc{x} \land \cc{res} = \cc{d} \\
   %
     \bot &\gets \cc{main}(\cc{n}, \cc{res}) \land \cc{res} < 0 
-\end{align*}
+\end{align}
 %
 While $\mcchc$ has been presented as the result
-of a translation from hierarchical program \cc{multiCall}, \sys is
+of a translation from hierarchical program \cc{dblAbs}, \sys is
 purely a solver for CHC systems: it does not require access to the
 concrete representation of a program, or for a given CHC system to be
 the result of translation from a program at all.
 
 % solving the running example
-\subsection{\cc{multiCall} as a Clause-Dependent Disjoint system}
+\subsection{\cc{dblAbs} as a Clause-Dependent Disjoint system}
 \label{sec:solve-ex}
 % state it is CDD
-The recursion-free CHC system \cc{multiCall} is a \emph{Clause-Dependent-Disjoint (CDD)}) system.
+The recursion-free CHC system $\mcchc$ is a
+\emph{Clause-Dependent-Disjoint} (CDD) system.
 % state the defn of CDD:
-\emph{Clause-Dependent-Disjoint (CDD)}) system is an recursion-free CHC system such that
-for any uninterpreted predictes in the body of the same clause, their transitive dependencies
-are disjoint(i.e,they do not have common predicates).
+A CDD system is a recursion-free CHC system such that
+each clause is dependence disjoint.
+A clause is dependence disjoint if no two predicates in the body share
+any transitive dependencies (i.e, they have no common predicates) and
+there are no two predicates that are the same.
 %
 The formal definition of CDD and its key properties are given in
 \autoref{sec:CDD-defn}.
 
 % give a example
-In particular, for clause $(7)$, uninterpreted predicates \cc{L6} and \cc{db} shows in
-the body of same clause.
+In particular, clause $(7)$ uses both $\cc{L}_9$ and $\cc{dbl}$ in its
+body.
 %
-The transitive dependency of \cc{L6} is \{\cc{L6}\,\cc{L8}\,\cc{L4}\}, 
-and the transitive dependency of \cc{db} is $\varnothing$.
+The transitive dependency of $\cc{L}_9$ is the set
+$\{\cc{L}_4,\cc{L}_6,\cc{L}_8\}$, while the transitive dependency of
+\cc{dbl} is the empty set.
 %
-Their transitive dependencies are disjoint, because \{\cc{L6}\,\cc{L8}\,\cc{L4}\} $\cap \varnothing = \varnothing$.
+Therefore, their transitive dependencies are disjoint:
+$\{\cc{L}_4,\cc{L}_6,\cc{L}_8\} \cap \varnothing = \varnothing$.
+If there were a conflict in the transitive dependencies, then $\mcchc$
+would not be a CDD system.
 %
 The formal definition of transitive dependency is given in\QZ{reference}.
 %
-And the other clauses in \cc{multiCall} only has one uninterpreted predicates in the body, so
-\cc{multiCall} is a CDD system.
+All other clauses in $\mcchc$ have at most one uninterpreted predicate
+in the body, so they are trivially disjoint dependent.
 %
-The fact that $\mcchc$ is CDD corresponds to the fact that there no statements executed more than
-once within one execution path.
+Since every rule in $\mcchc$ is disjoint dependent, $\mcchc$ is a CDD
+system.
+%
+The fact that $\mcchc$ is CDD corresponds to the fact that there no
+statements executed more than once within one execution path.
+\DAH{elaborate}
 %
 
 % restate defn of CDD systems:
-\sys solves $\mcchc$ directly by issuing a binary 
-interpolation queriey for each uninterpreted predicates in $\mcchc$ in a topological order.
+\sys solves $\mcchc$ directly by issuing a binary interpolation query
+for each uninterpreted predicate in topological order.
 %
-For each uninterpreted predicate $P$ in $\mathcal{S}$, the solution of
-$P$ is the interpolant of two formulas: %
-\textbf{(1)} a \emph{pre}-formula, constructed as 
-the solution of each uninterpreted predicate in dependence of $P$, constraints
-in corresponding clauses and boolean indicator variable for 
-each uninterpreted predicates in $\mcchc$%
-\textbf{(2)} a \emph{post}-formula, constructed as  
-all constraints that occur after $P$ and boolean indicator variable for 
-each uninterpreted predicates in $\mcchc$.
-%
-
-% walk through the example
-E.g., when \sys solving $\mcchc$, \sys issues interpolation queries of 
-each uninterpreted predicates in the order \cc{L4}, \cc{L6}, \cc{L8}, 
-\cc{L9}, \cc{db} and \cc{main}.
-%
-In particular, when \sys issues interpolation query for uninterpreted predicates \cc{L9},
-\sys has generated solutions for \cc{L4}, \cc{L6}, \cc{L8} which shows in\QZ{refer to graph}.
+Each uninterpreted predicate $P$ has a valid interpretation which can
+be computed by finding the interpolant of two formulas:
+\textbf{(1)} the \emph{pre}-formula, constructed from the solutions of
+each uninterpreted predicate $P$ directly depends on, constraints in
+clauses where $P$ is the head, and boolean indicator variables for
+each uninterpreted predicate in $\mcchc$%
+\textbf{(2)} the \emph{post}-formula, constructed from
+all constraints that occur after $P$ and boolean indicator
+variables for each uninterpreted predicate in $\mcchc$.
 %
 
-The solution of \cc{L9} is an interpolant of \textbf{(1)} 
-a \emph{pre}-formula, constructed as solutions generated for \cc{L4}, \cc{L6}
+We will walk through the interpolation query for $\cc{L}_9$ by hand.
+By the time \sys reaches $\cc{L}_9$ it will already have solutions for
+$\cc{L}_4$, $\cc{L}_6$, $\cc{L}_8$. Possible interpretations of these
+predicates are shown in \autoref{fig:ex-graph}.
+%
+\DAH{WORK FROM HERE}
+A solution for \cc{L9} can be constructed by interpolating \textbf{(1)}
+the \emph{pre}-formula, constructed as solutions generated for \cc{L4}, \cc{L6}
 the constraints in clauses (5) and (6) and boolean variables%
-\textbf{(2)} a \emph{post}-formula constructed from constraints in
-$\mcchc$ that all constrains after \cc{L9}, constrains for \cc{db}
+\textbf{(2)} the \emph{post}-formula constructed from constraints in
+$\mcchc$ that all constraints after \cc{L9}, constraints for \cc{dbl}
 and boolean variables.
 %
 In particular, the \emph{pre}-formula for \cc{L9} is 
 \begin{gather}
-((b_{L8}\land abs'= -n) \lor (b_{L6} \land abs=n))\land (\neg b_{L6} \lor n \ge 0) \land (\neg b_{L8} \lor n<0)
+  ((b_{L_8}\land \cc{abs'}= -\cc{n})
+    \lor (b_{L_6} \land \cc{abs}=\cc{n}))
+  \land (\neg b_{L_6} \lor \cc{n} \ge 0)
+    \land (\neg b_{L_8} \lor \cc{n}<0)
 \end{gather}
 %
 , $b_{L8}$ and $b_{L6}$ are boolean variables corresponding to predicates \cc{L8} and \cc{L6}.
 %
 The \emph{post}-formula for \cc{L9} is
 \begin{gather}
-(b_{main} \land res' < 0 ) \land (\neg b_{main} \lor (b_{db} \land abs'= m \land res =d )) 
-\land (\neg b_{db} \lor d = 2*m)
+  (b_{main} \land \cc{res'} < 0 )
+    \land (\neg b_{main} \lor (b_{dbl} \land \cc{abs'}= \cc{x} \land \cc{res}=\cc{d} ))
+  \land (\neg b_{dbl} \lor \cc{d} = 2*\cc{x})
 \end{gather}
-, $b_{main}$ and $b_{db}$ are boolean variables corresponding to predicates \cc{main} and \cc{db}.
+, $b_{main}$ and $b_{dbl}$ are boolean variables corresponding to
+predicates \cc{main} and \cc{dbl}.
 %
 A detailed and formal description for the procedure of solving a CDD system is given in
 \autoref{sec:solve-cdd}.
 
 
-\subsection{\cc{multiCall} is not in other system}
+\subsection{\cc{dblAbs} is not in other system}
 \label{sec:not-in}
 %
 There are three classes of directly solvable systems has been introduced
@@ -232,7 +228,7 @@ However, such systems cannot directly model the control flow of a
 program that contains procedure calls.
 %
 $\mcchc$ is not a linear system because the body of clause (7) has two
-predicates \cc{L9} and \cc{db}.
+predicates \cc{L9} and \cc{dbl}.
 %
 CHC solvers that solve linear systems, $\mcchc$, effectively inline constraints on
 relational predicates that occur in non-linear clauses~\cite{albarghouthi12b}.
@@ -245,7 +241,7 @@ The class of CDD systems strictly contains these three classes,
 but does not contain all
 recursion-free systems.
 %
-E.g., a recursion-free system that models \cc{multiCall} 
+E.g., a recursion-free system that models \cc{dblAbs} 
 call \cc{dbl} twice on \cc{abs} in sequence would not
 be CDD.
 %
