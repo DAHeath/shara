@@ -1,11 +1,10 @@
-int db(int m) {
-  return 2 * m; }
-int main(int n) {
-  int abs = 0;
+def dbl(int x)
+  return 2 * x
+def main(n)
+  abs = 0
   if (n >= 0)
-     abs = n;
+     abs = n
   else
-     abs = -n;
-  int res = dbl(abs);
-  return res;
-  }
+     abs = -n
+  res = dbl(abs)
+  assert(res >= 0)

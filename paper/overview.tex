@@ -37,7 +37,8 @@ previous work.
         Each relational predicate is a node (circle) and each clause
         is a hyperedge (box). } %
       \label{fig:ex-deps} }
-    { \includegraphics[width=\linewidth]{fig/ex-deps.pdf} }
+    % { \includegraphics[width=\linewidth]{fig/ex-deps.pdf} }
+      {\input{fig/example}}
   \end{floatrow}
 \end{figure}
 % walk through code of running example:
@@ -71,26 +72,26 @@ procedure name in \cc{multiCall}.
 %
 In particular, one such system $\mcchc$ is
 %
-\QZ{left allign}
-\begin{gather}
+\begin{align*}
 \label{chc}
   % semantic constraint of dbl:
-  \cc{db}(\cc{m}, \cc{d}) \gets \cc{d} = 2 * \cc{m} \\
+\cc{dbl}(\cc{x}, \cc{d}) &\gets \cc{d} = 2 * \cc{x} \\
   % semantic constraint of line 3:
-   \cc{L4}(\cc{n}, \cc{abs}) \gets  \cc{abs} = 0 \\
+  \cc{L}_4(\cc{n}, \cc{abs}) &\gets  \cc{abs} = 0 \\
   % semantic constraint of line 5 (then branch)
-   \cc{L6}(\cc{n}, \cc{abs}) \gets \cc{L4}(\cc{n}, \cc{abs}) \land \cc{n} \ge 0 \\
+  \cc{L}_6(\cc{n}, \cc{abs}) &\gets \cc{L}_4(\cc{n}, \cc{abs}) \land \cc{n} \ge 0 \\
   % semantic constraint of line 6 (else branch)
-   \cc{L8}(\cc{n}, \cc{abs}) \gets \cc{L4}(\cc{n}, \cc{abs}) \land \cc{n} < 0 \\
+  \cc{L}_8(\cc{n}, \cc{abs}) &\gets \cc{L}_4(\cc{n}, \cc{abs}) \land \cc{n} < 0 \\
   % assign branch
-   \cc{L9}(\cc{n}, \cc{abs'}) \gets \cc{L6}(\cc{n},\cc{abs}) \land \cc{abs'} = \cc{n} \\
-   \cc{L9}(\cc{n}, \cc{abs'}) \gets \cc{L8}(\cc{n},\cc{abs}) \land \cc{abs'} = -\cc{n} \\
+  \cc{L}_9(\cc{n}, \cc{abs'}) &\gets \cc{L}_6(\cc{n},\cc{abs}) \land \cc{abs'} = \cc{n} \\
+   \cc{L}_9(\cc{n}, \cc{abs'}) &\gets \cc{L}_8(\cc{n},\cc{abs}) \land \cc{abs'} = -\cc{n} \\
   % semantic constraint of main procedure:
-    \cc{main}(\cc{n},\cc{res}) \gets \cc{L9}(\cc{n}, \cc{abs'}) \land \cc{db}(\cc{m}, \cc{d})
-    \land \cc{abs'} = \cc{m} \land \cc{res} = \cc{d} \\
+   \cc{main}(\cc{n},\cc{res}) &\gets \cc{L}_9(\cc{n}, \cc{abs'}) \land
+                                     \cc{dbl}(\cc{x}, \cc{d})
+    \land \cc{abs'} = \cc{x} \land \cc{res} = \cc{d} \\
   %
-   False \gets \cc{main}(\cc{n}, \cc{res}) \land \cc{res} < 0 
-\end{gather}
+    \bot &\gets \cc{main}(\cc{n}, \cc{res}) \land \cc{res} < 0 
+\end{align*}
 %
 While $\mcchc$ has been presented as the result
 of a translation from hierarchical program \cc{multiCall}, \sys is
