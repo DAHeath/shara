@@ -1,0 +1,26 @@
+\scalebox{0.75}{%
+\begin{tikzpicture}
+\begin{scope}
+  \node (top) at (0,0) {\begin{tabular}{c}All Systems\\ \textsc{Undecidable}\end{tabular}};
+    \node[below = 0.5 of top] (rec) {\begin{tabular}{c}Recursion Free\\
+  \textsc{co-Nexptime Complete}\end{tabular}};
+  \node[below = 0.5 of rec] (dir) {\begin{tabular}{c}Directly Solvable\\ \textsc{co-NP}\end{tabular}};
+  \node[label={0:\{\textsc{Shara}\}}, draw, rounded corners=0.5cm,
+      below = 0.5 of dir] (cdd) {\begin{tabular}{c}Clause-Dependent-Disjoint\\ \textsc{co-NP}\end{tabular}};
+  \node[label={0:\{\textsc{Ufo}\}},
+      below left = 0.5 and 0.5 of cdd] (lin) {\begin{tabular}{c}Linear\\ \textsc{co-NP}\end{tabular}};
+  \node[label={180:\{\textsc{Eldarica}\cite{rummer13b}\}},
+      below right = 0.5 and 0.5 of cdd] (bd) {\begin{tabular}{c}Body Disjoint\\ \textsc{co-NP}\end{tabular}};
+  \node[label={180:\{\textsc{Duality}\cite{bjorner13}\}},
+      below = 0.5 of bd] (tree) {\begin{tabular}{c}Tree\\ \textsc{co-NP}\end{tabular}};
+\end{scope}
+\begin{scope}[every edge/.style={draw=black, very thick}]
+  \path[-] (tree) edge (bd);
+  \path[-] (bd) edge (cdd);
+  \path[-] (lin) edge (cdd);
+  \path[-] (cdd) edge (dir);
+  \path[-] (dir) edge (rec);
+  \path[-] (rec) edge (top);
+\end{scope}
+\end{tikzpicture}
+}
