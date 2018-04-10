@@ -1,9 +1,11 @@
-int dbl(int n) {
-  return 2 * n; }
+int db(int m) {
+  return 2 * m; }
 int main(int n) {
-  int res = 0;
+  int abs = 0;
   if (n >= 0)
-    res = dbl(n);
+     abs = n;
   else
-    res = -1 * dbl(n);
-  return res; }
+     abs = -n;
+  int res = dbl(abs);
+  return res;
+  }

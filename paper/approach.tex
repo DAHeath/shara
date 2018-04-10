@@ -42,26 +42,26 @@ CDD systems model hierarchical programs with branching and
 procedure calls that in each execution path that each statments be
 exected at most once.
 %
-\QZ{rework example}
 \begin{ex}
   The CHC system $\mcchc$ (given in \autoref{sec:solve-ex}) is a CDD
   system.
   %
-  The only clauses in $\mcchc$ that contain multiple uninterpreted
-  predicates are \autoref{eqn:then} and \autoref{eqn:else}, which both
-  contain $\cc{L4}$ and $\cc{dbl}$.
+  The only clauses in $\mcchc$ that its body has multiple uninterpreted
+  predicates are clause (7) that contains $\cc{L9}$ and $\cc{db}$.
   %
-  The dependences of $\cc{L4}$ and $\cc{dbl}$ are disjoint.
+  The transitive dependences of $\cc{L9}$ and $\cc{db}$ are \{\cc{L6}\,\cc{L8}\,\cc{L4}\} and $\varnothing$, which are disjoint.
 \end{ex}
 
 % talk about body disjoint
-The class of CDD systems contains body-disjoint and linear
+The class of CDD systems contains tree structure system, and body-disjoint and linear
 systems introduced in previous work.
 %
-For recursion-free system $\cc{S}$, if for each uninterpreted predicate
-$Q \in \predof{S}$, there is at most one caluse $\cc{C}$ that $Q \in \bodyof{C}$,
+Tree structure system is contained by body-disjoint system. 
+%
+For recursion-free system $S$, if for each uninterpreted predicate
+$Q \in \predof{S}$, there is at most one caluse $C$ that $Q \in \bodyof{C}$,
 and there is no uninterpreted predicate shows more than once in a body of clause, then
-$\cc{S}$ is \emph{body-disjoint}~\cite{rummer13a,rummer13b}.
+$S$ is \emph{body-disjoint}~\cite{rummer13a,rummer13b}.
 %
 If the body of each clause in $\cc{S}$ contains at most
 relational predicate, then $\cc{S}$ is
@@ -124,6 +124,7 @@ contained in the class of CDD systems is given in \autoref{app:char}.
 % introduce solveCDD
 the procedure $\solvecdd$ (\autoref{alg:solve-cdd}) is a solver for CDD systems.
 %
+
 $\solvecdd$, given a CDD system $\cc{S}$, it first do a topological sort on all
 uninterpreted predicates in $\cc{S}$ based on their dependency relations.
 %
@@ -141,69 +142,62 @@ In the order of topological sort, for each uninterpreted predicates $\cc{P}$
  %
  $\solvecdd$ returns the soltuion $\sigma$. 
 
-\QZ{rework example}
 %
 \begin{ex}
-  $\solvecdd{ \mcpreds }$, given $\mcchc$, may generate
+  $\solvecdd$, given $\mcchc$, may generate
   interpretations of $\mcpreds$ in any topological ordering of the
-  dependency relation of $\mcchc$, depending on the relational
-  predicates that it chooses at \autoref{line:case-deps}.
+  dependency relation of $\mcchc$.
   %
-  One such ordering is \cc{L3}, \cc{L4}, \cc{dbl}, \cc{L9}, \cc{main},
-  $\mathsf{Err}$.
+  One such ordering is \cc{L4}, \cc{L6}, \cc{L8}, 
+   \cc{L9}, \cc{db} and \cc{main}.
 \end{ex}
 
 \subsubsection{Constructing constrains of uninterpreted 
 predicate}
 %
-For an uninterpreted predicate $\cc{P} \in \predof{S}$ and $\cc{S}$ is an CDD system  
-,the formula $\ctrof{Q}$ is a compact representation of constrains of $\cc{P}$, defined as follows.
-% introduce the isused predicates:
-For each $\cc{Q} \in \predof{S}$, there is a corresponding boolean variable
-$b_Q$.
+For a CDD system $S$, given a uninterpreted predicate $\cc{P} \in \predof{S}$, and a partial 
+solution $\sigma$ that maps some uninterpreted predicate to its solution formula, 
+,the formula $\ctrof{P,\sigma}$ is a compact representation of constrains of $\cc{P}$ based on parital
+solution $\sigma$, defined as follows.
 % for each relational predicate, define constraint:
-The constraint of $P$, denoted $\ctrof{P}$, constrains
-that if $P$ occurs in a derivation of $S$, then there is
-some clauses $C \in S$ in which $P$ is the head of $\cc{C}$
-\textbf{(1)} each $Q \in \bodyof{C}$ is used and 
+If partial solution $\sigma$ does not contains $P$, 
+the constraint of $P$ under $\sigma$ that denoted as $\ctrof{P,\sigma}$ 
+is constructed as: for all clauses $C \in S$ in which $P$ is the head of $\cc{C}$
+\textbf{(1)} each predicate $Q \in \bodyof{C}$ is used and 
 \textbf{(2)} the constrained of the clause $\consof{C}$ is encoded.
 %
-I.e., $\ctrof{P}$ is
-\[\lnot b_Q \land 
-\left(
+I.e., $\ctrof{P,\sigma}$ is
+\[
 \biglor_{ (\cc{C}_i \in \cc{S}) \land (\headof{C_i} = \cc{P})}
 \left( \consof{C_i} \land %
 \bigland_{ \cc{Q} \in \bodyof{C_i}} %
-b_Q \right) \right)
+b_Q \right)
 \]
 %
-The counterexample characterization of $\mathcal{S'}$ constrains that
-\textbf{(1)} the query predicate of $\mathcal{S'}$ must be used in a
-derivation and %
-\textbf{(2)} for $R \in \mathcal{R}$, if $R$ is used, then its
-constraint must hold.
+If partial solution $\sigma$ contains $P$, then $\ctrof{P,\sigma}$ is the solution formula $\sigma[P]$.
+
+% introduce the isused predicates:
+For each $\cc{P} \in \predof{S}$, there is a corresponding boolean variable
+$b_P$.
 %
-I.e., $\vc{ \mathcal{R} }(\mathcal{S'})$ is $\used{
-  \queryof{\mathcal{S'} } } \land %
-\bigland_{R \in \mathcal{R} } \left( \used{R} \implies \ctrof{R}
-\right)$.
+The counterexample characterization of $P$ constrains that
+if $P$ is used, which means $b_{P}$ is \cc{True}, then its constraint must hold.
+%
+I.e., $\vc{P,\sigma}$ is $\neg b_{P} \lor \ctrof{P,\sigma}$.
 
 
-\QZ{rework example}
 \begin{ex}
-  % 
-  $\vc{ \mcpreds }(\mcchc)$ characterizes all runs of \cc{multiCall}
-  that result in an error.
+  \label{ex:ctr}
+  In the CHC system $\mcchc$ (given in \autoref{sec:solve-ex}), 
+  when $\mcsolve$ solves the uninterpreted predicate \cc{L9}, it 
+  has a partial solution $\sigma$ that maps \cc{L6} to $n \ge 0$.
   %
-  Although the relational predicates \cc{L4} and \cc{dbl} occur in the
-  bodies of multiple clauses, they are each modeled with only a single
-  instance of logical variables.
-  % 
-  Such a collection is sufficient because each run of \cc{multiCall}
-  reaches \cc{L4} and \cc{dbl} at most once.
+  For predicate \cc{L6}, the the $\ctrof{L6,\sigma}$ is $n \ge 0$.
   %
-  Correspondingly, each derivation of $\mcchc$ contains at most one
-  occurrence of relational predicates \cc{L4} and \cc{dbl}.
+  For the 
+  uninterpreted \cc{L9}, the $\ctrof{L9,\sigma}$ is $(abs' = n \land b_{L6}) \lor (abs' = n \land b_{L8})$.
+  %
+  The $\vc{L9,\sigma}$ is $\neg b_{L9} \lor \ctrof{L9,\sigma}$.
 \end{ex}
 
 % pre-constraint:
@@ -219,70 +213,69 @@ the pre-constraint $\prectr(\cc{P},\sigma)$ is a formula that the conjunction of
 of $\cc{P}$ and solutions of all dependencies of $P$ with their boolean varialbe.
 %
 In particular, $\prectr(\cc{P},\sigma)$ is:
-\[\ctrof{P} \land
+\[\ctrof{P,\sigma} \land
 \left(
 \bigland_{\cc{Q} \in \depsof{P}}
-\left(b_Q \land \sigma[ \cc{Q} ]  \right)
+\left(\neg b_Q \lor \sigma[ \cc{Q} ]  \right)
 \right)
 \]
 %
-\QZ{rework example}
 \begin{ex}
   \label{ex:pre-ctr}
-  Assume that $\mcsolve$, given $\mcchc$, synthesizes a partial
-  solution $\sigma \in \interps{ \mcpreds }$ that interprets \cc{L3}
-  as $\true$, and chooses to then find an interpretation of \cc{L4}.
+  In the CHC system $\mcchc$ (given in \autoref{sec:solve-ex}), 
+  when $\mcsolve$ solves the uninterpreted predicate \cc{L9}, because it solves
+  in topological order, partial solution $\sigma$ contains \cc{L6} and \cc{L8}.
   %
-  The pre-constraint of \cc{L4} is $\true \land \cc{res}_{\cc{4}} =
-  0$, where $\cc{res}_{\cc{4}}$ is a logical variable that models the
-  value of \cc{res} at line \cc{4}.
+  $\sigma$ maps
+  \cc{L6} to $n \ge 0$ and \cc{L8} to $n < 0$.
+  %
+  The pre-formula for \cc{L9} under $\sigma$ is $\ctrof{L9} \land (\neg b_{L6} \lor n \ge 0) \land (\neg b_{L8} \lor n < 0)$.
+  %
+  The forumula of $\ctrof{L9,\sigma}$ is given in~\autoref{ex:ctr}.
 \end{ex}
 
 \subsubsection{Constructing the post-constraint of a relational
   predicate}
 \label{sec:cons-ctx}
 %
-For $\sigma \in \interps{ \mathcal{R} }$ a partial solution of
-$\mathcal{S}$ and $R \in \mathcal{R}$, the post-constraint $\postctr{
-  \mathcal{R} }(\mathcal{S}, \sigma, R) \in \formulas$ is mutually
-inconsistent with the interpretation of $R$ in each solution of
-$\mathcal{S}$ that extends $\sigma$.
+For $\sigma$ as a partial solution of
+$S$ and $P \in \predof{S}$, the post-constraint $\postctr(P, \sigma)$ is mutually
+inconsistent with the solution of $P$ in each solution of
+$S$ that extends $\sigma$.
 % dependents of R:
-In particular, let $\mathcal{D}_0$ be the reflexive dependents of $R$
-in $\mathcal{S}$,
+In particular, let $D_0$ be the reflexive transitive dependents of $P$
+in $S$,
 % clause siblings of dependents:
-let $\mathcal{D}_1$ be the siblings in $\mathcal{S}$ of
-$\mathcal{D}_0$,
+let $D_1$ be the siblings in $S$ of
+$(D_0 \union {P})$,
 %
-let $\mathcal{D}_2$ be all dependences of $\mathcal{D}_1$, and
+let $D_2$ be all transitive dependences of $D_1$, and
 % collect all predicates that we define a constraint over:
-let $\mathcal{D} = \mathcal{D}_0 \union \mathcal{D}_1 \union
-\mathcal{D}_2$.
-% define constraint for each predicate
-Let $\restrict{ \mathcal{S} }{ \mathcal{D} }$ be $\mathcal{S}$
-restricted to clauses whose head's relational predicate is in
-$\mathcal{D}$.
+let $D = D_0 \union D_1 \union D_2$.
 % define instantiation of C
-The post constraint for $\mathcal{S}$ under $\sigma$ at $R$ is the
-counterexample characterization of $\restrict{ \mathcal{S} }{
-  \mathcal{D} }$ grounded on $\sigma$ (defined in \autoref{sec:chcs}).
+The post constraint for $P$ under $\sigma$ is the conjunction of
+counterexample characterization of all predicates $Q \in D$ and the query clause.
 %
-I.e., $\postctr{ \mathcal{R} }(\mathcal{S}, \sigma, R) = \vc{
-  \mathcal{R} }(\sigma( \restrict{ \mathcal{S} }{ \mathcal{D} }))$.
+I.e., $\postctr(R, \sigma) =\cc{query} \land (\bigland_{\cc{Q} \in D} \vc{Q,\sigma})$.
 % example post constraint:
 \begin{ex}
   \label{ex:ctx-ctr}
   Consider the case in which $\mcsolve$, given $\mcchc$, generates an
-  interpretation of \cc{L4}, introduced in \autoref{ex:pre-ctr}.
+  interpretation for \cc{L9}, introduced in \autoref{ex:pre-ctr}.
   %
-  $\mcsolve$ collects relational predicates $\mathcal{D}_0 = \elts{
-    \cc{L4}, \cc{L9}, \cc{main}, \mathsf{Err} }$, $\mathcal{D}_1 =
-  \elts{ \cc{dbl} }$, and $\mathcal{D}_2 = \emptyset$.
+  The reflexive transitive dependents $D_0$ of \cc{L9} is \{\cc{main}\}.
   %
-  $\mcsolve$ constructs $\postctr{ \mcpreds }(\mcchc, \sigma,
-  \cc{L4})$ to be the counterexample characterization of $\mcchc$
-  restricted to clauses whose head relational predicate is in
-  $\mathcal{D} = \elts{ \cc{L4}, \cc{L9}, \cc{main}, \mathsf{Err} }$.
+  The siblings set $D_1$ is \{\cc{db}\}.
+  %
+  The transitive dependences of $D_1$ is $\varnothing$. 
+  %
+  Then the $D$ set is \{\cc{main},\cc{db}\}
+  %
+  The \cc{query} is $b_{main} \land res'<0$.
+  %
+  The post constraint for $L9$ under $\sigma$ is $\cc{query} \land \vc{main,\sigma} \land \vc{db,\sigma}$.
+  %
+  The whole formula is given in\QZ{add reference}. 
 \end{ex}
 
 \subsection{Solving recursion-free systems using CDD systems}
