@@ -30,7 +30,8 @@ import           Data.Text.Prettyprint.Doc
 main :: IO ()
 main = do
   as <- getArgs
-  let defStrat = LicketySplit ConcurrentInterpolation
+  let defStrat = Topological
+  -- let defStrat = LicketySplit ConcurrentInterpolation
   let cfg = case as of
         [] -> defStrat
         (a:_) -> case a of
@@ -45,7 +46,7 @@ main = do
 test :: Chc
 test =
   G.mkGrammar
-  (  G.Terminal (Fact [expr|x = 41|])
+  (  G.Terminal (Fact [expr|x = 5|])
   <> G.Terminal (Apply x)
   <> G.Nonterminal 0
   ) $

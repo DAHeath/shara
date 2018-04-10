@@ -110,14 +110,14 @@ unwindFrom r = do
       G.Alt x y -> do
         -- Unwinding an alternation requires unwinding both parts with the same
         -- vocabulary.  A proof must show both branches.
-        q <- use (chcState . varQueue)
+        q <- use chcState
         (x', px) <- unw x
-        chcState . varQueue .= q
+        chcState .= q
         (y', py) <- unw y
         pure (x' <|> y', px <> py)
       G.Terminal x -> do
         st <- use chcState
-        let (x', st') = runState (resolve x) st
+        let (x', st') = runState (generativeResolve x) st
         chcState .= st'
         pure (case x' of
           LBool True -> G.epsGrammar

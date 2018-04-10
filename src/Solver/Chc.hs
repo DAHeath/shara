@@ -56,8 +56,8 @@ emptyChcState = ChcState
   , _varCounter = 0
   }
 
-resolve :: Monad m => Fragment -> StateT ChcState m Expr
-resolve = \case
+generativeResolve :: Monad m => Fragment -> StateT ChcState m Expr
+generativeResolve = \case
   Apply v -> do
     -- Applying a variable adds the variable to the vocabulary and has a
     -- trivial proof.
@@ -79,6 +79,33 @@ resolve = \case
     -- Uncapture does nothing but change the vocabulary context. The proof
     -- is trivial.
     varMapping %= tail
+    pure (LBool True)
+  Fact e ->
+    -- A single fact unwinds by applying the current vocabulary to the
+    -- fact. The proof is trivial.
+    applyMapping e
+
+simpleResolve :: Monad m => Fragment -> StateT ChcState m Expr
+simpleResolve = \case
+  Apply v -> do
+    -- Applying a variable adds the variable to the vocabulary and has a
+    -- trivial proof.
+    m <- use varMapping
+    varQueue %= (Seq.<|) (subst' m v)
+    pure (LBool True)
+  Capture v -> do
+    -- Capturing a variable either yields fresh variables or pops the
+    -- vocabulary. The proof is trivial.
+    Seq.viewr <$> use varQueue >>= \case
+      Seq.EmptyR -> pure ()
+      (xs Seq.:> x) -> do
+        varQueue .= xs
+        varMapping %= (:) (v, x)
+    pure (LBool True)
+  Uncapture ->
+    -- Uncapture does nothing but change the vocabulary context. The proof
+    -- is trivial.
+    -- varMapping %= tail
     pure (LBool True)
   Fact e ->
     -- A single fact unwinds by applying the current vocabulary to the

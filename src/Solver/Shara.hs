@@ -65,6 +65,7 @@ solveLoop sk g = solveDirect sk (IG.finite g) >>= \case
   Right sol -> do
     ps <- getProof
     (mproof, indSet) <- inductive ps sol
+    liftIO $ putStrLn (G.draw ps)
     case mproof of
       Just proof -> do
         cs <- getClones
@@ -115,18 +116,28 @@ inductive ps sols = do
 
 entails :: MonadIO m => Map NT Expr -> Map NT (Set NT) -> NT -> Rule Fragment-> m Bool
 entails sols descs lhs rhs =
-  let lhs' = nonterm (LBool False) lhs
-      rhs' = evalState (go rhs) emptyChcState
-  in rhs' `Z3.entails` lhs'
+  let (rhs', lhs') = evalState (do
+        rhs' <- go rhs
+        lhs' <- applyMapping (nonterm (LBool False) lhs)
+        pure (rhs', lhs')) emptyChcState
+  in do
+    liftIO $ print $ pretty rhs'
+    liftIO $ print $ pretty lhs'
+    rhs' `Z3.entails` lhs'
   where
     go :: Rule Fragment -> State ChcState Expr
     go = \case
       G.Null -> pure (LBool False)
       G.Eps -> pure (LBool True)
-      G.Alt a b -> mkOr <$> go a <*> go b
+      G.Alt a b -> do
+        q <- get
+        a' <- go a
+        put q
+        b' <- go b
+        pure (mkOr a' b')
       G.Seq a b -> mkAnd <$> go a <*> go b
       G.Nonterminal nt -> applyMapping (nonterm (LBool True) nt)
-      G.Terminal x -> resolve x
+      G.Terminal x -> simpleResolve x
 
     nonterm :: Expr -> NT -> Expr
     nonterm def nt =
@@ -138,11 +149,6 @@ entails sols descs lhs rhs =
     unalias e = e & vars . varName %~ unal
     unal :: String -> String
     unal n = head (splitOn "%" n)
-
-    freshVar v = do
-      c <- use _3
-      _3 += 1
-      pure (v & varName <>~ ("%" ++ show c))
 
 collapse :: Map NT (Set NT) -> Map NT Expr -> Map NT Expr
 collapse _ = id -- TODO

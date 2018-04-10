@@ -175,7 +175,7 @@ formToAst f =
 
     register v = do
       fd <- varDec v
-      fixedpointRegisterVariable fd
+      -- fixedpointRegisterVariable fd
       v' <- mkApp fd []
       envVars %= M.insert v v'
       return v'
