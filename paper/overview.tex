@@ -49,9 +49,9 @@ its input and stores the result in \cc{res}.
 The program also asserts that \cc{res} is greater than or equal to $0$
 before exiting.
 % talk about solving Horn Clauses:
-Verifying this assertion can be reduced to solving a recursion-free
-CHC system over a set of uninterpreted predicates that each represents
-a control location and procedure name in \cc{dblAbs}.
+Verifying this assertion reduces to solving a recursion-free
+CHC system over a set of uninterpreted predicates that represent
+the control locations in \cc{dblAbs}.
 %
 In particular, one such system $\mcchc$ is
 %
@@ -83,24 +83,25 @@ concrete representation of a program, or for a given CHC system to be
 the result of translation from a program at all.
 
 % solving the running example
-\subsection{\cc{dblAbs} as a Clause-Dependent Disjoint system}
+\subsection{$\mcchc$ as a Clause-Dependent Disjoint System}
 \label{sec:solve-ex}
 % state it is CDD
 The recursion-free CHC system $\mcchc$ is a
 \emph{Clause-Dependent-Disjoint} (CDD) system.
 % state the defn of CDD:
 A CDD system is a recursion-free CHC system such that
-each clause is dependence disjoint.
-A clause is dependence disjoint if no two predicates in the body share
-any transitive dependencies (i.e, they have no common predicates) and
-there are no two predicates that are the same.
+the dependencies between predicates in the system obey certain rules.
 %
-The formal definition of CDD and its key properties are given in
-\autoref{sec:CDD-defn}.
-
+One predicate is directly dependent on another if the second appears
+in the body of a clause where the first is the head.
+%
+Based on this, we say that a clause is dependence disjoint if
+\textbf{(1)} no two predicates in the body share any transitive
+dependencies on other predicates and \textbf{(2)} no two predicates in
+the body are the same.
 % give a example
-In particular, clause $(7)$ uses both $\cc{L}_9$ and $\cc{dbl}$ in its
-body.
+As an example, clause $(7)$ is dependence disjoint. Clause $(7)$ uses
+both $\cc{L}_9$ and $\cc{dbl}$ in its body.
 %
 The transitive dependency of $\cc{L}_9$ is the set
 $\{\cc{L}_4,\cc{L}_6,\cc{L}_8\}$, while the transitive dependency of
@@ -108,43 +109,41 @@ $\{\cc{L}_4,\cc{L}_6,\cc{L}_8\}$, while the transitive dependency of
 %
 Therefore, their transitive dependencies are disjoint:
 $\{\cc{L}_4,\cc{L}_6,\cc{L}_8\} \cap \varnothing = \varnothing$.
-If there were a conflict in the transitive dependencies, then $\mcchc$
-would not be a CDD system.
-%
-The formal definition of transitive dependency is given in\QZ{reference}.
 %
 All other clauses in $\mcchc$ have at most one uninterpreted predicate
 in the body, so they are trivially disjoint dependent.
 %
-Since every rule in $\mcchc$ is disjoint dependent, $\mcchc$ is a CDD
-system.
+When each clause in a CHC system is dependence disjoint, it is a CDD
+system. Therefore $\mcchc$ is a CDD system.
 %
 The fact that $\mcchc$ is CDD corresponds to the fact that there no
 statements executed more than once within one execution path.
 \DAH{elaborate}
 %
+The formal definition of CDD and its key properties are given in
+\autoref{sec:CDD-defn}.
+The formal definition of transitive dependency is given in\QZ{reference}.
+%
 
 % restate defn of CDD systems:
-\sys solves $\mcchc$ directly by issuing a binary interpolation query
-for each uninterpreted predicate in topological order.
+\sys solves CDD systems directly by issuing a binary interpolation
+query for each uninterpreted predicate in topological order.
 %
 Each uninterpreted predicate $P$ has a valid interpretation which can
-be computed by finding the interpolant of two formulas:
+be computed by interpolating
 \textbf{(1)} the \emph{pre}-formula, constructed from the solutions of
-each uninterpreted predicate $P$ directly depends on, constraints in
-clauses where $P$ is the head, and boolean indicator variables for
-each uninterpreted predicate in $\mcchc$%
+each uninterpreted predicate $P$ directly depends on and constraints
+in clauses where $P$ is the head and
 \textbf{(2)} the \emph{post}-formula, constructed from
-all constraints that occur after $P$ and boolean indicator
-variables for each uninterpreted predicate in $\mcchc$.
+all clauses where the head transitively depends on $P$.
 %
 
-We will walk through the interpolation query for $\cc{L}_9$ by hand.
-By the time \sys reaches $\cc{L}_9$ it will already have solutions for
-$\cc{L}_4$, $\cc{L}_6$, $\cc{L}_8$. Possible interpretations of these
-predicates are shown in \autoref{fig:ex-graph}.
+We will walk through the construction of an interpolation query for
+$\cc{L}_9$ by hand.  By the time \sys reaches $\cc{L}_9$ it will
+already have solutions for $\cc{L}_4$, $\cc{L}_6$, $\cc{L}_8$.
+Possible interpretations of these predicates are shown in
+\autoref{fig:ex-graph}.
 %
-\DAH{WORK FROM HERE}
 A solution for \cc{L9} can be constructed by interpolating \textbf{(1)}
 the \emph{pre}-formula, constructed as solutions generated for \cc{L4}, \cc{L6}
 the constraints in clauses (5) and (6) and boolean variables%
@@ -175,7 +174,7 @@ A detailed and formal description for the procedure of solving a CDD system is g
 \autoref{sec:solve-cdd}.
 
 
-\subsection{\cc{dblAbs} is not in other system}
+\subsection{$\mcchc$ is not in other system}
 \label{sec:not-in}
 %
 There are three classes of directly solvable systems has been introduced
