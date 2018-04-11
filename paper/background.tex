@@ -36,10 +36,10 @@ A Clause where the head is \cc{False} is called query.
 %
 % define a body function, head function, and recursion-free
 For a given CHC $C$, $\bodyof{C}$ denotes the vector of uninterpreted
-predicates in the body of $C$ and $\consof{C}$ denotes the fact in the
+predicates in the body and $\consof{C}$ denotes the fact in the
 body.
 %
-It is possible for an uninterpreted predicate to apper multiple times
+It is possible for an uninterpreted predicate to appear multiple times
 in the body of $C$.
 %
 If $C$ is not a query, then $\headof{C}$ denotes the uninterpreted
@@ -47,77 +47,87 @@ predicate in the head.
 %
 
 %define a CHC system
-A CHC system is a set of CHCs where exactly one clause is a query
+A CHC system is a set of CHCs where exactly one clause is a query.
 %
 For a given CHC system $S$, $\predof{S}$ denotes the set of all
 uninterpreted predicates.
 
 % define dependency predicates
 \begin{defn}
-  Given a CHC system $\cc{S}$ and two uninterpreted predicates $\cc{P}$ and
-  $\cc{Q} \in \predof{S}$, if $\exists \cc{C} \in \cc{S}$ such that $\cc{P} = \headof{C}$
-  and $\cc{Q} \in \bodyof{C}$, then $\cc{Q}$ is a dependency predicate of $\cc{P}$.
+  Given a CHC system $\cc{S}$ and two uninterpreted predicates
+  $\cc{P}$ and $\cc{Q} \in \predof{S}$, if $\exists \cc{C} \in \cc{S}$
+  such that $\cc{P} = \headof{C}$ and $\cc{Q} \in \bodyof{C}$, then
+  $\cc{Q}$ is a predicate dependency of $\cc{P}$.
 \end{defn}
 %
 \begin{ex}
-  Because uninterpreted predicates \cc{L4} is in the body of clause (4) and uninterpreted predicates \cc{L8}
-  is the head of clause (4), \cc{L4} is a dependency predicate of \cc{L8}.\autoref{chc}
+  In $\mcchc$, because $\cc{L}_4$ is in the body of clause (4) and
+  $\cc{L}_8$ is the head of clause (4), $\cc{L}_4$ is a predicate
+  dependency of $\cc{L}_8$.
 \end{ex}
 %
-Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$, $\depsof{P}$
-denotes the set of all dependency predicates of $\cc{P}$ in $\cc{S}$.
+Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$,
+$\depsof{P}$ denotes the set of all predicate dependencies of $\cc{P}$
+in $\cc{S}$.
 %
 
 %define transitive dependency predicates
 \begin{defn}
-  Given a CHC system $\cc{S}$ and three uninterpreted predicates $\cc{P},
-  \cc{Q}$ and $\cc{R} \in \predof{S}$, if $\cc{Q} \in \depsof{P}$ then \cc{Q} is a transitive dependency
-  predicate of \cc{P}. 
+  Given a CHC system $\cc{S}$ and three uninterpreted predicates
+  $\cc{P}, \cc{Q}$ and $\cc{R} \in \predof{S}$, if $\cc{Q} \in
+  \depsof{P}$ then \cc{Q} is a transitive predicate dependency of
+  \cc{P}.
   %
-  if \cc{Q} is a transitive dependency predicate of \cc{P}, and \cc{R} is a transitive dependency predicate
-  of \cc{Q},then $\cc{R}$ is a transitive dependency predicate of $\cc{P}$.
+  If \cc{Q} is a transitive predicate dependency of \cc{P} and \cc{R}
+  is a transitive predicate dependency of \cc{Q}, then $\cc{R}$ is a
+  transitive predicate dependency of $\cc{P}$.
 \end{defn}
 %
 \begin{ex}
-  Because uninterpreted predicates \cc{L4} is a dependency predicate of \cc{L8}, 
-  \cc{L4} is a transitive dependency predicate of \cc{L8}.
+  In $\mcchc$, because $\cc{L}_4$ is a predicate dependency of
+  $\cc{L}_8$, $\cc{L}_4$ is a transitive predicate dependency of
+  $\cc{L}_8$.
   %
-  And because \cc{L8} is an transitive dependency predicate of \cc{L9}, 
-  \cc{L4} is a transitive dependency predicate of \cc{L9}.\autoref{chc}
+  And because $\cc{L}_8$ is an transitive predicate dependency of
+  $\cc{L}_9$, $\cc{L}_4$ is a transitive predicate dependency of
+  $\cc{L}_9$.
 \end{ex}
 %
-Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$, $\tdepsof{P}$
-denotes the set of all transitive dependency predicates of $\cc{P}$ in $\cc{S}$.
+Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$,
+$\tdepsof{P}$ denotes the set of all transitive predicate dependencies
+of $\cc{P}$ in $\cc{S}$.
 %
 
 %define siblings
 \begin{defn}
-  Given a CHC system $\cc{S}$ and two uninterpreted predicates $\cc{P}$ and
-  $\cc{Q} \in \predof{S}$, if $\exists \cc{C} \in \cc{S}$ such that $\cc{P} \in \bodyof{C}$
-  and $\cc{Q} \in \bodyof{C}$, then $\cc{Q}$ and $\cc{P}$ are siblings of each other.
+  Given a CHC system $\cc{S}$ and two uninterpreted predicates
+  $\cc{P}$ and $\cc{Q} \in \predof{S}$, if $\exists \cc{C} \in \cc{S}$
+  such that $\cc{P} \in \bodyof{C}$ and $\cc{Q} \in \bodyof{C}$, then
+  $\cc{Q}$ and $\cc{P}$ are siblings.
 \end{defn}
 %
 \begin{ex}
-  Because uninterpreted predicates \cc{L9} and \cc{db} both shows in the body of
-  clause (6), \cc{L9} and \cc{db} are siblings of each other.
+  Because uninterpreted predicates $\cc{L}_9$ and $\cc{db}$ both
+  appear in the body of clause (6), $\cc{L}_9$ and $\cc{db}$ are
+  siblings.
   %
 \end{ex}
 %
-Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$, $\siblingof{P}$
-denotes the set of all siblings predicates of $\cc{P}$ in $\cc{S}$.
+Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$,
+$\siblingof{P}$ denotes the set of all predicate siblings of $\cc{P}$
+in $\cc{S}$.
+%
+For a given CHC system $\cc{S}$, if there are no uninterpreted
+predicate $\cc{P} \in \predof{S}$ such that $\cc{P} \in \tdepsof{P}$,
+then $\cc{S}$ is a \emph{recursion-free} CHCs system.
 %
 
+A solution to a CHC system $S$ is a map from each uninterpreted
+predicate $\cc{P} \in \predof{S}$ to its corresponding interpretation
+which is a formula.
 %
-For a given CHC system $\cc{S}$, there is no uninterpreted predicates $\cc{P} \in \predof{S}$ 
-such that $\cc{P} \in \tdepsof{P}$, then $\cc{S}$ is a \emph{recursion-free} CHCs system.
-%
-
-%
-A solution to a CHC system $S$ is a map that maps each each
-uninterpreted predicate $\cc{P} \in \predof{S}$ to its interpretation which is a formula.
-%
-All clauses in $S$ holds
-after substitute all uninterpreted predicates by its interpretation.
+For a solution to be valid, each clause in $S$ must be valid after
+substituting each uninterpreted predicate by its interpretation.
 
 % interpolants:
 \subsection{Logical interpolation}
