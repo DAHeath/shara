@@ -21,23 +21,41 @@ directly solvable classes introduced in previous work.
 \begin{figure}[t]
   \centering
   \begin{floatrow}[2]
-    \ffigbox[.26\textwidth] %
-    { \caption{\cc{dblAbs}: an example hierarchical program.} %
+    \ffigbox[.3\textwidth] {%
+      \caption{\cc{dblAbs}: an example hierarchical program.} %
       \label{fig:multicall-code} }
-    { \input{code/dblAbs.java} }
+    {\lstinputlisting[
+      basicstyle=\small,
+      xleftmargin=\parindent,
+      numbers=left,
+      morekeywords={def, return, if, else, assert}]{code/dblAbs.java}
+        % \input{code/dblAbs.java}}
+    }
     %
-    \ffigbox[.7\textwidth] %
-    {\caption{$\mcchc$ as a directed hypergraph.
-        % 
-        Each relational predicate is depicted as a graph node
-        while each clause is represented by a hyperedge.
-        Each hyperedge is labelled by the fact in the corresponding CHC\@.
-        Each node has a valid corresponding interpretation,
-        written in braces.
-      } %
-      \label{fig:ex-graph} }
-    % { \includegraphics[width=\linewidth]{fig/ex-deps.pdf} }
-      {\input{fig/example}}
+    \ffigbox[.66\textwidth]{%
+      \caption{A CHC system that models the safety condition of $\cc{dblAbs}$,
+    named $\mcchc$.}}{%
+      \label{fig:chc}
+      \begin{align}
+        % semantic constraint of dbl:
+        \cc{dbl}(\cc{x}, \cc{d}) &\gets \cc{d} = 2 * \cc{x} \\
+        % semantic constraint of line 3:
+        \cc{L}_4(\cc{n}, \cc{abs}) &\gets  \cc{abs} = 0 \\
+        % semantic constraint of line 5 (then branch)
+        \cc{L}_6(\cc{n}, \cc{abs}) &\gets \cc{L}_4(\cc{n}, \cc{abs}) \land \cc{n} \ge 0 \\
+        % semantic constraint of line 6 (else branch)
+        \cc{L}_8(\cc{n}, \cc{abs}) &\gets \cc{L}_4(\cc{n}, \cc{abs}) \land \cc{n} < 0 \\
+        % assign branch
+        \cc{L}_9(\cc{n}, \cc{abs'}) &\gets \cc{L}_6(\cc{n},\cc{abs}) \land \cc{abs'} = \cc{n} \\
+        \cc{L}_9(\cc{n}, \cc{abs'}) &\gets \cc{L}_8(\cc{n},\cc{abs}) \land \cc{abs'} = -\cc{n} \\
+        % semantic constraint of main procedure:
+        \cc{main}(\cc{n},\cc{res}) &\gets \cc{L}_9(\cc{n}, \cc{abs'}) \land
+        \cc{dbl}(\cc{x}, \cc{d})
+        \land \cc{abs'} = \cc{x} \land \cc{res} = \cc{d} \\
+        %
+        \bot &\gets \cc{main}(\cc{n}, \cc{res}) \land \cc{res} < 0 
+      \end{align}
+    }
   \end{floatrow}
 \end{figure}
 % walk through code of running example:
@@ -52,28 +70,8 @@ Verifying this assertion reduces to solving a recursion-free
 CHC system over a set of uninterpreted predicates that represent
 the control locations in \cc{dblAbs}.
 %
-In particular, one such system $\mcchc$ is
+In particular, one such system $\mcchc$ is shown in \autoref{fig:chc}.
 %
-\begin{align}
-\label{chc}
-  % semantic constraint of dbl:
-\cc{dbl}(\cc{x}, \cc{d}) &\gets \cc{d} = 2 * \cc{x} \\
-  % semantic constraint of line 3:
-  \cc{L}_4(\cc{n}, \cc{abs}) &\gets  \cc{abs} = 0 \\
-  % semantic constraint of line 5 (then branch)
-  \cc{L}_6(\cc{n}, \cc{abs}) &\gets \cc{L}_4(\cc{n}, \cc{abs}) \land \cc{n} \ge 0 \\
-  % semantic constraint of line 6 (else branch)
-  \cc{L}_8(\cc{n}, \cc{abs}) &\gets \cc{L}_4(\cc{n}, \cc{abs}) \land \cc{n} < 0 \\
-  % assign branch
-  \cc{L}_9(\cc{n}, \cc{abs'}) &\gets \cc{L}_6(\cc{n},\cc{abs}) \land \cc{abs'} = \cc{n} \\
-   \cc{L}_9(\cc{n}, \cc{abs'}) &\gets \cc{L}_8(\cc{n},\cc{abs}) \land \cc{abs'} = -\cc{n} \\
-  % semantic constraint of main procedure:
-   \cc{main}(\cc{n},\cc{res}) &\gets \cc{L}_9(\cc{n}, \cc{abs'}) \land
-                                     \cc{dbl}(\cc{x}, \cc{d})
-    \land \cc{abs'} = \cc{x} \land \cc{res} = \cc{d} \\
-  %
-    \bot &\gets \cc{main}(\cc{n}, \cc{res}) \land \cc{res} < 0 
-\end{align}
 %
 While $\mcchc$ has been presented as the result
 of a translation from \cc{dblAbs}, \sys is
@@ -236,8 +234,26 @@ efficient, but in general such approaches can generate systems that
 are exponentially larger than the input.
 
 %% talk about expansion:
-\begin{figure}
-  \input{fig/hierarchy}
+\begin{figure}[t]
+  \centering
+  \begin{floatrow}[2]
+    \ffigbox[.45\textwidth] {%
+      {\caption{$\mcchc$ as a directed hypergraph. Each relational
+          predicate is depicted as a graph node while each clause is
+          represented by a hyperedge. Each hyperedge is labelled by the
+          fact in the corresponding CHC\@. Each node has a valid
+          corresponding interpretation, written in braces.
+      }\label{fig:ex-graph}}}
+      {\input{fig/example}}
+    \ffigbox[.45\textwidth]
+      {\caption{The hierarchy of classes of recursion-free CHC
+          systems. Body Disjoint and Linear systems are subsumed by
+          CDD systems. Solving Directly Solvable CHC systems is in
+          co-NP while solving general, recursion-free systems is
+          co-NEXPTIME Complete.
+      }\label{fig:hierarchy}}
+      {\input{fig/hierarchy}}
+  \end{floatrow}
 \end{figure}
 
 The class CDD of CDD systems is a superclass of union of the classes of

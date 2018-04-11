@@ -29,21 +29,17 @@ Recursion-free CHC systems are an important subclass for two reasons.
 First, recursion-free systems can be used to model safety properties
 for hierarchical programs~\cite{lal-qadeer15,lal-qadeer-lahiri12}
 (programs with only bounded iteration and recursion).
-
-
-
 %
-Second and most importantly, A well-known approach for solving a general CHC
-system can reduce to solving a sequence of recursion-free
-systems \QZ{reference}.
+Second and most importantly, a well-known approach for solving a
+general CHC system can reduces the input problem to solving a sequence
+of recursion-free systems \QZ{reference}.
 %
-Many solvers attempt to synthesize the solution of the original system 
-by using the solutions of constructed recruion-free system~\cite{bjorner13}.
+Such approaches attempt to synthesize a solution for the   original
+system from the solutions of recursion-free systems~\cite{bjorner13}.
 %
-Because of this, the performance of solving general CHC system is heavily reliant on the 
-performance of the solving recursion-free CHC system.
+Because of this, the performance of solving general CHC system relies
+heavily on the performance of solving recursion-free CHC systems.
 %
-
 
 % current general techniques for solving recursion-free systems
 Typically, recursion-free CHC systems are not solved directly.
@@ -60,22 +56,22 @@ We will discuss these classes in \autoref{sec:overview} and
 \autoref{sec:related-work}.
 %
 Such classes can be solved by issuing
-\emph{interpolation queries} for uninterpreted predicate and 
-each constrains shows only one time in the interpolation query.
+\emph{interpolation queries} to find suitable definitions for the
+uninterpreted predicates.
 %
-We
-refer such class as \emph{directly solvable}.
+We refer such classes as \emph{directly solvable}.
 
 % Time complexity
-In general, solving a recursion-free CHC system for 
-propositional logic and theory of linear integer arithmetic is
+In general, solving a recursion-free CHC system for
+propositional logic and the theory of linear integer arithmetic is
 co-NEXPTIME-complete~\cite{rummer13b}.
 %
-In contrast, solving a directly solvable system with the same logic and theories
-is in co-NP~\cite{rummer13b}.
+In contrast, solving a directly solvable system with the same logic
+and theories is in co-NP~\cite{rummer13b}.
 %
-Therefore, the performance of solving a recurion-free system is highly reliant on the
-size of the directly solvable systems it is reduced to.
+Therefore, the performance of solving a recursion-free system is
+highly reliant on the size of the directly solvable system it reduces
+to.
 
 % contribution of this paper: CDD systems:
 The first contribution of this paper is the introduction of a novel
@@ -115,7 +111,7 @@ sequence of recursion-free systems.
 %
 Each subsystem is a bounded unwinding of the original system. \sys
 attempts to combine the solutions of these recursion-free systems to
-synthesize a soltuion to the original problem, as has been proposed
+synthesize a solution to the original problem, as has been proposed
 in previous work~\cite{rummer13b}.
 
 % experience:
@@ -149,8 +145,3 @@ based.
 of \sys.
 %
 \autoref{sec:related-work} compares \sys to related work.
-
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: "p"
-%%% End: 

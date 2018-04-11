@@ -8,9 +8,8 @@
 
 \subsubsection{Structure}
 % definition of CHC
-As stated in \autoref{sec:intro} a Constrained Horn Clause is a
-logical implication where the antecedent is called the body and the
-consequent is called the head.
+A Constrained Horn Clause is a logical implication where the
+antecedent is called the body and the consequent is called the head.
 %
 The body is a conjunction of a logical formula, called the fact,
 and a vector of uninterpreted predicates. The fact is an arbitrary
@@ -21,25 +20,23 @@ not appear in the fact.
 %
 A head can be either an uninterpreted predicate applied to variables or \cc{False}.
 %
-A Clause where the head is \cc{False} is called query.
-\begin{defn}
-  CHCs can be defined structurally:
+A clause where the head is \cc{False} is called a query. A CHC can be
+defined structurally:
 \begin{align*}
-  \cc{chc} &\Coloneqq \cc{head} \gets \cc{body} \\
-  \cc{head} &\Coloneqq \cc{False} \\&\mid \cc{pred}  \\
-  \cc{body} &\Coloneqq \varphi \wedge \cc{preds} \\
-  \cc{preds} &\Coloneqq \cc{True} \\&\mid \cc{pred} \wedge \cc{preds} \\
-  \cc{pred} &\Coloneqq \textsf{an uninterpreted predicate applied to variables} \\
-  \varphi &\Coloneqq \textsf{a formula that all variables are vocabulary} \\
+\cc{chc} &\Coloneqq \cc{head} \gets \cc{body} \\
+\cc{head} &\Coloneqq \cc{False} \\&\mid \cc{pred}  \\
+\cc{body} &\Coloneqq \varphi \wedge \cc{preds} \\
+\cc{preds} &\Coloneqq \cc{True} \\&\mid \cc{pred} \wedge \cc{preds} \\
+\cc{pred} &\Coloneqq \textsf{an uninterpreted predicate applied to variables} \\
+\varphi &\Coloneqq \textsf{a formula that all variables are vocabulary} \\
 \end{align*}
-\end{defn}
 %
 % define a body function, head function, and recursion-free
 For a given CHC $C$, $\bodyof{C}$ denotes the vector of uninterpreted
-predicates in the body of $C$ and $\consof{C}$ denotes the fact in the
+predicates in the body and $\consof{C}$ denotes the fact in the
 body.
 %
-It is possible for an uninterpreted predicate to apper multiple times
+It is possible for an uninterpreted predicate to appear multiple times
 in the body of $C$.
 %
 If $C$ is not a query, then $\headof{C}$ denotes the uninterpreted
@@ -47,94 +44,102 @@ predicate in the head.
 %
 
 %define a CHC system
-A CHC system is a set of CHCs where exactly one clause is a query
+A CHC system is a set of CHCs where exactly one clause is a query.
 %
 For a given CHC system $S$, $\predof{S}$ denotes the set of all
 uninterpreted predicates.
 
 % define dependency predicates
 \begin{defn}
-  Given a CHC system $\cc{S}$ and two uninterpreted predicates $\cc{P}$ and
-  $\cc{Q} \in \predof{S}$, if $\exists \cc{C} \in \cc{S}$ such that $\cc{P} = \headof{C}$
-  and $\cc{Q} \in \bodyof{C}$, then $\cc{Q}$ is a dependency predicate of $\cc{P}$.
+  Given a CHC system $\cc{S}$ and two uninterpreted predicates
+  $\cc{P}$ and $\cc{Q} \in \predof{S}$, if $\exists \cc{C} \in \cc{S}$
+  such that $\cc{P} = \headof{C}$ and $\cc{Q} \in \bodyof{C}$, then
+  $\cc{Q}$ is a predicate dependency of $\cc{P}$.
 \end{defn}
 %
 \begin{ex}
-  Because uninterpreted predicates \cc{L4} is in the body of clause (4) and uninterpreted predicates \cc{L8}
-  is the head of clause (4), \cc{L4} is a dependency predicate of \cc{L8}.\autoref{chc}
+  In $\mcchc$, because $\cc{L}_4$ is in the body of clause (4) and
+  $\cc{L}_8$ is the head of clause (4), $\cc{L}_4$ is a predicate
+  dependency of $\cc{L}_8$.
 \end{ex}
 %
-Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$, $\depsof{P}$
-denotes the set of all dependency predicates of $\cc{P}$ in $\cc{S}$.
+Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$,
+$\depsof{P}$ denotes the set of all predicate dependencies of $\cc{P}$
+in $\cc{S}$.
 %
 
 %define transitive dependency predicates
 \begin{defn}
-  Given a CHC system $\cc{S}$ and three uninterpreted predicates $\cc{P},
-  \cc{Q}$ and $\cc{R} \in \predof{S}$, if $\cc{Q} \in \depsof{P}$ then \cc{Q} is a transitive dependency
-  predicate of \cc{P}. 
+  Given a CHC system $\cc{S}$ and three uninterpreted predicates
+  $\cc{P}, \cc{Q}$ and $\cc{R} \in \predof{S}$, if $\cc{Q} \in
+  \depsof{P}$ then \cc{Q} is a transitive predicate dependency of
+  \cc{P}.
   %
-  if \cc{Q} is a transitive dependency predicate of \cc{P}, and \cc{R} is a transitive dependency predicate
-  of \cc{Q},then $\cc{R}$ is a transitive dependency predicate of $\cc{P}$.
+  If \cc{Q} is a transitive predicate dependency of \cc{P} and \cc{R}
+  is a transitive predicate dependency of \cc{Q}, then $\cc{R}$ is a
+  transitive predicate dependency of $\cc{P}$.
 \end{defn}
 %
 \begin{ex}
-  Because uninterpreted predicates \cc{L4} is a dependency predicate of \cc{L8}, 
-  \cc{L4} is a transitive dependency predicate of \cc{L8}.
+  In $\mcchc$, because $\cc{L}_4$ is a predicate dependency of
+  $\cc{L}_8$, $\cc{L}_4$ is a transitive predicate dependency of
+  $\cc{L}_8$.
   %
-  And because \cc{L8} is an transitive dependency predicate of \cc{L9}, 
-  \cc{L4} is a transitive dependency predicate of \cc{L9}.\autoref{chc}
+  And because $\cc{L}_8$ is an transitive predicate dependency of
+  $\cc{L}_9$, $\cc{L}_4$ is a transitive predicate dependency of
+  $\cc{L}_9$.
 \end{ex}
 %
-Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$, $\tdepsof{P}$
-denotes the set of all transitive dependency predicates of $\cc{P}$ in $\cc{S}$.
+Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$,
+$\tdepsof{P}$ denotes the set of all transitive predicate dependencies
+of $\cc{P}$ in $\cc{S}$.
 %
 
 %define siblings
 \begin{defn}
-  Given a CHC system $\cc{S}$ and two uninterpreted predicates $\cc{P}$ and
-  $\cc{Q} \in \predof{S}$, if $\exists \cc{C} \in \cc{S}$ such that $\cc{P} \in \bodyof{C}$
-  and $\cc{Q} \in \bodyof{C}$, then $\cc{Q}$ and $\cc{P}$ are siblings of each other.
+  Given a CHC system $\cc{S}$ and two uninterpreted predicates
+  $\cc{P}$ and $\cc{Q} \in \predof{S}$, if $\exists \cc{C} \in \cc{S}$
+  such that $\cc{P} \in \bodyof{C}$ and $\cc{Q} \in \bodyof{C}$, then
+  $\cc{Q}$ and $\cc{P}$ are siblings.
 \end{defn}
 %
 \begin{ex}
-  Because uninterpreted predicates \cc{L9} and \cc{db} both shows in the body of
-  clause (6), \cc{L9} and \cc{db} are siblings of each other.
+  Because uninterpreted predicates $\cc{L}_9$ and $\cc{db}$ both
+  appear in the body of clause (6), $\cc{L}_9$ and $\cc{db}$ are
+  siblings.
   %
 \end{ex}
 %
-Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$, $\siblingof{P}$
-denotes the set of all siblings predicates of $\cc{P}$ in $\cc{S}$.
+Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$,
+$\siblingof{P}$ denotes the set of all siblings of $\cc{P}$
+in $\cc{S}$.
+%
+For a given CHC system $\cc{S}$, if there are no uninterpreted
+predicate $\cc{P} \in \predof{S}$ such that $\cc{P} \in \tdepsof{P}$,
+then $\cc{S}$ is a \emph{recursion-free} CHCs system.
 %
 
+A solution to a CHC system $S$ is a map from each uninterpreted
+predicate $\cc{P} \in \predof{S}$ to its corresponding interpretation
+which is a formula.
 %
-For a given CHC system $\cc{S}$, there is no uninterpreted predicates $\cc{P} \in \predof{S}$ 
-such that $\cc{P} \in \tdepsof{P}$, then $\cc{S}$ is a \emph{recursion-free} CHCs system.
-%
-
-%
-A solution to a CHC system $S$ is a map that maps each each
-uninterpreted predicate $\cc{P} \in \predof{S}$ to its interpretation which is a formula.
-%
-All clauses in $S$ holds
-after substitute all uninterpreted predicates by its interpretation.
+For a solution to be valid, each clause in $S$ must be valid after
+substituting each uninterpreted predicate by its interpretation.
 
 % interpolants:
 \subsection{Logical interpolation}
 \label{sec:itps}
 %
-\sys solves CHC systems, logic-programming problems in which a
-solution maps predicate symbols to first-order formulas.
-%
 All objects defined in this paper are defined over a fixed space of
 first-order logical variables $X$.
 %
-In particular, for theory $\mathcal{T}$, the space of $\mathcal{T}$
+In particular, for a theory $\mathcal{T}$, the space of $\mathcal{T}$
 formulas over $X$ is denoted $\tformulas{\mathcal{T}}$.
 %
 For each formula $\varphi \in \tformulas{\mathcal{T}}$, the set of
 variables that occur in $\varphi$ (i.e., the \emph{vocabulary} of
 $\varphi$) is denoted $\vocab(\varphi)$.
+%
 % define models, satisfaction, entailment
 For formulas $\varphi_0, \ldots, \varphi_n, \varphi \in
 \tformulas{\mathcal{T}}$, the fact that $\varphi_0, \ldots, \varphi_n$
@@ -164,19 +169,18 @@ vocabulary that explains their inconsistency.
 \begin{defn}
   \label{defn:itps}
   % define:
-  For $\varphi_0, \varphi_1 \in \tformulas{\mathcal{T}}$, $I \in
-  \tformulas{\mathcal{T}}$ such that
+  For $\varphi_0, \varphi_1, I \in \tformulas{\mathcal{T}}$, if
   %
   \textbf{(1)} $\varphi_0 \entails I$, %
-  \textbf{(2)} $I, \varphi_1 \entails \false$, and %
+  \textbf{(2)} $I \land \varphi_1 \entails \false$, and %
   \textbf{(3)} $\vocab(I) \subseteq \vocab(\varphi_0) \intersection
   \vocab(\varphi_1)$,
   %
-  $I$ is an \emph{interpolant} of $\varphi_0$ and $\varphi_1$.
+  then $I$ is an \emph{interpolant} of $\varphi_0$ and $\varphi_1$.
 \end{defn}
 %
-All spaces of formulas in the remainder of this paper will be defined
-for a fixed, arbitrary theory $\mathcal{T}$ that supports
+For the remainder of this paper, all spaces of formulas will be
+defined for a fixed, arbitrary theory $\mathcal{T}$ that supports
 interpolation, such as combinations of the theories of linear
 arithmetic and the theory of uninterpreted functions with equality.
 % introduce decision procedure:
@@ -185,11 +189,6 @@ is NP-complete in general, decision procedures~\cite{moura08} and
 interpolating theorem provers~\cite{mcmillan04} for such theories have
 been proposed that operate on such formulas efficiently.
 %
-\sys is defined as using a decision procedure for $\mathcal{T}$ named
-\issat, and an interpolating theorem prover for $\mathcal{T}$ named
-$\solveitp$.
-
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: "p"
-%%% End: 
+We define \sys in terms of an abstract decision procedure for
+$\mathcal{T}$ named \issat, and an abstract interpolating theorem
+prover for $\mathcal{T}$ named $\solveitp$.
