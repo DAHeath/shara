@@ -2,119 +2,91 @@
 \section{Introduction}
 \label{sec:intro}
 % context, problem defn:
-Many critical problems in program verification, such as the
-verification of safety properties of recursive programs and
-concurrent programs, can be reduced to solving systems of
-\emph{Constrained Horn Clauses} (CHCs), a class of logic-programming
+Many critical problems in program verification can be reduced to
+solving systems of Constrained Horn Clauses (CHCs), a class of
+logic-programming
 problems~\cite{bjorner13,flanagan03,rummer13a,rummer13b}.
-
-
-% general introduce chc system
-A CHC consists of a body of applications of uninterpreted relational
-predicates, a constraint in a first-order theory, and a head
-application of a relational-predicate.
 %
-A CHC system consists of a set of CHCs and a query relational
-predicate.
-% 
-A solution of a system is an interpretation of each relational
-predicate as a formula such that each clause body with predicate
-symbols substituted with their interpretation entails the interpreted
-clause head.
-\QZ{This seems really out of place -- DAH}
+A CHC is a logical implication where the antecedent is a conjunction
+of uninterpreted relational predicates with a fact in a background
+theory and the consequent is an uninterpreted relational predicate. In
+the context of a CHC we call the antecedent the body and the
+consequent the head.  A CHC system is a set of CHCs.
+%
+The goal of a CHC solving problem is to find suitable interpretations
+for each relational predicate such that each CHC is logically
+consistent in isolation.
 
 % introduce the problem of solving recursion-free systems:
 In this work we focus on the subclass of CHC systems which are known
 as \emph{recursion-free}. In a recursion-free CHC system, the
 derivation of each relational predicate will contain no references to
-itself. \QZ{\DAH{I still think we need a small example here}} I.e., no
-relational predicate is \emph{dependent} on itself.
+itself. \QZ{\DAH{I still think we need a small example here}}
 %
 Recursion-free CHC systems are an important subclass for two reasons.
 %
 First, recursion-free systems can be used to model safety properties
-for hierarchical programs~\cite{lal-qadeer15,lal-qadeer-lahiri12},
-i.e., programs with control branches and procedure calls, but only
-bounded iteration and recursion.
+for hierarchical programs~\cite{lal-qadeer15,lal-qadeer-lahiri12}
+(programs with only bounded iteration and recursion).
 %
-Second (and most importantly), the task of solving a general CHC
+Second and most importantly, the task of solving a general CHC
 system can reduce to the task of solving a sequence of recursion-free
-systems.
-%
+systems \QZ{reference}.
+
 Many \QZ{more references? Or remove many.} modern solvers generate
-such a sequence where each subsystem is a bounded unwinding of the
-input system. These solvers attempt to show that the solution to a
-given subsystem generalizes to the original system or else generate a
+a sequence such that each subsystem is a bounded unwinding of the
+input system. These solvers either attempt to show that the solution to a
+given subsystem generalizes to the original system or generate a
 larger subsystem for the next iteration~\cite{bjorner13}.
 %
-Such solvers are heavily reliant on the performance of the underlying
-recursion-free solver since they invoke this underlying solver in an
-iterative loop.
+Since such solvers inspect recursion-free systems in an iterative
+loop, they are heavily reliant on the performance of the underlying
+recursion-free solver.
 %
 % current general techniques for solving recursion-free systems
 Typically, even recursion-free CHC systems are not solved directly.
-Instead, they are reduced to some even more specific subclass of CHC
-system. For example, some approaches generate CHC systems whose
-derivations are trees~\cite{bjorner13}.
-\QZ{In general it seems we need many more references in the intro.}
+Instead, they are reduced to a more specific subclass of
+recursion-free CHC system.
 %
-A solver can dispatch such a system by issuing interpolation queries
-to find a suitable definition for each relational predicate.
+These classes include those of
+\emph{body disjoint} (or \emph{tree structure})
+systems~\cite{heizmann10,bjorner13,mcmillan14,rummer13a,rummer13b} and
+of \emph{linear} systems~\cite{albarghouthi12a}.
 %
-We refer to the subclass of CHC systems that can be solved by such
-techniques as \emph{directly solvable}.
+We will discuss these classes in \autoref{sec:overview} and
+\autoref{sec:related-work}.
+%
+Such classes have proved practical because a solver can find
+suitable definitions for relational predicates by issuing
+\emph{interpolation queries}.
+%
+When a class of CHC systems can be solved by interpolation queries, we
+say the class is \emph{directly solvable}.
 
 % Time complexity
 In general, solving a recursion-free CHC system whose facts are
-restricted to the theory of integer linear arithmetic is
+restricted to the theory of linear integer arithmetic is
 co-NEXPTIME-complete~\cite{rummer13b}.
 %
-In contrast, solving a directly solvable system in the same theories
-is co-NP~~\cite{rummer13b}.
+In contrast, solving a directly solvable system with the same theories
+is in co-NP~\cite{rummer13b}.
 %
 Therefore, the performance of a CHC solver is highly reliant on the
-order (i.e the number of predicates) of the directly solvable systems
-it produces.
-
-\begin{figure}
-\input{fig/hierarchy}
-\end{figure}
-
-% current subclass
-Previous work has introduced three classes of directly solvable
-systems,
-% derivation trees:
-\textbf{(1)} tree systems~\cite{heizmann10,bjorner13,mcmillan14}, %
-% disjunctive trees:
-\textbf{(2)} body-disjoint systems, which represent multiple
-derivation trees with a single disjunctive tree
-system~\cite{rummer13a,rummer13b}, and
-% linear systems:
-\textbf{(3)} linear CHC systems, which can compactly represent
-multiple linear derivations with a single system structured as a
-Directed Acyclic Graph (DAG)~\cite{albarghouthi12a}.
-%
-The class of body-disjoint systems strictly contains the class of
-derivation trees, and is independent of the class of linear systems
-(i.e., the classes overlap, and neither contains the
-other)~\cite{rummer13a,rummer13b}.
+size of the directly solvable systems it produces.
 
 % contribution of this paper: CDD systems:
 The first contribution of this paper is the introduction of a novel
-class of directly solvable systems that is a superset of both
-the body-disjoint subclass and the linear subclass.
+class of directly solvable systems that we refer to as
+\emph{Clause-Dependence Disjoint} (CDD).
 %
-In particular, the class consists of all recursion-free CHC systems
-such that, for each clause $C$, the dependences of all distinct
-relational predicates in the body of $C$ are disjoint \DAH{\QZ{Should
-we illustrate what disjoin means here?}};
+The class consists of all recursion-free CHC systems such that each
+clause in the system has at most one dependency on the same relational
+predicate.
 %
-we thus refer to such systems as \emph{Clause-Dependent Disjoint
-(CDD)} systems.
-%
-We demonstrate that the class of CDD systems is directly solvable
-through a symbolic algorithm.
-%
+The key characteristic of this class is that CDD systems are often
+smaller than equivalent systems in other directly solvable classes,
+and therefore solving recursion free systems by rewriting them in CDD
+form is often less computationally expensive.
 
 % a new solver
 The second contribution of this paper is a solver for CHC systems,
@@ -124,32 +96,26 @@ Given a recursion-free system $S$, \sys reduces the problem
 of solving $S$ to solving an equivalent CDD system
 $S'$.
 %
-In the worst case, it is possible that the order of $S'$ may be
-exponential in the order of $S$.
+In the worst case, it is possible that the size of $S'$ may be
+exponential in the size of $S$.
 %
-However, empirically we have found that the order of $S'$ is usually
-close enough to the order of $S$ that \sys often outperforms the best
+However, empirically we have found that the size of $S'$ is usually
+close enough to the size of $S$ that \sys often outperforms the best
 known CHC solvers.
 %
-Because the class of CDD systems is a superset of both body-disjoint
-and linear systems, the order of an equivalent CDD system is always
-less than or equal to that of systems in these subclasses.
+The procedure implemented in \sys is a generalization of existing
+techniques that synthesize compact verification conditions for
+hierarchical programs~\cite{flanagan01,lal-qadeer15}.
 %
-The procedure implemented in \sys to construct $S'$ is a
-generalization of existing procedures for generating compact
-verification conditions of hierarchical
-programs~\cite{flanagan01,lal-qadeer15}.
-%
-Given a general (possibly recursive) CHC system, \sys solves a sequence of
-recursion-free systems.
+Given a general (possibly recursive) CHC system, \sys solves a
+sequence of recursion-free systems.
 %
 Each subsystem is a bounded unwinding of the original system. \sys
 attempts to combine the solutions of these recursion-free systems to
-synthesize a soltuion of the original solution, as has been proposed
+synthesize a soltuion to the original problem, as has been proposed
 in previous work~\cite{rummer13b}.
 
 % experience:
-\QZ{need to change if need}
 We implemented \sys within the \duality CHC solver~\cite{bjorner13},
 which is implemented within the \zthree automatic theorem
 prover~\cite{moura08}.
@@ -157,7 +123,7 @@ prover~\cite{moura08}.
 We evaluated the effectiveness of \sys on standard benchmarks drawn
 from SVCOMP15~\cite{svcomp15}.
 %
-The results indicate that in a strong majority of practical cases,
+The results indicate that in a strong majority of cases,
 \sys performs better than modern solvers.
 %
 Futhermore, the results indicate that combining the strengths of \sys
