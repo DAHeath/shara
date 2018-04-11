@@ -86,13 +86,13 @@ $\expandaux$ recurses on the CHC system returned by $\copyrel $ and returns the 
 %  
 
 % CDD systems:
-$\expand{\mathcal{R}}$ always returns a CDD expansion of its input
+$\expand$ always returns a CDD expansion of its input
 (see \autoref{app:corr}, \autoref{lem:expand-corr}) that is minimal.
 % discussion: there are variations:
-$\expand{ \mathcal{R} }$ is certainly not unique as an algorithm for
+$\expand$ is certainly not unique as an algorithm for
 generating a minimal CDD expansion.
 %
-In particular, feasible variations of $\expand{ \mathcal{R} }$ can be
+In particular, feasible variations of $\expand$ can be
 generated from different implementations of $\sharingclause$, each of
 which chooses clause-relations pairs to return based on different
 heuristics.
@@ -119,35 +119,36 @@ The following is a proof of \autoref{thm:cdd-contains}.
   body-disjoint.
 
   % contains linear systems:
-  For goal \textbf{(1)}, let $\mathcal{S}$ be an arbitrary linear
+  For goal \textbf{(1)}, let $S$ be an arbitrary linear
   system.
   %
-  $\mathcal{S}$ is CDD if for each clause $\mathcal{C}$ in
-  $\mathcal{S}$, for each pair of distinct relational predicates in
-  the body of $\mathcal{C}$, the transitive dependence are disjoint
+  $S$ is CDD if for each clause $C$ in
+  $S$, each pair of distinct predicates in
+  the body of $C$, the transitive dependence are disjoint, and
+  no predicates shows more than once in the body of $C$.
   (\autoref{defn:cdds}).
   %
-  Let $\mathcal{C}$ be an arbitrary clause in $\mathcal{S}$.
+  Let $C$ be an arbitrary clause in $S$.
   %
-  $\mathcal{C}$ has no pairs of distinct clauses, by the fact that
-  $\mathcal{S}$ is linear.
+  The body of $C$ has no pair of distinct predicates or a predicates shows more than once, by the fact that
+  $S$ is linear.
   %
-  Therefore, $\mathcal{S}$ is CDD.
+  Therefore, $S$ is CDD.
 
   % contains body-disjoint systems:
-  For goal \textbf{(2)}, let $\mathcal{S}$ be an arbitrary
+  For goal \textbf{(2)}, let $S$ be an arbitrary
   body-disjoint system.
   %
-  The dependence relation of $\mathcal{S}$ is a tree $T$, by the
+  The dependence relation of $S$ is a tree $T$, by the
   definition of a body-disjoint system.
   %
-  Let $\mathcal{C}$ be an arbitrary clause in $\mathcal{S}$, with
+  Let $C$ be an arbitrary clause in $S$, with
   distinct relational predicates $R_0$ and $R_1$ in its body.
   %
   All dependences of $R_0$ and $R_1$ are in subtrees of $T$, which
   are disjoint by the definition of a tree.
   %
-  Thus, $\mathcal{S}$ is CDD, by \autoref{defn:cdds}.
+  Thus, $S$ is CDD, by \autoref{defn:cdds}.
 
   % distinguishing example:
   For goal \textbf{(3)}, the system $\mcchc$ is CDD, but is not linear
@@ -162,8 +163,8 @@ recursion-free CHC systems.
 %
 We first establish lemmas for the correctness of each procedure used
 by \sys, namely \textsc{Collapse} (\autoref{lem:expansion-sound} and
-\autoref{lem:expansion-complete}), $\expand{\mathcal{R}}$
-(\autoref{lem:expand-corr}), and $\solvecdd{ \mathcal{R} }$
+\autoref{lem:expansion-complete}), $\expand$
+(\autoref{lem:expand-corr}), and $\solvecdd$
 (\autoref{lem:vc}, \autoref{lem:cdd-soln-sound}, and
 \autoref{lem:cdd-soln-complete}).
 %
@@ -171,17 +172,16 @@ We combine the lemmas to prove correctness of \sys
 (\autoref{thm:corr}).
 
 % lem: result connecting expansions to constructing solutions
-For CHC systems $\mathcal{S}$ and $\mathcal{S}'$, if $\mathcal{S}'$ is
-an expansion of $\mathcal{S}$, then the result of collapsing a
-solution of $\mathcal{S}'$ is a solution of $\mathcal{S}$.
+For recursion-free CHC systems $S$ and $S'$, if $S'$ is
+an expansion of $S$, then the result of collapsing a
+solution of $S'$ is a solution of $S$.
 %
 \begin{lem}
   \label{lem:expansion-sound}
-  For $\mathcal{R}, \mathcal{R}' \in \relpreds$, $\mathcal{S} \in
-  \chcs{ \mathcal{R} }$, $\mathcal{S}' \in \chcs{ \mathcal{R}' }$,
-  $\sigma' \in \interps{ \mathcal{R}' }$, and $\eta : \mathcal{R}' \to
-  \mathcal{R}$ a correspondence from $\mathcal{S}'$ to $\mathcal{S}$,
-  $\collapse{\eta}{\sigma'}$ is a solution of $\mathcal{S}$.
+  For recursion-free CHC system $S'$ and $S$,
+  $\sigma'$ is a solution of $S'$, and $\eta : \predof{S}' \to
+  \predof{S}$ a correspondence from $\predof{S}'$ to $\predof{S}$,
+  $\collapse{\eta}{\sigma'}$ is a solution of $S$.
 \end{lem}
 %
 \begin{proof}
@@ -190,265 +190,216 @@ solution of $\mathcal{S}'$ is a solution of $\mathcal{S}$.
   and $R \in \mathcal{R}$ be such that $((\mathcal{B}, \varphi),
   R(\vars{ \mathcal{S} }(R))) \in \mathcal{S}$.
   %
-  For each $R' \in \mathcal{R}'$ such that $\eta(R') = R$, there is
-  some $\mathcal{B}' \in \bodies{ \mathcal{R}' }$ such that
-  $((\mathcal{B}', \varphi), R'(\vars{ \mathcal{S} }(R))) \in
-  \mathcal{S}'$, by the fact that $\mathcal{S}'$ is an expansion of
-  $\mathcal{S}$ and the definition of an expansion.
+  For each predicate $P' \in \predof{S}'$ such that $\eta(P') = P$, there is
+  some clause $C' \in S'$ such that $P' \in \bodyof{C'}$ by the fact that $S'$ is an expansion of
+  $S$ and the definition of an expansion.
   %
-  $\sigma'(\mathcal{B}'), \varphi \entails \sigma'(\mathcal{R}')$ by
-  the fact that $\sigma'$ is a solution of $\mathcal{S}'$.
-  %
-  $\collapse{ \eta }{ \sigma' }(\mathcal{B}), \varphi \entails
-  \sigma'(\mathcal{R}')$, by the definition of
-  $\collapse{\eta}{\sigma'}$.
+  Let preicate $Q' \in \predof{S}'$ such that $Q'$ is the head of clause $C'$.
+  % 
+  $\sigma'[P'] \land \consof{C'} \entails \sigma'[Q']$ by
+  the fact that $\sigma'$ is a solution of $S'$.
   %
   Therefore,
   %
-  \[ \collapse{ \eta }{ \sigma' }( \mathcal{B} ), \varphi \entails %
-  \left( \bigland_{ \substack{R' \in \mathcal{R}' \\ \eta(R') = R} }
-  \sigma(R') \right) = %
-  \collapse{\eta}{\sigma'}(\mathcal{R}') 
+  \[ \collapse{ \eta }{ \sigma' }[P] \land \consof{C'} \entails %
+  \left( \bigland_{ \substack{Q' \in \predof{S}' \\ \eta(Q') = Q} }
+  \sigma(Q') = %
+  \collapse{\eta}{\sigma'}[Q'] \right)
   \]
   % 
-  Therefore, $\collapse{\eta}{\sigma'}$ is a solution of clause
-  $((\mathcal{B}, \varphi), R(\varsof{ \mathcal{S} }(R)))$.
+  Therefore, $\collapse{\eta}{\sigma'}$ is a solution of $P$.
   %
   Therefore, $\collapse{\eta}{\sigma'}$ is a solution of
-  $\mathcal{S}$.
+  $S$.
 \end{proof}
 
 % completeness of expansions:
-For CHC solvable system $\mathcal{S}$, each expansion of $\mathcal{S}$
+For a recursion-free CHC system $S$ is solvalbe, each expansion of $S$
 is solvable.
 \begin{lem}
   \label{lem:expansion-complete}
-  For $\mathcal{R}, \mathcal{R}' \in \relpreds$, $\mathcal{S} \in
-  \chcs{ \mathcal{R} }$ such that $\mathcal{S}$ is solvable, and
-  $\mathcal{S}' \in \chcs{ \mathcal{R}' }$ such that $\mathcal{S'}$ is
-  an expansion of $\mathcal{S}$, $\mathcal{S}'$ is solvable.
+  For a recursion-free CHC system $S$ is solvable, and
+  $S'$ is
+  an expansion of $S$, $S'$ is solvable.
 \end{lem}
 %
 \begin{proof}
-  Let $\sigma : \mathcal{R} \to \formulas$ be a solution of
-  $\mathcal{S}$, and let $\eta : \mathcal{R}' \to \mathcal{R}$ be a
-  correspondence from $\mathcal{R}'$ to $\mathcal{R}$.
+  Let $\sigma : P \to \formulas$ be a solution of
+  $S$, and let $\eta : \predof{S}' \to \predof{S}$ be a
+  correspondence from $S'$ to $S$.
   %
-  Let $\sigma' : \mathcal{R}' \to \formulas$ be such that for each $R'
-  \in \mathcal{R}'$, $\sigma'(R') = \sigma(\eta(R'))$.
+  Let $\sigma' : \predof{S}' \to \formulas$ be such that for each $P'
+  \in \predof{S}'$, $\sigma'(P') = \sigma(\eta(P'))$.
   %
-  Then $\sigma$ is a solution of $\mathcal{S}'$.
+  Then $\sigma'$ is a solution of $S'$.
 \end{proof}
 
 % CDD systems:
-$\expand{\mathcal{R}}$ always returns a CDD expansion of its input.
+$\expand$ always returns a CDD expansion of its input.
 %
 \begin{lem}
   \label{lem:expand-corr}
-  For $\mathcal{R} \in \relpreds$ and $\mathcal{S} \in \chcs{
-    \mathcal{R} }$, $\mathcal{S} \in \chcs{ \ctxs{ \mathcal{R} } }$,
-  and $\eta : \ctxs{ \mathcal{R} } \to \mathcal{R}$ such that
-  $(\mathcal{S}', \eta) = \expand{\mathcal{R}}(\mathcal{S})$, $\eta$
-  is a correspondence from $\mathcal{S}'$ to $\mathcal{S}$.
+  For a recursion-free CHC system $S$ and $S'$, and $\eta : \predof{S'} \to \predof{S}$ such that
+  $(S', \eta) = \expand(S)$, $\eta$
+  is a correspondence from $S'$ to $S$, $S'$ is an CDD system and an expansion
+  of $S$.
 \end{lem}
 %
 \begin{proof}
-  Proof by induction on the evaluation of $\expand{ \mathcal{R} }$ on
-  an arbitrary $\mathcal{S} \in \chcs{ \mathcal{R} }$.
+  Proof by induction on the evaluation of $\expand$ on
+  an arbitrary recursion-free CHC system $S$.
   % inductive fact:
   The inductive fact is that in each step of evaluation \expandaux,
-  $\corr{ \mathcal{R} }$ is a correspondence from argument
-  $\mathcal{S}'$ to $\mathcal{S}$.
+  $\corr$ is a correspondence from argument
+  $S'$ to $S$.
   % base case:
-  For the base case, \expandaux is called initially on $\mathcal{S}$,
+  For the base case, \expandaux is called initially on $S$,
   by \autoref{alg:expand}.
   % 
-  $\corr{ \mathcal{R} }$ is a correspondence from $\mathcal{S}$ to
-  itself, by the definition of $\corr{ \mathcal{R} }$
+  $\corr$ is a correspondence from $S$ to
+  itself, by the definition of $\corr$
   (\autoref{app:cons-cdd}).
 
   % inductive case:
-  For the inductive case, for $\mathcal{C} \in \mathcal{S}$ and $R \in
-  \ctxs{ \mathcal{R} }$, $\expandaux$ calls itself on $\copyrel{
-    \mathcal{R} }(\mathcal{S}, \mathcal{C}, R)$.
+  For the inductive case, for $C \in S$ and $P \in \predof{S}$, $\expandaux$ calls itself on 
+  $\copyrel(S, C, P)$.
   %
-  For each $\mathcal{S}' \in \chcs{ \ctxs{ \mathcal{R} } }$ such that
-  $\corr{ \mathcal{R} }$ is a correspondence from $\mathcal{S}'$ to
-  $\mathcal{S}$, $\corr{ \mathcal{R} }$ is a correspondence from
-  $\copyrel{ \mathcal{R} }( \mathcal{S}', \mathcal{C}, R)$ to
-  $\mathcal{S}$, by definition of $\copyrel{ \mathcal{R} }$
+  For each recursion-free CHC system $S'$ that generated by $\copyrel(S, C, P)$,
+  $\corr$ is a correspondence from $S'$ to
+  $S$ by definition of $\copyrel$
   (\autoref{app:cons-cdd}).
   %
-  By this fact and the inductive hypothesis, $\corr{ \mathcal{R}}$ is
-  a correspondence from $\copyrel{ \mathcal{R} }( \mathcal{S}',
-  \mathcal{C}, R)$ to $\mathcal{S}$.
+  By this fact and the inductive hypothesis, $\corr$ is
+  a correspondence from $\copyrel(S',
+  C, P)$ to $S$.
 
   % final claim: expand returns an expansion:
-  $\expandaux{ \mathcal{R} }$ returns its parameter at some step, by
+  $\expandaux$ returns its parameter at some step, by
   \autoref{alg:expand}.
   %
-  Therefore, $\expandaux$ returns an expansion of $\mathcal{S}$.
+  Therefore, $\expandaux$ returns an expansion of $S$.
 
   % prove that returned system is CDD:
-  For $\mathcal{S}' \in \chcs{ \ctxs{ \mathcal{R} } }$ and $\eta :
-  \ctxs{\mathcal{R}} \to \mathcal{R}$, if $(\mathcal{S}', \eta) =
-  \expand{ \mathcal{R} }( \mathcal{S} )$, then $\sharingclause(
-  \mathcal{S}') = \none$, by the definition of $\expand{ \mathcal{R}
-  }$.
+  For a given recursion-free CHC system $S'$, if $(S', \eta) =
+  \expand(S')$, 
+  then $\sharingclause(S') = \none$, by the definition of $\expand$.
   %
-  If $\sharingclause(\mathcal{S}') = \none$, then $\mathcal{S}'$ is
+  If $\sharingclause(S') = \none$, then $S'$ is
   CDD, by the definition of $\sharingclause$ and CDD systems
   (\autoref{defn:cdds}).
   %
-  Therefore, $\mathcal{S}'$ is CDD.
+  Therefore, $S'$ is CDD.
 \end{proof}
 %
-Furthermore, $\expand{ \mathcal{R} }$ returns a \emph{minimal} CDD
+Furthermore, $\expand$ returns a \emph{minimal} CDD
 expansion of its input.
 %
 This fact is not required to prove \autoref{thm:corr}, and thus a
 complete proof is withheld.
 
 % lem: VC's characterize system sat:
-For each CHC system $\mathcal{S}$, $\mathcal{S}$ has a solution if and
-only if the verification condition of $\mathcal{S}$ is unsatisfiable.
+For each recursion-free CHC system $S$, $S$ has a solution if and
+only if all interpolants queries return interpolants.
 %
 \begin{lem}
   \label{lem:vc}
-  For $\mathcal{R} \in \relpreds$ and $\mathcal{S} \in \chcs{
-    \mathcal{R} }$ that is CDD and solvable, $\vc{ \mathcal{R} }(
-  \mathcal{S} )$ is unsatisfiable.
+  Given a recursion-free CHC system $S$ that is CDD and solvable, for all predicates $P \in \predof{S}$,
+   $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ returns a interpolatn $I$.
 \end{lem}
 %
 \begin{proof}
   %
-  Assume that $\mathcal{S}$ has solution $\sigma$ and $m$ is a model
-  of $\vc{ \mathcal{R} }( \mathcal{S})$.
+  Assume that $S$ has solution $\sigma$ and there are
+  some predicates $P \in \predof{S}$ such that $\solveitp(\prectr(\cc{P},\sigma'),\postctr(\cc{P},\sigma'))$
+  returns $SAT$, which means there is a model $m$ for the conjuntion of $\prectr(\cc{P},\sigma')$
+  and $\postctr(\cc{P},\sigma')$.
   %
-  There are some relational predicates $\mathcal{R}' \subseteq
-  \mathcal{R}$ containing $\queryof{ \mathcal{S} }$ such that for each
-  $R' \in \mathcal{R}'$, $m(\used{R})$ holds, by the definition of
-  $\vc{ \mathcal{R} }$ (\autoref{sec:solve-cdd}).
-  %
-  For each $R'$, the interpretation of $m$ over $\varsof{ \mathcal{R}'
-  }$ must satisfy $\sigma(R')$, by well-founded induction on $\deps_S$
-  restricted to $\mathcal{R}'$.
-  %
-  But $\sigma(\queryof{ \mathcal{S} }) = \false$, by the definition of
-  a solution of a CHC system (\autoref{defn:chc-soln}).
+  But $\postctr(\cc{P},\sigma) = \false$, by the definition of
+  a solution of a CHC system.
   %
   Therefore, there can be no such model $m$.
   %
-  Therefore, $\vc{ \mathcal{R} }( \mathcal{S} )$ is unsatisfiable.
+  Therefore, $\solveitp(\prectr(\cc{P},\sigma'),\postctr(\cc{P},\sigma'))$ always returns interpolant.
 \end{proof}
 
 \begin{lem}
   \label{lem:solve-aux}
-  For $\mathcal{R} \in \relpreds$ and $\mathcal{S} \in \chcs{
-    \mathcal{R} }$ such that $\vc{ \mathcal{R} }(\mathcal{S})$ is
-  unsatisfiable, $\solvecdd{ \mathcal{R} }(\mathcal{S})$ is a solution
-  of $\mathcal{S}$.
+  Given a recursion-free CHC system $S$ that is CDD, if for all predciates $P \in \predof{S}$, 
+  $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ returns a interpolatn $I$, 
+  then $\solvecdd(S)$ is a solution of $S$.
 \end{lem}
 %
 \begin{proof}
   % overview of structure:
-  Proof by induction on the evaluation of $\solveaux$ on
-  interpretation $\sigma$.
+  Proof by induction on the $\solvecdd(S)$ calles $\solveitp$ on all predicates $P \in \predof{S}$
+  in a topolgical order.
   %
-  The inductive fact is that at each step of evaluation, $\sigma$ is a
-  partial solution of $\mathcal{S}$ such that $\sigma(\mathcal{S})$
+  The inductive fact is that at each step of calling $\solveitp$, $\sigma$ is a
+  partial solution of $S$.
   % base case:
-  For the base case, \solveaux is initially called on the empty
-  interpretation.
+  For the base case, $\predof{S} = \varnothing$,
   %
-  Therefore, $\vc{\mathcal{R}}(\sigma(\mathcal{S})) = \vc{
-    \mathcal{R}}(\mathcal{S})$, which is unsatisfiable.
+  Therefore, $\sigma$ is a solution of $S$.
 
   % inductive case:
-  For the inductive case, in each step, \solveaux calls itself on an
-  interpretation $\sigma'$, which is its argument $\sigma$, extended
-  to map relational predicate $R$ to an interpolant of $\prectr{
-    \mathcal{R} }( \mathcal{S}, \sigma, R)$ and $\postctr{ \mathcal{R}
-  }( \mathcal{S}, \sigma, R)$.
+  For the inductive case, in each step, $\solvecdd$ calls $\solveitp$ on
+  a predicate $P \in \predof{S}$ with partial solution $\sigma$, which
+  contains all solutions of predciates $P \in \depsof{S}$.
   %
-  $\sigma'$ is a partial solution of $\mathcal{S}$ by a combination of
-  the inductive hypothesis that $\sigma$ is a partial solution, the
-  fact that any extension of $\sigma$ that maps $R$ to a formula
-  implied by $\prectr{ \mathcal{R} }( \mathcal{S}, \sigma, R)$ is a
-  partial solution, and the definition of an interpolant
-  (\autoref{defn:itps}).
+  Based on the definition of an interpolant(\autoref{defn:itps}), $\sigma$
+  is a partial solution of $S$, then $\prectr(\cc{P},\sigma')$ and $\postctr(\cc{P},\sigma))$
+  are inconsistent.
   %
-  $\vc{ \mathcal{R} }(\sigma'(\mathcal{S}))$ is unsatisfiable by a
-  combination of the inductive hypothesis that $\vc{ \mathcal{R}
-  }(\sigma(\mathcal{ S }))$ is unsatisfiable, that for any extension
-  $\sigma''$ of $\sigma$ that maps $R$ to a formula inconsistent with
-  $\postctr{ \mathcal{R} }( \mathcal{S}, \sigma, R)$, $\vc{
-    \mathcal{R} }(\sigma''(\mathcal{S}))$ is unsatisfiable, and the
-  definition of an interpolant (\autoref{defn:itps}).
+  The interpolant $I$ returns by $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ entails
+  by all clause that head is $P$ and $\bodyof{P}$ is substituted by partial solution $\sigma$.
+  %
+  $I$ also is inconsistment with all constrains shows later that support the query clause.
+  %
+  Then $\solvecdd$ updates $\sigma$ by binding $P$ to $I$, which makes the new $\sigma$ also a partial
+  solution of $S$.
 
-  % prove goal:
-  $\mathcal{R}'$ (defined at \autoref{alg:solve-cdd},
-  \autoref{line:cons-nodeps}) is empty only if $\mathcal{R} \setminus
-  \domainof{ \sigma }$ is empty, by induction on evaluation of
-  \solveaux.
   %
-  Therefore, \solveaux only returns its parameter $\sigma$ if $\sigma$
-  is in fact a complete interpretation.
-  %
-  This fact, combined with the inductive fact, imply that \solveaux
-  returns a solution of $\mathcal{S}$.
+  Base case combined with the inductive case, imply that \solvecdd
+  returns a solution of $S$.
 \end{proof}
 
 % SolveCDD: establish soundness
-For $\mathcal{R} \in \relpreds$, $\solvecdd{ \mathcal{R} }$ is a
-correct CHC solver for CDD systems over $\mathcal{R}$.
+$\solvecdd$ is a
+correct CHC solver for CDD systems $S$.
 %
 \begin{lem}
   \label{lem:cdd-soln-sound}
-  For $\mathcal{R} \in \relpreds$, %
-  $\mathcal{S} \in \chcs{ \mathcal{R} }$ such that $\mathcal{S}$ is
-  CDD, and %
-  $\sigma \in \interps{ \mathcal{R} }$ such that %
-  $\sigma = \solvecdd{ \mathcal{R} }(\mathcal{S})$, %
+  For a given CDD system $S$, and $\sigma = \solvecdd(S)$, %
   $\sigma$ is a solution of $\mathcal{S}$.
 \end{lem}
 %
 \begin{proof}
   %
-  $\vc{ \mathcal{R} }(\mathcal{S})$ is unsatisfiable, by the fact that
-  $\sigma \in \interps{ \mathcal{R} }$ \autoref{alg:solve-cdd},
-  \autoref{line:check-sat}.
+  $\solvecdd{S}$ returns $\sigma$ implies that for all predicates 
+  $P \in \predof{S}$, $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ returns a interpolatn $I$, 
+  by the definition of $\solvecdd$ \autoref{alg:solve-cdd}. 
   %
-  Therefore, $\solvecdd{ \mathcal{R} }(\mathcal{S})$ is the result of
-  calling \solveaux, by \autoref{alg:solve-cdd},
-  \autoref{line:check-sat}.
-  %
-  Therefore, \autoref{lem:solve-aux} and the fact that $\vc{
-    \mathcal{R} }(\mathcal{S})$ is unsatisfiable imply that \solveaux
-  returns a complete solution of $\mathcal{S}$.
+  Therefore, \autoref{lem:solve-aux} implies that \solvecdd
+  returns a complete solution of $S$.
 \end{proof}
 
 % SolveCDD: establish completeness
 \begin{lem}
   \label{lem:cdd-soln-complete}
-  For $\mathcal{R} \in \relpreds$ and %
-  $\mathcal{S} \in \chcs{ \mathcal{R} }$ such that $\mathcal{S}$ is
-  solvable and CDD, %
-  there is some $\sigma \in \interps{ \mathcal{R} }$ such that %
-  $\sigma = \solvecdd{ \mathcal{R} }(\mathcal{S})$.
+  For a CDD system $S$ such that $S$ is
+  solvable, %
+  there is some $\sigma$ such that %
+  $\sigma = \solvecdd(S)$.
 \end{lem}
 %
 \begin{proof}
   % final claim:
-  $\vc{ \mathcal{R} }(\mathcal{S})$ is not satisfiable, by
+  for all predicates $P \in \predof{S}$, $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ returns a interpolatn $I$, by
   \autoref{lem:vc} and the fact that $\mathcal{S}$ is solvable.
   %
-  Therefore, $\solvecdd{ \mathcal{R} }$ is the result of running
-  \solveaux, by \autoref{alg:solve-cdd}.
-  %
   Therefore, by \autoref{lem:solve-aux} and the fact that
-  $\mathcal{S}$ is solvable, $\solvecdd{ \mathcal{R} }$ returns a
-  solution of $\mathcal{S}$.
+  $S$ is solvable, $\solvecdd(S)$ returns a
+  solution of $S$.
 \end{proof}
 
 % proof of main theorem:
@@ -456,43 +407,36 @@ The following is a proof of correctness of \sys
 (\autoref{sec:approach}, \autoref{thm:corr}).
 %
 \begin{proof}
-  % if returns a map, then S is a solution
-  Assume that for $\sigma \in \interps{ \mathcal{R} }$, $\sigma =
-  \shara{ \mathcal{R} }( \mathcal{S} ) \in \interps{ \mathcal{R} }$.
+  Given recurion-free CHC systems $S$ and $S'$, and $\eta :\predof{S'} \to 
+  \predof{S}$ such that $(S', \eta) = \expand(S)$, 
+  then $S'$ is minimal CDD expansion of 
+  $S$, and $\eta$ is a correspondence from $S'$ to $S$ by \autoref{lem:expand-corr}.
   %
-  Let $\mathcal{S'} \in \chcs{ \ctxs{ \mathcal{R} } }$ and $\eta :
-  \ctxs{ \mathcal{R} } \to \mathcal{R}$ be such that $(\mathcal{S}',
-  \eta) = \expand{ \mathcal{R} }( \mathcal{S} )$;
+  There is some $\sigma'$ such that
+  $\sigma' = \solvecdd(S' )$, by
+  the definition of $\shara$.
   %
-  $\eta$ is a correspondence from $\mathcal{S'}$ to $\mathcal{S}$, by
-  \autoref{lem:expand-corr}.
-  %
-  There is some $\sigma' \in \interps{ \mathcal{R}' }$ such that
-  $\sigma' = \solvecdd{ \ctxs{ \mathcal{R} } }( \mathcal{S}' )$, by
-  the definition of $\shara{ \mathcal{R} }$.
-  %
-  $\sigma'$ is a solution of $\mathcal{S}'$, by
+  $\sigma'$ is a solution of $S'$, by
   \autoref{lem:cdd-soln-sound}.
   %
-  $\collapse{ \eta }{ \sigma' }$ is a solution of $\mathcal{S}$, by
+  $\collapse{ \eta }{ \sigma' }$ is a solution of $S$, by
   \autoref{lem:expansion-sound}.
 
   % if S is solvable, then shara returns a solution
-  Assume that $\mathcal{S}$ is solvable.
+  Assume that a recursion-free $S$ is solvable.
   %
-  Let $\mathcal{S'} \in \chcs{ \ctxs{ \mathcal{R} } }$ and $\eta :
-  \ctxs{ \mathcal{R} } \to \mathcal{R}$ be such that $(\mathcal{S}',
-  \eta) = \expand{ \mathcal{R} }( \mathcal{S} )$.
+  Let a recursion-free CHC system $S'$ and $\eta :
+  \predof{S'} \to \predof{S}$ be such that $(S',
+  \eta) = \expand(S)$.
   %
-  $\mathcal{S}'$ is a CDD expansion of $\mathcal{S}$, by
+  $S'$ is a CDD expansion of $S$, by
   \autoref{lem:expand-corr}.
   %
-  $\mathcal{S}'$ is solvable, by \autoref{lem:expansion-complete}.
+  $S'$ is solvable, by \autoref{lem:expansion-complete}.
   %
-  $\solvecdd{ \ctxs{ \mathcal{R} } }( \mathcal{S'}) \in \interps{
-    \mathcal{R'} } $, by \autoref{lem:cdd-soln-complete}.
+  $\solvecdd(S')$ returns a solution $\sigma$ of $S'$ by \autoref{lem:cdd-soln-complete}.
   %
-  $\shara{\mathcal{R}} \in \interps{ \mathcal{R} }$, by
+  $\shara$ returns a solution of $S$ by calling $\collapse{ \eta }{ \sigma' }$, based on
   \autoref{alg:shara}.
 \end{proof}
 

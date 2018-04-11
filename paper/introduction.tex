@@ -8,19 +8,20 @@ logic-programming
 problems~\cite{bjorner13,flanagan03,rummer13a,rummer13b}.
 %
 A CHC is a logical implication where the antecedent is a conjunction
-of uninterpreted relational predicates with a fact in a background
-theory and the consequent is an uninterpreted relational predicate. In
-the context of a CHC we call the antecedent the body and the
-consequent the head.  A CHC system is a set of CHCs.
+of uninterpreted predicates with a fact in a background
+theory and the consequent is an uninterpreted predicate. 
+%
+In the context of a CHC we call the antecedent the body and the
+consequent the head.  A CHC system is a set of CHCs. 
 %
 The goal of a CHC solving problem is to find suitable interpretations
-for each relational predicate such that each CHC is logically
-consistent in isolation.
+for each predicate such that each CHC is logically
+consistent in isolation.\QZ{re-write this based on other papers}
 
 % introduce the problem of solving recursion-free systems:
 In this work we focus on the subclass of CHC systems which are known
 as \emph{recursion-free}. In a recursion-free CHC system, the
-derivation of each relational predicate will contain no references to
+derivation of each predicate will not contain
 itself. \QZ{\DAH{I still think we need a small example here}}
 %
 Recursion-free CHC systems are an important subclass for two reasons.
@@ -28,51 +29,53 @@ Recursion-free CHC systems are an important subclass for two reasons.
 First, recursion-free systems can be used to model safety properties
 for hierarchical programs~\cite{lal-qadeer15,lal-qadeer-lahiri12}
 (programs with only bounded iteration and recursion).
-%
-Second and most importantly, the task of solving a general CHC
-system can reduce to the task of solving a sequence of recursion-free
-systems \QZ{reference}.
 
-Many \QZ{more references? Or remove many.} modern solvers generate
-a sequence such that each subsystem is a bounded unwinding of the
-input system. These solvers either attempt to show that the solution to a
-given subsystem generalizes to the original system or generate a
-larger subsystem for the next iteration~\cite{bjorner13}.
+
+
 %
-Since such solvers inspect recursion-free systems in an iterative
-loop, they are heavily reliant on the performance of the underlying
-recursion-free solver.
+Second and most importantly, A well-known approach for solving a general CHC
+system can reduce to solving a sequence of recursion-free
+systems \QZ{reference}.
 %
+Many solvers attempt to synthesize the solution of the original system 
+by using the solutions of constructed recruion-free system~\cite{bjorner13}.
+%
+Because of this, the performance of solving general CHC system is heavily reliant on the 
+performance of the solving recursion-free CHC system.
+%
+
+
 % current general techniques for solving recursion-free systems
-Typically, even recursion-free CHC systems are not solved directly.
+Typically, recursion-free CHC systems are not solved directly.
+%
 Instead, they are reduced to a more specific subclass of
 recursion-free CHC system.
 %
 These classes include those of
-\emph{body disjoint} (or \emph{tree structure})
+\emph{body disjoint} (or \emph{derivation tree})
 systems~\cite{heizmann10,bjorner13,mcmillan14,rummer13a,rummer13b} and
 of \emph{linear} systems~\cite{albarghouthi12a}.
 %
 We will discuss these classes in \autoref{sec:overview} and
 \autoref{sec:related-work}.
 %
-Such classes have proved practical because a solver can find
-suitable definitions for relational predicates by issuing
-\emph{interpolation queries}.
+Such classes can be solved by issuing
+\emph{interpolation queries} for uninterpreted predicate and 
+each constrains shows only one time in the interpolation query.
 %
-When a class of CHC systems can be solved by interpolation queries, we
-say the class is \emph{directly solvable}.
+We
+refer such class as \emph{directly solvable}.
 
 % Time complexity
-In general, solving a recursion-free CHC system whose facts are
-restricted to the theory of linear integer arithmetic is
+In general, solving a recursion-free CHC system for 
+propositional logic and theory of linear integer arithmetic is
 co-NEXPTIME-complete~\cite{rummer13b}.
 %
-In contrast, solving a directly solvable system with the same theories
+In contrast, solving a directly solvable system with the same logic and theories
 is in co-NP~\cite{rummer13b}.
 %
-Therefore, the performance of a CHC solver is highly reliant on the
-size of the directly solvable systems it produces.
+Therefore, the performance of solving a recurion-free system is highly reliant on the
+size of the directly solvable systems it is reduced to.
 
 % contribution of this paper: CDD systems:
 The first contribution of this paper is the introduction of a novel
@@ -81,7 +84,7 @@ class of directly solvable systems that we refer to as
 %
 The class consists of all recursion-free CHC systems such that each
 clause in the system has at most one dependency on the same relational
-predicate.
+predicate.\QZ{repharse this}
 %
 The key characteristic of this class is that CDD systems are often
 smaller than equivalent systems in other directly solvable classes,

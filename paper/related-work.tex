@@ -23,46 +23,49 @@ The proposed approach selects interprocedural paths of a program and
 synthesizes invariants for each as nested interpolants.
 %
 Such an approach corresponds to attempting to solve a recursive CHC
-system $\mathcal{S}$ by selecting derivation trees of $\mathcal{S}$
+system $S$ by selecting derivation trees of $S$
 and solving each tree.
 
 % solving recursive systems:
 Previous work has proposed solvers for recursive systems that, given a
-system $\mathcal{S}$, attempt to solve $\mathcal{S}$ by generating and
-solving a series of recursion-free unwindings of $\mathcal{S}$.
+system $S$, attempt to solve $S$ by generating and
+solving a series of recursion-free unwindings of $S$.
+
 %
-In particular, \duality attempts to solve each unwinding
-$\mathcal{S}'$ by selecting and solving derivation-trees of
-$\mathcal{S}'$~\cite{bjorner13}.
+In particular, \eldarica attempts to solve each unwinding
+$S'$ by reducing to and solving body-disjoint systems~\cite{rummer13a,rummer13b}.
+%
+
+%
+\duality attempts to avoid solving all 
+derivation-trees (i.e body-disjoint system) by using lazy annotation~\cite{bjorner13}.
 %
 Other optimizations selects derivation trees to solve using symbolic
 symbolic analogs of Prolog evaluation with
 tabling~\cite{jaffar09,mcmillan14}.
 %
-\eldarica attempts to solve each recursion-free CHC system by lazily
-copying its subsystems to form a body-disjoint
-over-approximation~\cite{rummer13a,rummer13b}.
 
-% DAG interpolation:
 \whale attempts to verify a sequential recursive program by generating
 and solving hierarchical programs (i.e., programs that may contain
 conditional branches and procedure calls, but do not contain loops or
 recursion), which correspond to recursion-free CHC
 systems~\cite{albarghouthi12b}.
 %
-To solve a particular recursion-free system $\mathcal{S}$, \whale
-generates a linear inlining $\mathcal{S}'$ of $\mathcal{S}$ and solves
+To solve a particular recursion-free system $S$, \whale
+generates a linear inlining $S'$ of $S$ and solves
 it using a procedure \vinta~\cite{albarghouthi12a}.
 %
-In general, $\mathcal{S}'$ may have size exponential in the size of
-$\mathcal{S}$.
+In general, $S'$ may have size exponential in the size of
+$S$.
 
 % compare sys to all of the previous work:
-\sys is similar to all of the approaches given above for solving
+\sys is similar to all of the approaches given above for solving 
 recursion-free CHC systems in that it reduces the problem of solving a
-given recursion-free CHC system $\mathcal{S}$ to solving a CHC system
+given recursion-free CHC system $S$ to solving a CHC system
 in a directly-solvable class.
 %
+
+
 \sys is distinct from all of the approaches given above in that it
 reduces solving a recursion-free CHC system to solving a
 Clause-Dependent Disjoint (CDD) system.
@@ -70,6 +73,12 @@ Clause-Dependent Disjoint (CDD) system.
 CDD systems strictly contain the union of all classes of
 directly-solvable CHC systems used by the above approaches, and can
 themselves be solved directly.
+
+%
+For solving genreal CHC system, \sys uses the same strategy that proposed
+by above approaches, that solving a series recursion-free CHC system that unwinding 
+from the original CHC system, and try to synthesize the solution for the original 
+CHC system by using solutions of recursion-free CHC systems.  
 
 % bullshit CADE papers:
 Previous work has given solvers for non-linear Horn clauses over
@@ -95,9 +104,9 @@ DAG inlining, given a hierarchical program $P$, attempts to generate a
 compact verification condition for $P$~\cite{lal-qadeer15}.
 %
 \sys contains a procedure that, given a recursion-free Horn Clause
-system $\mathcal{S}$, attempts to construct a compact CDD system
-$\mathcal{S}'$ such that each solution of $\mathcal{S}'$ defines a
-solution of $\mathcal{S}$.
+system $S$, attempts to construct a compact CDD system
+$S'$ such that each solution of $S'$ defines a
+solution of $S$.
 %
 Because hierarchical programs and recursion-free Horn Clauses
 correspond closely to each other, algorithms that operate on
