@@ -1,26 +1,35 @@
-\scalebox{0.75}{%
+% \scalebox{0.75}{%
+% }
+
 \begin{tikzpicture}
-\begin{scope}
-  \node (top) at (0,0) {\begin{tabular}{c}All Systems\\ \textsc{Undecidable}\end{tabular}};
-    \node[below = 0.5 of top] (rec) {\begin{tabular}{c}Recursion Free\\
-  \textsc{co-Nexptime Complete}\end{tabular}};
-  \node[below = 0.5 of rec] (dir) {\begin{tabular}{c}Directly Solvable\\ \textsc{co-NP}\end{tabular}};
-  \node[label={0:\{\textsc{Shara}\}}, draw, rounded corners=0.5cm,
-      below = 0.5 of dir] (cdd) {\begin{tabular}{c}Clause-Dependent-Disjoint\\ \textsc{co-NP}\end{tabular}};
-  \node[label={0:\{\textsc{Ufo}\}},
-      below left = 0.5 and 0.5 of cdd] (lin) {\begin{tabular}{c}Linear\\ \textsc{co-NP}\end{tabular}};
-  \node[label={180:\{\textsc{Eldarica}\cite{rummer13b}\}},
-      below right = 0.5 and 0.5 of cdd] (bd) {\begin{tabular}{c}Body Disjoint\\ \textsc{co-NP}\end{tabular}};
-  \node[label={180:\{\textsc{Duality}\cite{bjorner13}\}},
-      below = 0.5 of bd] (tree) {\begin{tabular}{c}Tree\\ \textsc{co-NP}\end{tabular}};
-\end{scope}
-\begin{scope}[every edge/.style={draw=black, very thick}]
-  \path[-] (tree) edge (bd);
-  \path[-] (bd) edge (cdd);
-  \path[-] (lin) edge (cdd);
-  \path[-] (cdd) edge (dir);
-  \path[-] (dir) edge (rec);
-  \path[-] (rec) edge (top);
-\end{scope}
+\tikzstyle{every node}=[draw=black, thin, ellipse]
+  \begin{scope}[fill opacity=0.1,text opacity=1]
+
+  \draw node[minimum width=6.2cm,minimum height=6cm,
+    label={[anchor=north, inner sep=5pt]north:
+      \begin{tabular}{c}Recursion-Free\\\textsc{co-NEXPTIME Complete}\end{tabular}} ]
+    at (0,0)
+    {};
+
+  \draw node[fill=blue, minimum width=5.5cm,minimum height=4.5cm,
+    label={[anchor=south, inner sep=0pt]south:
+      \begin{tabular}{c}Directly Solvable\\\textsc{co-NP}\end{tabular}} ]
+    at (0,-6mm)
+    {};
+
+  \draw node[fill=yellow, minimum width=5cm,minimum height=3cm,
+    label={[anchor=north, inner sep=5pt]north:CDD}]
+    at (0,-1mm)
+    {};
+
+  \draw node[fill=red, minimum width=2.7cm,minimum height=2cm]
+    at (10mm,-2mm)
+    {\begin{tabular}{c}Body\\Disjoint\end{tabular}};
+
+  \draw node[fill=green, minimum width=2.7cm,minimum height=2cm]
+    at (-10mm,-2mm)
+    {Linear};
+
+    % \begin{tabular}{c}Directly Solvable\\\textsc{co-NP}\end{tabular}} ]
+  \end{scope}
 \end{tikzpicture}
-}

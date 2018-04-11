@@ -8,42 +8,49 @@
 
 \subsubsection{Structure}
 % definition of CHC
-A Constrained Horn Clause contains a body and a head.
+As stated in \autoref{sec:intro} a Constrained Horn Clause is a
+logical implication where the antecedent is called the body and the
+consequent is called the head.
 %
-A body consisting of a conjunction of a formula that over variables and a vector of uninterpreted predicates applied to varialbes.
+The body is a conjunction of a logical formula, called the fact,
+and a vector of uninterpreted predicates. The fact is an arbitrary
+formula in some background logic, such as linear integer arithmetic.
 %
-A head can either be an uninterpreted predicates applied to variables or \cc{False}.
+The uninterpreted predicates are applied to variables which may or may
+not appear in the fact.
+%
+A head can be either an uninterpreted predicate applied to variables or \cc{False}.
 %
 A Clause where the head is \cc{False} is called query.
-\QZ{make it looks nice}
 \begin{defn}
-  A Constrained Horn Clause is definied as follows: \\
-  $\cc{chc} \Coloneqq \cc{head} \gets \cc{body}$ \\
-  $\cc{head} \Coloneqq \cc{False} \mid \cc{pred}$  \\
-  $\cc{body} \Coloneqq \varphi \wedge \cc{preds}$ \\
-  $\cc{preds} \Coloneqq \cc{True} \mid \cc{pred} \wedge \cc{preds}$ \\
-  $\cc{pred} \Coloneqq$ an uninterpreted predicate applied to variables \\
-  $\varphi \Coloneqq$ a formula that all variables are vocabulary \\
+  CHCs can be defined structurally:
+\begin{align*}
+  \cc{chc} &\Coloneqq \cc{head} \gets \cc{body} \\
+  \cc{head} &\Coloneqq \cc{False} \\&\mid \cc{pred}  \\
+  \cc{body} &\Coloneqq \varphi \wedge \cc{preds} \\
+  \cc{preds} &\Coloneqq \cc{True} \\&\mid \cc{pred} \wedge \cc{preds} \\
+  \cc{pred} &\Coloneqq \textsf{an uninterpreted predicate applied to variables} \\
+  \varphi &\Coloneqq \textsf{a formula that all variables are vocabulary} \\
+\end{align*}
 \end{defn}
 %
 % define a body function, head function, and recursion-free
-For a given constrained horn clause $C$, $\bodyof{C}$ denotes
-the vector of uninterpreted predicates in the body of $C$, $\consof{C}$
-denotes the formula in the body.
+For a given CHC $C$, $\bodyof{C}$ denotes the vector of uninterpreted
+predicates in the body of $C$ and $\consof{C}$ denotes the fact in the
+body.
 %
-It is possible for a uninterpreted predicate shows multiple times in the
-body of $C$.
+It is possible for an uninterpreted predicate to apper multiple times
+in the body of $C$.
 %
-For a given constrained horn clause $C$ that is not a query,
-$\headof{c}$ denotes the uninterpreted predicates of the head of $C$.
+If $C$ is not a query, then $\headof{C}$ denotes the uninterpreted
+predicate in the head.
 %
 
 %define a CHC system
-A Constrained Horn Clauses system is a set of constrained horn clauses 
-that it has one and only one query.
+A CHC system is a set of CHCs where exactly one clause is a query
 %
-For a given Constrained Horn Clauses system $S$,$\predof{S}$ denotes 
-the set of all uninterpreted predicates in this CHC system.
+For a given CHC system $S$, $\predof{S}$ denotes the set of all
+uninterpreted predicates.
 
 % define dependency predicates
 \begin{defn}
