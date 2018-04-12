@@ -20,60 +20,51 @@ Proofs of all theorems stated in this section are contained in appendix
 \label{sec:CDD-defn}
 %
 The key contribution of our work is the introduction of the class of
-Clause-Dependence Disjoint (CDD) systems.
-%
-Solving an CHC system in CDD is coNP time.
-%
-CDD strictly contains
-the union of classes of recursion-free systems that can be solved
-in coNP time that have been introduced in previous work.
+Clause-Dependence Disjoint (CDD) systems. Critically, CDD systems can be solved
+in co-NP time by interpolation of the uninterpreted relational predicates.
 %
 \begin{defn}
   \label{defn:cdds}
   For a given recursion-free CHC system $\cc{S}$,
   %
-  if for all pair of uninterpreted predicates $P, Q \in \predof{S}$ that are siblings(\autoref{sec:chcs}), the 
-  transitive dependences of $P$ and $Q$ are disjoint $\tdepsof{P} \cap \tdepsof{Q} = \emptyset$, and there is 
-  no uninterpreted predicate shows more than once in a body of clause, then $\cc{S}$ is
-  \emph{Clause-Dependence-Disjoint (CDD)}.
+  if for all sibling pairs, $P, Q \in \predof{S}$,
+  %
+  the transitive dependences of $P$ and $Q$ are disjoint ($\tdepsof{P} \cap
+  \tdepsof{Q} = \emptyset$)
+  %
+  and no predicate is a sibling of itself,
+  %
+  then $\cc{S}$ is \emph{Clause-Dependence Disjoint (CDD)}.
 \end{defn}
 %
-CDD systems model hierarchical programs with branching and
-procedure calls that in each execution path that each statments be
-exected at most once.
+CDD systems model hierarchical programs with branches and procedure calls such
+that each execution path invokes each statement at most once.
 %
 \begin{ex}
-  The CHC system $\mcchc$ (given in \autoref{sec:solve-ex}) is a CDD
-  system.
-  %
-  The only clauses in $\mcchc$ that its body has multiple uninterpreted
-  predicates are clause (7) that contains $\cc{L9}$ and $\cc{db}$.
-  %
-  The transitive dependences of $\cc{L9}$ and $\cc{db}$ are \{\cc{L6}\,\cc{L8}\,\cc{L4}\} and $\varnothing$, which are disjoint.
+  The CHC system $\mcchc$ is a CDD system. An argument is given in
+  \autoref{sec:solve-ex}.
 \end{ex}
 
 % talk about previous system
-The class of CDD systems contains body-disjoint and linear
-systems introduced in previous work.
+As discussed in \autoref{sec:overview}, CDD is a superclass of the
+class of body-disjoint systems and the class of linear systems.
 %
-For recursion-free system $S$, if for each uninterpreted predicate
-$Q \in \predof{S}$, there is at most one caluse $C$ that $Q \in \bodyof{C}$,
-and there is no uninterpreted predicate shows more than once in a body of clause, then
-$S$ is \emph{body-disjoint}~\cite{rummer13a,rummer13b}.
+For a given recursion-free system $S$, if each uninterpreted predicate $Q \in
+\predof{S}$, appears in at most one clause $C$ ($Q \in \bodyof{C}$) and no
+predicate appears more than once in the body of a single clause,
+then $S$ is \emph{body-disjoint}~\cite{rummer13a,rummer13b}.
 %
-If the body of each clause in $\cc{S}$ contains at most
-relational predicate, then $\cc{S}$ is
-\emph{linear}~\cite{albarghouthi12a}.
-
+If the body of each clause in $\cc{S}$ contains at most one relational
+predicate, then $\cc{S}$ is \emph{linear}~\cite{albarghouthi12a}.
 
 % talk about linear system
 \begin{thm}
-	\label{thm:cdd-contains}
+\label{thm:cdd-contains}
   The class of CDD systems strictly contains the union of the classes
   of body-disjoint and linear systems.
 \end{thm}
 %
-The proof is given in \autoref{app:char}.
+Proof given in \autoref{app:char}.
 
 % describe how to solve a CDD system
 \subsection{Solving a CDD system}
@@ -98,11 +89,11 @@ The proof is given in \autoref{app:char}.
     \label{line:solve-begin}}{ %
     $\sigma \assign \emptyset$ \\
     $\cc{Preds} \assign \topSort(\predof{S})$ \\
-    \For {$\cc{P} \in \cc{Preds}$}
-    {$\cc{interpolant} \assign \solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$\\
+    \For {$P \in \cc{Preds}$}
+    {$\cc{interpolant} \assign \solveitp(\prectr(P,\sigma),\postctr(P,\sigma))$\\
      \Switch{\cc{interpolant}}{
        \lCase{\cc{SAT}:}{\Return{$\nosoln$}}
-       \lCase{$\cc{I}$:}{$\sigma$ [$\cc{P} \to \cc{I}$]}
+       \lCase{$\cc{I}$:}{$\sigma$ [$P$] $\assign$ $\cc{I}$}
      }
     }
     \Return{$\sigma$}
@@ -116,172 +107,179 @@ The proof is given in \autoref{app:char}.
 
 
 % introduce solveCDD
-the procedure $\solvecdd$ (\autoref{alg:solve-cdd}) is a solver for CDD systems.
+\autoref{alg:solve-cdd} presents $\solvecdd$, a procedure designed to solve
+CDD systems.
 %
-$\solvecdd$, given a CDD system $\cc{S}$, it first do a topological sort on all
-uninterpreted predicates in $\cc{S}$ based on their dependency relations.
+Given a CDD system $\cc{S}$, $\solvecdd$ topologically sorts the uninterpreted
+predicates in $\cc{S}$ based on their dependency relations.
 %
-In the order of topological sort, for each uninterpreted predicates $\cc{P}$ 
- $\solvecdd$ calles $\solveitp$ to compute the binary interpolation of 
- encoded pre and post formulas with the current solution.
- %
- If the conjunction of pre and post formulas is satisifiable, then $\solvecdd$
- returns $\nosoln$ to indicate this CDD system $\cc{S}$ is not solvable.
- %
- Otherwise, $\solvecdd$ binds the uninterpreted predicate $\cc{P}$ to the
- interpolation result $\cc{I}$ as part of the soltuion.
- %
- The encoding procedure $\prectr$ and $\postctr$ are defined below.
- %
- $\solvecdd$ returns the soltuion $\sigma$. 
+Then, the algorithm calculates interpretations for each predicate in this order
+by invoking $\solveitp$.
+%
+$\solveitp$ computes a binary interpolant of the pre and post formulas of the
+given predicate, where these formulas are based on the current, partial
+solution.
+%
+The pre and post formulas are computed respectively by $\prectr$ and
+$\postctr$, which we define in \autoref{sec:cons-pre} and \autoref{sec:cons-post}.
+%
+It is possible that the pre and post formulas may be mutually satisifiable, in
+which case $\solveitp$ returns \cc{SAT}. In this case, $\solvecdd$ returns
+$\nosoln$ to indicate that $\cc{S}$ is not solvable.
+%
+Otherwise, $\solvecdd$ modifies the partial solution by setting the
+interpretation of $P$ to $\cc{I}$.
+%
+Once all predicates have been interpolated, $\solvecdd$ returns the complete
+solution, $\sigma$.
 
 %
 \begin{ex}
-  $\solvecdd$, given a CDD system $\mcchc$ in \autoref{sec:running-ex}, may generate
-  interpretations queries in any topological ordering of the
-  dependency relation of $\mcchc$.
+  Given the CDD system $\mcchc$, $\solvecdd$ may generate interpolation
+  queries in any topological ordering of the dependency relations.
   %
-  One such ordering is \cc{L4}, \cc{L6}, \cc{L8}, 
-   \cc{L9}, \cc{db} and \cc{main}.
+  One such ordering is $\cc{L}_4$, $\cc{L}_6$, $\cc{L}_8$, $\cc{L}_9$, \cc{dbl},
+  \cc{main}.
 \end{ex}
 
-\subsubsection{Constructing constrains of uninterpreted 
-predicate}
+\subsubsection{Constructing constraints for predicates}
 %
-For a CDD system $S$, given a uninterpreted predicate $\cc{P} \in \predof{S}$, and a partial 
-solution $\sigma$ that maps some uninterpreted predicate to its solution formula, 
-,the formula $\ctrof{P,\sigma}$ is a compact representation of constrains of $\cc{P}$ based on parital
-solution $\sigma$, defined as follows.
-% for each relational predicate, define constraint:
-If partial solution $\sigma$ does not contains $P$, 
-the constraint of $P$ under $\sigma$ that denoted as $\ctrof{P,\sigma}$ 
-is constructed as: for all clauses $C \in S$ in which $P$ is the head of $\cc{C}$
-\textbf{(1)} each predicate $Q \in \bodyof{C}$ is used and 
-\textbf{(2)} the constrained of the clause $\consof{C}$ is encoded.
+For a CDD system $S$, a predicate $P \in \predof{S}$, and a partial
+solution $\sigma$ that maps predicates to their solutions, the formula
+$\ctrof{P,\sigma}$ is a compact representation of the constraints of $P$.
 %
-I.e., $\ctrof{P,\sigma}$ is
+If $\sigma$ does not contain $P$, then the constraint of $P$ is constructed
+from the clauses where $P$.  When $\sigma$ does contain $P$, $\ctrof{P,\sigma}$
+is a lookup from $\sigma$:
+%
 \[
-\biglor_{ (\cc{C}_i \in \cc{S}) \land (\headof{C_i} = \cc{P})}
-\left( \consof{C_i} \land %
-\bigland_{ \cc{Q} \in \bodyof{C_i}} %
-b_Q \right)
+  \ctrof{P,\sigma}=
+  \begin{dcases}
+    \biglor_{(\cc{C}_i \in \cc{S}) \land (\headof{C_i} = P)}
+    \left( \consof{C_i} \land %
+      \bigland_{ \cc{Q} \in \bodyof{C_i}} \cc{b}_Q
+    \right),
+  &\text{if } P \notin \sigma\\
+  \sigma[P], &\text{if } P \in \sigma
+  \end{dcases}
 \]
 %
-If partial solution $\sigma$ contains $P$, then $\ctrof{P,\sigma}$ is the solution formula $\sigma[P]$.
-
 % introduce the isused predicates:
-For each $\cc{P} \in \predof{S}$, there is a corresponding boolean variable
-$b_P$.
+Each $P \in \predof{S}$ has a corresponding boolean variable $\cc{b}_P$.
 %
-The counterexample characterization of $P$ constrains that
-if $P$ is used, which means $b_{P}$ is \cc{True}, then its constraint must hold.
-%
-I.e., $\vc{P,\sigma}$ is $\neg b_{P} \lor \ctrof{P,\sigma}$.
+The counterexample characterization of $P$ constrains that if $P$ is used,
+(meaning $\cc{b}_{P} = True$) then its constraint must hold:
+\[
+  \vc{P,\sigma} = \neg \cc{b}_{P} \lor \ctrof{P,\sigma}
+\]
 
 
 \begin{ex}
   \label{ex:ctr}
-  In the CHC system $\mcchc$ (given in \autoref{sec:solve-ex}), 
-  when $\mcsolve$ solves the uninterpreted predicate \cc{L9}, it 
-  has a partial solution $\sigma$ that maps \cc{L6} to $n \ge 0$.
-  %
-  For predicate \cc{L6}, the the $\ctrof{L6,\sigma}$ is $n \ge 0$.
-  %
-  For the 
-  uninterpreted \cc{L9}, the $\ctrof{L9,\sigma}$ is $(abs' = n \land b_{L6}) \lor (abs' = n \land b_{L8})$.
-  %
-  The $\vc{L9,\sigma}$ is $\neg b_{L9} \lor \ctrof{L9,\sigma}$.
+  When $\solvecdd$ solves the predicate $\cc{L}_9$ in $\mcchc$, it generates a
+  constraint based on clauses (5) and (6):
+  $$\ctrof{\cc{L}_9,\sigma} =
+    (\cc{abs'} = \cc{n} \land \cc{b}_{\cc{L}_6})
+    \lor
+    (\cc{abs'} = -\cc{n} \land \cc{b}_{\cc{L}_8})$$
+  The counterexample characterization for $\cc{L}_9$ is based on its boolean
+  indicator and this constraint:
+  $$\vc{\cc{L}_9,\sigma} = \neg \cc{b}_{\cc{L}_9} \lor \ctrof{\cc{L}_9,\sigma}$$
 \end{ex}
 
 % pre-constraint:
-\subsubsection{Constructing the pre-constraint of a relational predicate}
+\subsubsection{Constructing pre-formulas for predicates}
 \label{sec:cons-pre}
 %
-For a CDD system $\cc{S}$, given a uninterpreted predicate $\cc{P} \in \predof{\cc{S}}$
-, because $\solvecdd$ solve each uninterpreted predicate in a toplogical order, 
-it has a partial solution $\sigma : \cc{Q} \to \formula$ for all uninterpreted predicates in
-$\depsof{P}$.
+$\prectr(P, \sigma)$ denotes the pre-formula for an arbitrary predicate $P$
+with respect to the partial solution map, $\sigma$.
 %
-the pre-constraint $\prectr(\cc{P},\sigma)$ is a formula that the conjunction of the constrains
-of $\cc{P}$ and solutions of all dependencies of $P$ with their boolean varialbe.
+Due to the topological ordering, when $\solvecdd$ attempts to solve $P$, the
+interpretations for all dependencies of $P$ will be stored in
+$\sigma$.
 %
-In particular, $\prectr(\cc{P},\sigma)$ is:
-\[\ctrof{P,\sigma} \land
-\left(
-\bigland_{\cc{Q} \in \depsof{P}}
-\left(\neg b_Q \lor \sigma[ \cc{Q} ]  \right)
-\right)
+The pre-formula is built from these interpretations together with boolean
+indicators of the dependencies and the constraint of $P$:
+%
+\[
+\prectr(P,\sigma) =
+  \ctrof{P,\sigma} \land
+    \left(
+      \bigland_{\cc{Q} \in \depsof{P}}
+      \left(\neg b_Q \lor \sigma[ \cc{Q} ]  \right)
+    \right)
 \]
 %
 \begin{ex}
   \label{ex:pre-ctr}
-  In the CHC system $\mcchc$ (given in \autoref{sec:solve-ex}), 
-  when $\mcsolve$ solves the uninterpreted predicate \cc{L9}, because it solves
-  in topological order, partial solution $\sigma$ contains \cc{L6} and \cc{L8}.
+  When $\solvecdd$ solves the uninterpreted predicate $\cc{L}_9$ in $\mcchc$,
+  $\sigma$ contains $\cc{L}_6$ and $\cc{L}_8$.
   %
-  $\sigma$ maps
-  \cc{L6} to $n \ge 0$ and \cc{L8} to $n < 0$.
+  $\sigma$ maps $\cc{L}_6$ to $n \ge 0$ and $\cc{L}_8$ to $n < 0$.
   %
-  The pre-formula for \cc{L9} under $\sigma$ is $\ctrof{L9} \land (\neg b_{L6} \lor n \ge 0) \land (\neg b_{L8} \lor n < 0)$.
+  The pre-formula for $\cc{L}_9$ under $\sigma$ is therefore:
+  $$\ctrof{\cc{L}_9}
+  \land (\neg \cc{b}_{\cc{L}_6} \lor n \ge 0) \land (\neg \cc{b}_{\cc{L}_8}
+  \lor n < 0)$$
   %
-  The forumula of $\ctrof{L9,\sigma}$ is given in~\autoref{ex:ctr}.
+  The formula $\ctrof{\cc{L}_9,\sigma}$ is given in~\autoref{ex:ctr}.
 \end{ex}
 
 \subsubsection{Constructing the post-constraint of a relational
   predicate}
-\label{sec:cons-ctx}
+\label{sec:cons-post}
+$\postctr(P, \sigma)$ denotes the post-formula for an arbitrary predicate $P$
+with respect to the partial solution map, $\sigma$. A valid post-constraint is
+mutually inconsistent with the solution of $P$.
 %
-For $\sigma$ as a partial solution of
-$S$ and $P \in \predof{S}$, the post-constraint $\postctr(P, \sigma)$ is mutually
-inconsistent with the solution of $P$ in each solution of
-$S$ that extends $\sigma$.
+The post formula is constructed based on the predicates which depend on $P$.
+%
 % dependents of R:
-In particular, let $D_0$ be the reflexive transitive dependents of $P$
-in $S$,
+Let $D_0$ be the reflexive transitive dependents of $P$ in $S$,
 % clause siblings of dependents:
-let $D_1$ be the siblings in $S$ of
-$(D_0 \union {P})$,
+let $D_1$ be the siblings in $S$ of $(D_0 \union {P})$,
 %
 let $D_2$ be all transitive dependences of $D_1$, and
 % collect all predicates that we define a constraint over:
 let $D = D_0 \union D_1 \union D_2$.
 % define instantiation of C
-The post constraint for $P$ under $\sigma$ is the conjunction of
-counterexample characterization of all predicates $Q \in D$ and the query clause.
+The post constraint for $P$ under $\sigma$ is the conjunction of counterexample
+characterization of all predicates $Q \in D$ and the query clause.
 %
-I.e., $\postctr(R, \sigma) =\cc{query} \land (\bigland_{\cc{Q} \in D} \vc{Q,\sigma})$.
+\[
+\postctr(R, \sigma) =\cc{query} \land (\bigland_{\cc{Q} \in D} \vc{Q,\sigma})
+\]
 % example post constraint:
 \begin{ex}
   \label{ex:ctx-ctr}
-  Consider the case in which $\mcsolve$, given $\mcchc$, generates an
-  interpretation for \cc{L9}, introduced in \autoref{ex:pre-ctr}.
+  When $\solvecdd$ solves $\cc{L}_9$ in $\mcchc$, it must consider
+  the dependents of $\cc{L}_9$.
   %
-  The reflexive transitive dependents $D_0$ of \cc{L9} is \{\cc{main}\}.
+  The transitive dependents $D_0$ of $\cc{L}_9$ is \{\cc{main}\}.
   %
-  The siblings set $D_1$ is \{\cc{db}\}.
+  The siblings set $D_1$ is \{\cc{dbl}\}.
   %
   The transitive dependences of $D_1$ is $\varnothing$. 
   %
-  Then the $D$ set is \{\cc{main},\cc{db}\}
+  Therefore, the $D$ set is \{\cc{main},\cc{dbl}\}.
   %
-  The \cc{query} is $b_{main} \land res'<0$.
+  The \cc{query} is $\cc{b}_{main} \land res'<0$.
   %
-  The post constraint for $L9$ under $\sigma$ is $\cc{query} \land \vc{main,\sigma} \land \vc{db,\sigma}$.
-  %
-  The whole formula is given in\QZ{add reference}. 
+  The post constraint for $\cc{L}_9$ under $\sigma$ is
+  $$\cc{query} \land \vc{\cc{main},\sigma} \land \vc{\cc{dbl},\sigma}$$
 \end{ex}
 
 \subsection{Solving recursion-free systems using CDD systems}
 \label{sec:core-solver}
 
 % give the general procedure:
-$\shara$, given an recursion-free CHC system $S$,
-constructs a CDD system $S'$ equivalent to $S$.
+$\shara$, given a recursion-free CHC system $S$,
+constructs an equivalent CDD system $S'$.
 %
-\sys then directly solves $S'$ and from its solution,
-constructs a solution of $S$.
+\sys then directly solves $S'$ and, from this solution, constructs a solution
+for $S$.
 % define an expansion of a CHC system:
-For two given recursion-free CHC system $S$ and $S'$, if
+For two given recursion-free CHC systems $S$ and $S'$, if
 there is a homomorphism from $\predof{S'}$ to $\predof{S}$ that
 preserves the relationship between the clauses of $S'$ in
 the clauses of $S$, then $S'$ is an expansion of
@@ -295,15 +293,14 @@ $S$, and $S'$).
   \textbf{(1)} for all $P' \in \predof{S'}$, $P'$ has the
   same vector of parameters as $f(P')$;
   % preserves clause structure:
-  \textbf{(2)} for all clause $C' \in S'$, the new clause $C$
-  by substituting all predicates $P'$ by $f(P')$ is in $S$.
+  \textbf{(2)} for each clause $C' \in S'$, the clause $C$ (constructed
+  by substituting all predicates $P'$ by $f(P')$) is in $S$.
   %
   Then $f$ is a \emph{correspondence} from $S'$ to $S$.
 \end{defn}
 %
-If there is a correspondence from $S'$ to $S$,
-$S'$ is an \emph{expansion} of $S$, denoted
-$S \expandsto S'$.
+If there is a correspondence from $S'$ to $S$, then $S'$ is an \emph{expansion}
+of $S$, denoted $S \expandsto S'$.
 %
 
 % core algorithm
@@ -344,26 +341,22 @@ $S \expandsto S'$.
   \label{alg:shara}
 \end{algorithm}
 % walk through the sys algorithm:
-$\shara$ (\autoref{alg:shara}), given an recursion-free CHC system $S$ (\autoref{line:shara-begin}), 
+\sys (\autoref{alg:shara}), given a recursion-free CHC system $S$
+(\autoref{line:shara-begin}), 
 returns a solution
 to $S$ or the value $\none$ to denote that $S$ is
 unsolvable.
 %
-$\shara$ first runs a procedure $\expand{}$ on $S$ to obtain a CDD expansion $S'$ (\autoref{defn:min-cdd-expansion})
-of $S$.
+\sys first runs a procedure $\expand{}$ on $S$ to obtain a CDD expansion
+$S'$ of $S$.
 %
-$\shara$ then runs a procedure $\solvecdd$ on $S'$, which either returns the value
-$\none$ to denote that $S'$ has no solution or a solution
-$\sigma'$ (\autoref{line:shara-case}).
+\sys then invokes $\solvecdd$ on $S'$.
 %
-If $\solvecdd$ returns that $S'$ has
-no solution, then \sys returns that $S$ has no solution
-(\autoref{line:shara-ret-none}).
+When \solvecdd~returns that $S'$ has
+no solution, \sys~propogates $\none$ (\autoref{line:shara-ret-none}).
 %
-Otherwise, if $\solvecdd$ returns a solution
-$\sigma'$, then $\sys$ returns, as a solution to $S$,
-$\collapse{ \eta }{ \sigma' }$, defined below
-(\autoref{line:shara-ret-collapse}).
+Otherwise, \sys constructs a solution from the CDD solution, $\sigma'$, by
+invoking $\collapse{ \eta }{ \sigma' }$ (\autoref{line:shara-ret-collapse}).
 
 % define collapse:
 For $\sigma'$ and %
