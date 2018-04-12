@@ -31,20 +31,20 @@ for hierarchical programs~\cite{lal-qadeer15,lal-qadeer-lahiri12}
 (programs with only bounded iteration and recursion).
 %
 Second and most importantly, a well-known approach for solving a
-general CHC system can reduces the input problem to solving a sequence
-of recursion-free systems \QZ{reference}.
+general CHC system reduces the input problem to solving a sequence
+of recursion-free systems.
 %
 Such approaches attempt to synthesize a solution for the   original
 system from the solutions of recursion-free systems~\cite{bjorner13}.
 %
-Because of this, the performance of solving general CHC system relies
+The performance of such solvers relies
 heavily on the performance of solving recursion-free CHC systems.
 %
 
 % current general techniques for solving recursion-free systems
 Typically, recursion-free CHC systems are not solved directly.
 %
-Instead, they are reduced to a more specific subclass of
+Instead, they are rewritten to a more specific subclass of
 recursion-free CHC system.
 %
 These classes include those of
@@ -59,7 +59,7 @@ Such classes can be solved by issuing
 \emph{interpolation queries} to find suitable definitions for the
 uninterpreted predicates.
 %
-We refer such classes as \emph{directly solvable}.
+We refer to such classes as \emph{directly solvable}.
 
 % Time complexity
 In general, solving a recursion-free CHC system for
@@ -70,8 +70,8 @@ In contrast, solving a directly solvable system with the same logic
 and theories is in co-NP~\cite{rummer13b}.
 %
 Therefore, the performance of solving a recursion-free system is
-highly reliant on the size of the directly solvable system it reduces
-to.
+highly reliant on the size of the synthesized directly solvable
+system.
 
 % contribution of this paper: CDD systems:
 The first contribution of this paper is the introduction of a novel
@@ -80,11 +80,11 @@ class of directly solvable systems that we refer to as
 %
 The class consists of all recursion-free CHC systems such that each
 clause in the system has at most one dependency on the same relational
-predicate.\QZ{repharse this}
+predicate.
 %
 The key characteristic of this class is that CDD systems are often
 smaller than equivalent systems in other directly solvable classes,
-and therefore solving recursion free systems by rewriting them in CDD
+and therefore solving recursion free systems by rewriting them to CDD
 form is often less computationally expensive.
 
 % a new solver
@@ -122,8 +122,8 @@ prover~\cite{moura08}.
 We evaluated the effectiveness of \sys on standard benchmarks drawn
 from SVCOMP15~\cite{svcomp15}.
 %
-The results indicate that in a strong majority of cases,
-\sys performs better than modern solvers.
+The results indicate that \sys outperforms modern solvers in a strong
+majority of cases.
 %
 Futhermore, the results indicate that combining the strengths of \sys
 with that of other existing approaches (as discussed in

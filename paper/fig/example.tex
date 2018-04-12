@@ -14,16 +14,16 @@
 \end{scope}
 
 \begin{scope}[every edge/.style={draw=black, very thick}]
-  \path[->, style=right] (L4') edge node {$\cc{abs} = 0$} (L4);
-  \path[->, style=above left] (L4) edge node {$\cc{n} \geq 0$} (L6);
-  \path[->, style=above right] (L4) edge node {$\cc{n} < 0$} (L8);
-  \path[->, style=left] (L6) edge node {$\cc{abs'} = \cc{n}$} (L9);
-  \path[->, style=right] (L8) edge node {$\cc{abs'} = -\cc{n}$} (L9);
+  \path[->, style=right] (L4') edge node {$\cc{abs} = 0$ \textbf{(2)}} (L4);
+  \path[->, style=above left] (L4) edge node {$\cc{n} \geq 0$ \textbf{(3)}} (L6);
+  \path[->, style=above right] (L4) edge node {$\cc{n} < 0$ \textbf{(4)}} (L8);
+  \path[->, style=left] (L6) edge node {$\cc{abs'} = \cc{n}$ \textbf{(5)}} (L9);
+  \path[->, style=right] (L8) edge node {$\cc{abs'} = -\cc{n}$ \textbf{(6)}} (L9);
   \path[-] (L9) edge[out=330, in=90] (main');
-  \path[->, style=right] (dbl') edge node {$\cc{d} = 2*\cc{x}$} (dbl);
+  \path[->, style=right] (dbl') edge node {$\cc{d} = 2*\cc{x}$ \textbf{(1)}} (dbl);
   \path[-] (dbl) edge[out=210, in=90] (main');
-  \path[->, style=above right] (main') edge node {$\cc{abs'} = \cc{x} \land \cc{res} = \cc{d}$} (main);
-  \path[->, style=right] (main) edge node {$\cc{res} < 0$} (bot);
+  \path[->, style=above right] (main') edge node {$\cc{abs'} = \cc{x} \land \cc{res} = \cc{d}$ \textbf{(7)}} (main);
+  \path[->, style=right] (main) edge node {$\cc{res} < 0$ \textbf{(8)}} (bot);
 \end{scope}
 \end{tikzpicture}
 }
