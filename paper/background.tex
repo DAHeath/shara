@@ -132,38 +132,24 @@ substituting each uninterpreted predicate by its interpretation.
 All logical objects in this paper are defined over a fixed space of first-order
 variables, $X$.
 %
-For a theory $\mathcal{T}$, the space of $\mathcal{T}$
-formulas over $X$ is denoted $\tformulas{\mathcal{T}}$.
+For a theory $T$, the space of $T$
+formulas over $X$ is denoted $\tformulas{T}$.
 %
-For each formula $\varphi \in \tformulas{\mathcal{T}}$, the set of
+For each formula $\varphi \in \tformulas{T}$, the set of
 variables that occur in $\varphi$ (i.e., the \emph{vocabulary} of
 $\varphi$) is denoted $\vocab(\varphi)$.
 %
 % define models, satisfaction, entailment
 For formulas $\varphi_0, \ldots, \varphi_n, \varphi \in
-\tformulas{\mathcal{T}}$, the fact that $\varphi_0, \ldots, \varphi_n$
+\tformulas{Ts}$, the fact that $\varphi_0, \ldots, \varphi_n$
 \emph{entail} $\varphi$ is denoted $\varphi_0, \ldots, \varphi_n
 \entails \varphi$.
 
-% Define replacement and substitution:
-For sequences of variables $Y = [ y_0, \ldots, y_n ]$ and $Z = [ z_0,
-\ldots, z_n ]$, the $\mathcal{T}$ formula constraining the equality of
-each element in $Y$ with its corresponding element in $Z$, i.e., the
-formula $\bigland_{0 \leq i \leq n} y_i = z_i$, is denoted $Y = Z$.
-%
-The repeated replacement of variables $\varphi[ z_0 / y_0 \ldots z_{n}
-/ y_{n} ]$ is denoted $\replace{\varphi}{Y}{Z}$.
-%
-For each formula $\varphi$ defined over free variables $Y$,
-$\replace{\varphi}{Y}{Z}$ is denoted alternatively as $\varphi[ Z ]$.
-%
-The number of free variables in formula $\varphi$ is denoted
-$\degreeof{\varphi}$.
 
 % introduce interpolation:
-An interpolant of mutually inconsistent $\mathcal{T}$ formulas
-$\varphi_0$ and $\varphi_1$ is a $\mathcal{T}$ formula in their common
-vocabulary that explains their inconsistency.
+An interpolant of a pair of mutually inconsistent formulas
+$\varphi_0$ and $\varphi_1$ in $\tformulas{T}$ is a formula $I$ in $\tformulas{T}$ over 
+their common vocabulary that explains their inconsistency.
 %
 \begin{defn}
   \label{defn:itps}
@@ -179,15 +165,22 @@ vocabulary that explains their inconsistency.
 \end{defn}
 %
 For the remainder of this paper, all spaces of formulas will be
-defined for a fixed, arbitrary theory $\mathcal{T}$ that supports
-interpolation, such as combinations of the theories of linear
-arithmetic and the theory of uninterpreted functions with equality.
+defined for a fixed, arbitrary theory $T$ that supports
+interpolation, such as the theory of linear
+arithmetic.
 % introduce decision procedure:
 Although determining the satisfiability of formulas in such theories
 is NP-complete in general, decision procedures~\cite{moura08} and
 interpolating theorem provers~\cite{mcmillan04} for such theories have
 been proposed that operate on such formulas efficiently.
 %
-We define \sys in terms of an abstract decision procedure for
-$\mathcal{T}$ named \issat, and an abstract interpolating theorem
-prover for $\mathcal{T}$ named $\solveitp$.
+
+%
+We define \sys in terms of an abstract interpolating theorem
+prover for $T$ named $\solveitp$.
+%
+Given two formulas $\varphi_0$ and $\varphi_1$, if $\varphi_0$ and $\varphi_1$ are mutually 
+inconsistent, $\solveitp$ returns the interpolant of $\varphi_0$ and $\varphi_1$.
+%
+Otherwise, $\solveitp$ returns $\none$.
+

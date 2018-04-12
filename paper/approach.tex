@@ -11,7 +11,7 @@ systems and its key properties.
 directly.
 %
 \autoref{sec:core-solver} describes how \sys solves a given
-recursion-free system by solving an equivalent CDD system.
+recursion-free system by solving an CDD system.
 %
 Proofs of all theorems stated in this section are contained in appendix
 \autoref{app:char} and \autoref{app:corr}.
@@ -20,8 +20,11 @@ Proofs of all theorems stated in this section are contained in appendix
 \label{sec:CDD-defn}
 %
 The key contribution of our work is the introduction of the class of
-Clause-Dependence Disjoint (CDD) systems. Critically, CDD systems can be solved
-in co-NP time by interpolation of the uninterpreted relational predicates.
+Clause-Dependence Disjoint (CDD) systems.
+%
+CDD systems can be solved
+in co-NP time and contains the union of all previous introduced classes
+that can be solved in co-NP time.
 %
 \begin{defn}
   \label{defn:cdds}
@@ -32,7 +35,7 @@ in co-NP time by interpolation of the uninterpreted relational predicates.
   the transitive dependences of $P$ and $Q$ are disjoint ($\tdepsof{P} \cap
   \tdepsof{Q} = \emptyset$)
   %
-  and no predicate is a sibling of itself,
+  and no predicate shows more than once in the body of a single clause,
   %
   then $\cc{S}$ is \emph{Clause-Dependence Disjoint (CDD)}.
 \end{defn}
@@ -50,7 +53,7 @@ As discussed in \autoref{sec:overview}, CDD is a superclass of the
 class of body-disjoint systems and the class of linear systems.
 %
 For a given recursion-free system $S$, if each uninterpreted predicate $Q \in
-\predof{S}$, appears in at most one clause $C$ ($Q \in \bodyof{C}$) and no
+\predof{S}$, appears in at most one in the body of a clause and, no
 predicate appears more than once in the body of a single clause,
 then $S$ is \emph{body-disjoint}~\cite{rummer13a,rummer13b}.
 %
@@ -64,7 +67,7 @@ predicate, then $\cc{S}$ is \emph{linear}~\cite{albarghouthi12a}.
   of body-disjoint and linear systems.
 \end{thm}
 %
-Proof given in \autoref{app:char}.
+Proof is given in \autoref{app:char}.
 
 % describe how to solve a CDD system
 \subsection{Solving a CDD system}
@@ -127,7 +130,7 @@ It is possible that the pre and post formulas may be mutually satisifiable, in
 which case $\solveitp$ returns \cc{SAT}. In this case, $\solvecdd$ returns
 $\nosoln$ to indicate that $\cc{S}$ is not solvable.
 %
-Otherwise, $\solvecdd$ modifies the partial solution by setting the
+Otherwise, $\solvecdd$ updates the partial solution by setting the
 interpretation of $P$ to $\cc{I}$.
 %
 Once all predicates have been interpolated, $\solvecdd$ returns the complete
@@ -141,6 +144,13 @@ solution, $\sigma$.
   One such ordering is $\cc{L}_4$, $\cc{L}_6$, $\cc{L}_8$, $\cc{L}_9$, \cc{dbl},
   \cc{main}.
 \end{ex}
+
+% solve-cdd in coNP
+\begin{thm}
+  \label{thm:solve-cp}
+  Given a CDD system $S$, $\solvecdd$ either returns the solution of $S$ or $\none$
+  in coNP time.
+\end{thm}
 
 \subsubsection{Constructing constraints for predicates}
 %
@@ -235,7 +245,7 @@ mutually inconsistent with the solution of $P$.
 The post formula is constructed based on the predicates which depend on $P$.
 %
 % dependents of R:
-Let $D_0$ be the reflexive transitive dependents of $P$ in $S$,
+Let $D_0$ be the \emph{reflexive transitive dependents} of $P$ in $S$,
 % clause siblings of dependents:
 let $D_1$ be the siblings in $S$ of $(D_0 \union {P})$,
 %
@@ -255,7 +265,7 @@ characterization of all predicates $Q \in D$ and the query clause.
   When $\solvecdd$ solves $\cc{L}_9$ in $\mcchc$, it must consider
   the dependents of $\cc{L}_9$.
   %
-  The transitive dependents $D_0$ of $\cc{L}_9$ is \{\cc{main}\}.
+  The \emph{reflexive transitive dependents} $D_0$ of $\cc{L}_9$ is \{\cc{main}\}.
   %
   The siblings set $D_1$ is \{\cc{dbl}\}.
   %
@@ -263,7 +273,7 @@ characterization of all predicates $Q \in D$ and the query clause.
   %
   Therefore, the $D$ set is \{\cc{main},\cc{dbl}\}.
   %
-  The \cc{query} is $\cc{b}_{main} \land res'<0$.
+  The \cc{query} is $\cc{b}_{main} \land res<0$.
   %
   The post constraint for $\cc{L}_9$ under $\sigma$ is
   $$\cc{query} \land \vc{\cc{main},\sigma} \land \vc{\cc{dbl},\sigma}$$
@@ -274,7 +284,7 @@ characterization of all predicates $Q \in D$ and the query clause.
 
 % give the general procedure:
 $\shara$, given a recursion-free CHC system $S$,
-constructs an equivalent CDD system $S'$.
+constructs an CDD system $S'$.
 %
 \sys then directly solves $S'$ and, from this solution, constructs a solution
 for $S$.
@@ -302,6 +312,12 @@ $S$, and $S'$).
 If there is a correspondence from $S'$ to $S$, then $S'$ is an \emph{expansion}
 of $S$, denoted $S \expandsto S'$.
 %
+
+%
+\begin{defn}
+  If $S'$ is CDD, $S \expandsto S'$, and there is no CDD system $S''$ such that $S \expandsto S' \expandsto S''$ and
+  $S'' \neq S'$, then $S'$ is a minimal CDD expansion of $S$.
+\end{defn}
 
 % core algorithm
 \begin{algorithm}[t]
@@ -347,7 +363,7 @@ returns a solution
 to $S$ or the value $\none$ to denote that $S$ is
 unsolvable.
 %
-\sys first runs a procedure $\expand{}$ on $S$ to obtain a CDD expansion
+\sys first runs a procedure $\expand$ on $S$ to obtain a CDD expansion
 $S'$ of $S$.
 %
 \sys then invokes $\solvecdd$ on $S'$.
@@ -365,13 +381,14 @@ $\collapse{\eta}{\sigma'}$ maps solution $\sigma'$ to
 $\sigma$[$P \to \bigland_{ \eta(P') = P}
 \sigma'(P')$].
 %
-$\expand{ \mathcal{R} }$ is given in \autoref{app:cons-cdd}.
+$\expand$ is given in \autoref{app:cons-cdd}.
 
 % shara correctness
 \begin{thm}
   \label{thm:corr}
   $S$ is solvable if and only if $\shara$ returns solution $\sigma$.
 \end{thm}
+Proof is given in \autoref{app:corr}.
 
 %%% Local Variables: 
 %%% mode: latex
