@@ -3,7 +3,7 @@
 
 %first introduce the question
 In \autoref{sec:running-ex}, we describe a recursion-free CHC system,
-$\mcchc$, that models the safety of a small program,
+$\mcchc$ (\autoref{fig:chc}), that models the safety of a small program,
 \cc{dblAbs} (\autoref{fig:multicall-code}).
 %
 In \autoref{sec:solve-ex}, we show that $\mcchc$ is a CDD system and
@@ -53,7 +53,7 @@ directly solvable classes introduced in previous work.
         \cc{dbl}(\cc{x}, \cc{d})
         \land \cc{abs'} = \cc{x} \land \cc{res} = \cc{d} \\
         %
-        \bot &\gets \cc{main}(\cc{n}, \cc{res}) \land \cc{res} < 0 
+        False &\gets \cc{main}(\cc{n}, \cc{res}) \land \cc{res} < 0 
       \end{align}
     }
   \end{floatrow}
@@ -70,7 +70,8 @@ Verifying this assertion reduces to solving a recursion-free
 CHC system over a set of uninterpreted predicates that represent
 the control locations in \cc{dblAbs}.
 %
-In particular, one such system $\mcchc$ is shown in \autoref{fig:chc}.
+In particular, one such system, $\mcchc$, is shown in
+\autoref{fig:chc}.
 %
 %
 While $\mcchc$ has been presented as the result
@@ -86,12 +87,13 @@ the result of translation from a program at all.
 The recursion-free CHC system $\mcchc$ is a
 \emph{Clause-Dependence-Disjoint} (CDD) system.
 % state the defn of CDD:
-A CHC system can be classified as CDD when all clauses are satisified
-the following rules:
+A CHC system can be classified as CDD when each clause satisfies the
+following rules:
 %
-\textbf{(1)} no two predicates in the body of the same clause share any transitive
-dependencies on other predicates(i.e. dependence disjoint) 
-and \textbf{(2)} no clause has more than one same predicate in its body.
+\textbf{(1)} no two predicates in the body of the same clause share
+any transitive dependencies on other predicates and
+\textbf{(2)} no clause has more than one occurrence of a given
+predicate in the body.
 % give a example
 As an example, clause $(7)$ is dependence disjoint. 
 %
@@ -107,8 +109,6 @@ $\{\cc{L}_4,\cc{L}_6,\cc{L}_8\} \cap \varnothing = \varnothing$.
 All other clauses in $\mcchc$ have at most one uninterpreted predicate
 in the body, so they are trivially disjoint dependent.
 %
-And there is no clauses has more than one same predicate in its body.
-%
 Therefore $\mcchc$ is a CDD system.
 %
 %
@@ -122,35 +122,31 @@ The formal definition of transitive dependency is given in
 \sys solves CDD systems directly by issuing a binary interpolation
 query for each uninterpreted predicate in topological order.
 %
-Each interpretation of uninterpreted predicate $P$ can
-be computed by interpolating
+Each interpretation of a predicate $P$ can be computed by
+interpolating
 \textbf{(1)} the \emph{pre}-formula, constructed from clauses where
-$P$ is the head and
+$P$ is the head, and
 \textbf{(2)} the \emph{post}-formula, constructed from
 all clauses where the head transitively depends on $P$.
 %
 
-For example, when \sys try to solve $\cc{L}_9$, it has partial solution that 
-map $\cc{L}_4$, $\cc{L}_6$, $\cc{L}_8$ to their interpretation.
+For example, consider $\cc{L}_9$. By the time \sys attempts to
+synthesize an interpretation for $\cc{L}_9$ it will have solutions for
+$\cc{L}_4$, $\cc{L}_6$, $\cc{L}_8$.
 %
 Possible interpretations of these predicates are shown in
 \autoref{fig:ex-graph}.
 %
-
-
-%
-A interpretation of $\cc{L}_9$ can be constructed by interpolating
-the appropriate pre and post formulas.
-%
 The pre-formula is constructed from the bodies of clauses where
-$\cc{L}_9$ is the head. 
+$\cc{L}_9$ is the head.
 %
 Each relational predicate, $P$,
 is replaced by a corresponding boolean indicator variable, $\cc{b}_P$.
 %
-Each
-boolean indicator variable implies the solution for its predicate which is encoded
-as the disjunction of the negation of the boolean indicator variable and the solution.
+Each boolean indicator variable implies the solution for its
+predicate,
+encoded as the disjunction of the negation of the boolean
+indicator variable and the solution.
 %
 In particular, the pre-formula for $\cc{L}_9$ is constructed from
 clauses (5) and (6):
@@ -170,16 +166,17 @@ corresponding boolean indicators. However, we omit the boolean indicator for
 $\cc{L}_9$. The post-formula is composed from clauses (1), (7), and
 (8):
 \begin{gather}
-  (\cc{b}_{\cc{main}} \land \cc{res'} < 0)
+  (\neg \cc{b}_{\cc{dbl}} \lor \cc{d} = 2*\cc{x})
   \land
   (\neg \cc{b}_{\cc{main}} \lor
     (\cc{b}_{\cc{dbl}}
     \land \cc{abs'}= \cc{x}
     \land \cc{res}=\cc{d} ))
-  \land (\neg \cc{b}_{\cc{dbl}} \lor \cc{d} = 2*\cc{x})
+  \land
+  (\cc{b}_{\cc{main}} \land \cc{res'} < 0)
 \end{gather}
 %
-Interpolating the pre and post formulas yields a intepretation
+Interpolating the pre and post formulas yields an intepretation
 of $\cc{L}_9$: $\cc{abs'} \geq 0$.
 %
 The procedure for solving a CDD system is described in formal detail
@@ -196,19 +193,18 @@ discuss body-disjoint systems and linear systems.
 %
 
 % tree solver
-Body-disjoint systems(i.e derivation tree)
+Body-disjoint (or derivation tree)
 systems~\cite{mcmillan14,bjorner13,heizmann10,rummer13a,rummer13b} are
-class of recursion-free CHC system where each uninterpreted predicate
-appears in the body of at most one clause and appears in such a
-clause exactly once.
+a class of recursion-free CHC system where each uninterpreted
+predicate appears in the body of at most one clause and appears in
+such a clause exactly once.
 %
 Such systems cannot model a program with multiple control paths that
 share a common pre-subpath, typically modeled as a CHC system with a
 uninterpreted predicate that occurs in the body of multiple clauses.
 %
-$\mcchc$ is not a body-disjoint system because the uninterpreted
-predicates $\cc{L}_4$ shows in the body of both clause (3) and clause
-(4).
+$\mcchc$ is not a body-disjoint system because $\cc{L}_4$ shows in the
+body of both clause (3) and clause (4).
 %
 In order to solve for $\mcchc$, a solver which uses
 body-disjoint systems would have to create a fresh copy of
@@ -216,8 +212,9 @@ $\cc{L}_4$, as well copies for all clauses and relational predicates that
 $\cc{L}_4$ depends on.
 
 %linear systems:
-Previous work also introduced linear system~\cite{albarghouthi12a},
-where each clause's body has at most one uninterpreted predicate.
+Previous work has also introduced the class of linear
+systems~\cite{albarghouthi12a}, where the body of each has at most
+one uninterpreted predicate.
 %
 However, such systems cannot directly model the control flow of a
 program that contains procedure calls.
@@ -225,13 +222,17 @@ program that contains procedure calls.
 $\mcchc$ is not a linear system because the body of clause (7) has two
 predicates \cc{L9} and \cc{dbl}.
 %
-CHC solvers that solve linear systems effectively inline the
+CHC solvers that use linear systems effectively inline the
 constraints for relational predicates that occur in non-linear
 clauses~\cite{albarghouthi12b}.
 %
 In the case of $\mcchc$, inlining the constraints of $\cc{dbl}$ is
 efficient, but in general such approaches can generate systems that
-are exponentially larger than the input.
+are exponentially larger than the input. For example, if the procedure
+$\cc{dbl}$ were called more than once in $\cc{dblsAbs}$ then multiple
+copies of the body of the procedure would be inlined. And if the body
+of this procedure were large, the inlining would quickly become
+prohibitively expensive.
 
 %% talk about expansion:
 \begin{figure}[t]
@@ -256,32 +257,30 @@ are exponentially larger than the input.
   \end{floatrow}
 \end{figure}
 
-The class CDD of CDD systems is a superclass of union of the classes of
-body-disjoint and linear systems.
+The hierarchy of discussed classes of recursion-free systems is
+depicted in \autoref{fig:hierarchy}.
 %
-% The fact that $\mcchc$ is CDD corresponds to the fact that there no
-% statements executed more than once within one execution path.
-% \DAH{elaborate}
+As shown, the class of CDD systems is a superclass of both the class
+of body-disjoint systems and the class of linear systems. So any
+recursion-free system that is efficiently expressible in body-disjoint
+or linear form is also efficiently expressible in CDD form.
 %
-E.g., a recursion-free system that models \cc{dblAbs} 
-call \cc{dbl} twice on \cc{abs} in sequence would not
-be CDD.
+In addition, some systems which are expensive to express in
+body-disjoint or linear form are efficiently expressible in CDD form.
 %
-\sys, given an arbitrary recursion-free CHC system $S$,
-solves it by generating an equivalent CDD system $S'$ and
-solving $S'$ directly.
+\sys~takes advantage of this fact when solving input systems.
+Given an arbitrary recursion-free CHC system $S$, \sys~generates an
+equivalent CDD system $S'$ and solves $S'$ directly.
 %
 In general, $S'$ may have size exponential in the size of
 $S$.
 %
-In practice, a suitable equivalent system can be generated using
-heuristics analogous to those used to generate compact verification
-conditions of hierarchical programs~\cite{flanagan01,lal-qadeer15}.
+However, \sys~generates equivalent systems via heuristics analogous to
+those used to generate compact verification conditions of hierarchical
+programs~\cite{flanagan01,lal-qadeer15}.
+%
+In practice these heuristics often yield CDD systems which are
+small with respect to the input system.
 %
 A general procedure for constructing a CDD expansion of a given CHC
 system is given in \autoref{app:cons-cdd}.
-
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: "p"
-%%% End: 

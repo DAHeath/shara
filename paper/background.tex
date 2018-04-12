@@ -18,17 +18,19 @@ formula in some background logic, such as linear integer arithmetic.
 The uninterpreted predicates are applied to variables which may or may
 not appear in the fact.
 %
-A head can be either an uninterpreted predicate applied to variables or \cc{False}.
+A head can be either an uninterpreted predicate applied to variables or $False$.
 %
-A clause where the head is \cc{False} is called a query. A CHC can be
+A clause where the head is $False$ is called a query. A CHC can be
 defined structurally:
 \begin{align*}
-\cc{chc} &\Coloneqq \cc{head} \gets \cc{body} \\
-\cc{head} &\Coloneqq \cc{False} \\&\mid \cc{pred}  \\
-\cc{body} &\Coloneqq \varphi \wedge \cc{preds} \\
-\cc{preds} &\Coloneqq \cc{True} \\&\mid \cc{pred} \wedge \cc{preds} \\
-\cc{pred} &\Coloneqq \textsf{an uninterpreted predicate applied to variables} \\
-\varphi &\Coloneqq \textsf{a formula that all variables are vocabulary} \\
+\cc{chc} \Coloneqq&~\cc{head} \gets \cc{body} \\
+\cc{head} \Coloneqq&~False \\
+  \mid&~\cc{pred} \\
+\cc{body} \Coloneqq&~\varphi \wedge \cc{preds} \\
+\cc{preds} \Coloneqq&~True \\
+  \mid&~\cc{pred} \wedge \cc{preds} \\
+\cc{pred} \Coloneqq&~\textsf{\emph{an uninterpreted predicate applied to variables}} \\
+\varphi \Coloneqq&~\textsf{\emph{a formula}} \\
 \end{align*}
 %
 % define a body function, head function, and recursion-free
@@ -36,19 +38,18 @@ For a given CHC $C$, $\bodyof{C}$ denotes the vector of uninterpreted
 predicates in the body and $\consof{C}$ denotes the fact in the
 body.
 %
-It is possible for an uninterpreted predicate to appear multiple times
-in the body of $C$.
-%
 If $C$ is not a query, then $\headof{C}$ denotes the uninterpreted
 predicate in the head.
 %
-
 %define a CHC system
 A CHC system is a set of CHCs where exactly one clause is a query.
 %
 For a given CHC system $S$, $\predof{S}$ denotes the set of all
 uninterpreted predicates.
 
+To explain the structure of a CDD system, we need terminology that relates
+predicates in a CHC system including the terms \emph{predicate dependency},
+\emph{transitive predicate dependency}, and \emph{sibling}.
 % define dependency predicates
 \begin{defn}
   Given a CHC system $\cc{S}$ and two uninterpreted predicates
@@ -67,7 +68,6 @@ Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$,
 $\depsof{P}$ denotes the set of all predicate dependencies of $\cc{P}$
 in $\cc{S}$.
 %
-
 %define transitive dependency predicates
 \begin{defn}
   Given a CHC system $\cc{S}$ and three uninterpreted predicates
@@ -94,7 +94,6 @@ Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$,
 $\tdepsof{P}$ denotes the set of all transitive predicate dependencies
 of $\cc{P}$ in $\cc{S}$.
 %
-
 %define siblings
 \begin{defn}
   Given a CHC system $\cc{S}$ and two uninterpreted predicates
@@ -105,7 +104,7 @@ of $\cc{P}$ in $\cc{S}$.
 %
 \begin{ex}
   Because uninterpreted predicates $\cc{L}_9$ and $\cc{db}$ both
-  appear in the body of clause (6), $\cc{L}_9$ and $\cc{db}$ are
+  appear in the body of clause (7), $\cc{L}_9$ and $\cc{db}$ are
   siblings.
   %
 \end{ex}
@@ -130,10 +129,10 @@ substituting each uninterpreted predicate by its interpretation.
 \subsection{Logical interpolation}
 \label{sec:itps}
 %
-All objects defined in this paper are defined over a fixed space of
-first-order logical variables $X$.
+All logical objects in this paper are defined over a fixed space of first-order
+variables, $X$.
 %
-In particular, for a theory $\mathcal{T}$, the space of $\mathcal{T}$
+For a theory $\mathcal{T}$, the space of $\mathcal{T}$
 formulas over $X$ is denoted $\tformulas{\mathcal{T}}$.
 %
 For each formula $\varphi \in \tformulas{\mathcal{T}}$, the set of

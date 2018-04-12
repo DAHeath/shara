@@ -1,35 +1,40 @@
-% \scalebox{0.75}{%
-% }
-
 \begin{tikzpicture}
-\tikzstyle{every node}=[draw=black, thin, ellipse]
-  \begin{scope}[fill opacity=0.1,text opacity=1]
+\begin{scope}
+  \node at (0, 0) (rec) {%
+    \begin{tabular}{c}
+      Recursion Free\\\textsc{co-Nexptime Complete}
+    \end{tabular}
+  };
 
-  \draw node[minimum width=6.2cm,minimum height=6cm,
-    label={[anchor=north, inner sep=5pt]north:
-      \begin{tabular}{c}Recursion-Free\\\textsc{co-NEXPTIME Complete}\end{tabular}} ]
-    at (0,0)
-    {};
+  \node[below = 0.5 of rec] (dir) {%
+    \begin{tabular}{c}
+      Directly Solvable\\\textsc{co-NP}
+    \end{tabular}
+  };
 
-  \draw node[minimum width=5.5cm,minimum height=4.5cm,
-    label={[anchor=south, inner sep=0pt]south:
-      \begin{tabular}{c}Directly Solvable\\\textsc{co-NP}\end{tabular}} ]
-    at (0,-6mm)
-    {};
+  \node[draw, rounded corners=0.5cm, below = 0.5 of dir] (cdd) {%
+    \begin{tabular}{c}
+      Clause-Dependence Disjoint\\\textsc{co-NP}
+    \end{tabular}
+  };
 
-  \draw node[very thick, minimum width=5cm,minimum height=3cm,
-    label={[anchor=north, inner sep=5pt]north:CDD}]
-    at (0,-1mm)
-    {};
+  \node[below left = 0.5 and -1.1 of cdd] (lin) {%
+    \begin{tabular}{c}
+      Linear\\\textsc{co-NP}
+    \end{tabular}
+  };
 
-  \draw node[minimum width=2.7cm,minimum height=2cm]
-    at (10mm,-2mm)
-    {\begin{tabular}{c}Body\\Disjoint\end{tabular}};
+  \node[below right = 0.5 and -1.1 of cdd] (bd) {%
+    \begin{tabular}{c}
+      Body-Disjoint\\\textsc{co-NP}
+    \end{tabular}
+  };
 
-  \draw node[minimum width=2.7cm,minimum height=2cm]
-    at (-10mm,-2mm)
-    {Linear};
-
-    % \begin{tabular}{c}Directly Solvable\\\textsc{co-NP}\end{tabular}} ]
-  \end{scope}
+\end{scope}
+\begin{scope}[every edge/.style={draw=black, very thick}]
+  \path[-] (bd) edge (cdd);
+  \path[-] (lin) edge (cdd);
+  \path[-] (cdd) edge (dir);
+  \path[-] (dir) edge (rec);
+\end{scope}
 \end{tikzpicture}
