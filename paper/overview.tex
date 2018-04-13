@@ -270,13 +270,13 @@ In addition, some systems which are expensive to express in
 body-disjoint or linear form are efficiently expressible in CDD form.
 %
 \sys~takes advantage of this fact when solving input systems.
-Given an arbitrary recursion-free CHC system $S$, \sys~generates an
-equivalent CDD system $S'$ and solves $S'$ directly.
+Given an arbitrary recursion-free CHC system $S$, \sys~reduce $S$ to an
+CDD system $S'$ and solves $S'$ directly.
 %
 In general, $S'$ may have size exponential in the size of
 $S$.
 %
-However, \sys~generates equivalent systems via heuristics analogous to
+However, \sys~generates CDD systems via heuristics analogous to
 those used to generate compact verification conditions of hierarchical
 programs~\cite{flanagan01,lal-qadeer15}.
 %
