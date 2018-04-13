@@ -5,6 +5,6 @@ def main(n)
   if (n >= 0)
      abs = n
   else
-     abs = -n
+     abs = (*@$-$@*)n
   res = dbl(abs)
   assert(res >= 0)

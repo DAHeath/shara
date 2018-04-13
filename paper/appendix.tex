@@ -314,7 +314,7 @@ if all interpolants queries return interpolants.
   \label{lem:vc}
   Given a recursion-free CHC system $S$ that is CDD and solvable, for
   all predicates $P \in \predof{S}$,
-  $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ returns
+  $\solveitp$ returns
   an interpolant $I$.
 \end{lem}
 %
@@ -322,7 +322,7 @@ if all interpolants queries return interpolants.
   %
   Assume that $S$ has a solution $\sigma$ and there are some
   predicates $P \in \predof{S}$ such that
-  $\solveitp(\prectr(\cc{P},\sigma'),\postctr(\cc{P},\sigma'))$
+  $\solveitp$
   returns $SAT$. This means there must be a model $m$ for the
   conjunction of $\prectr(\cc{P},\sigma')$ and
   $\postctr(\cc{P},\sigma')$.
@@ -333,7 +333,7 @@ if all interpolants queries return interpolants.
   Therefore, there can be no such model $m$.
   %
   Therefore,
-  $\solveitp(\prectr(\cc{P},\sigma'),\postctr(\cc{P},\sigma'))$ always
+  $\solveitp$ always
   returns interpolant.
 \end{proof}
 
@@ -341,7 +341,7 @@ if all interpolants queries return interpolants.
   \label{lem:solve-aux}
   Given a recursion-free CHC system $S$ that is CDD, if for all
   predicates $P \in \predof{S}$,
-  $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ returns
+  $\solveitp$ returns
   an interpolant $I$, then $\solvecdd(S)$ is a solution of $S$.
 \end{lem}
 %
@@ -368,13 +368,12 @@ if all interpolants queries return interpolants.
   $\prectr(\cc{P},\sigma)$ and $\postctr(\cc{P},\sigma))$ are
   inconsistent.
   %
-  The interpolant $I$ returned by
-  $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ is
-  entailed by each clause $C$ where $P$ is the head where the
+  The interpolant of these two formulas returned by $\solveitp$, $I$,
+  is entailed by each clause $C$ where $P$ is the head where the
   predicates in $\bodyof{C}$ are substituted by their interpretations
-  in$\sigma$.
+  in $\sigma$.
   %
-  $I$ is also inconsistment with all constraints that appear after $P$
+  $I$ is also inconsistent with all constraints that appear after $P$
   that support the query clause.
   %
   Therefore, when $\solvecdd$ updates $\sigma$ by binding $P$ to $I$
@@ -382,7 +381,7 @@ if all interpolants queries return interpolants.
 \end{proof}
 
 % SolveCDD: establish soundness
-$\solvecdd$ is correct for CDD systems.
+The output of $\solvecdd$ is correct for a given input CDD system.
 %
 \begin{lem}
   \label{lem:cdd-soln-sound}
@@ -394,7 +393,7 @@ $\solvecdd$ is correct for CDD systems.
   %
   The fact that $\solvecdd(S)$ returns $\sigma$ implies that for each
   predicate $P \in \predof{S}$,
-  $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ returns
+  $\solveitp$ returns
   a valid interpolant (\autoref{alg:solve-cdd}).
   %
   Therefore, \autoref{lem:solve-aux} implies that \solvecdd~returns a
@@ -412,7 +411,8 @@ $\solvecdd$ is correct for CDD systems.
 %
 \begin{proof}
   % final claim:
-  for all predicates $P \in \predof{S}$, $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ returns a interpolatn $I$, by
+  for all predicates $P \in \predof{S}$, $\solveitp$ returns a
+  interpolant $I$, by
   \autoref{lem:vc} and the fact that $\mathcal{S}$ is solvable.
   %
   Therefore, by \autoref{lem:solve-aux} and the fact that
@@ -421,44 +421,25 @@ $\solvecdd$ is correct for CDD systems.
 \end{proof}
 
 % proof of main theorem:
-The following is a proof of correctness of \sys
+The output of \sys is correct for a given input CDD system.
 (\autoref{sec:approach}, \autoref{thm:corr}).
 %
 \begin{proof}
-  Given recurion-free CHC systems $S$ and $S'$, and $\eta :\predof{S'} \to 
-  \predof{S}$ such that $(S', \eta) = \expand(S)$, 
-  then $S'$ is minimal CDD expansion of 
-  $S$, and $\eta$ is a correspondence from $S'$ to $S$ by \autoref{lem:expand-corr}.
+  Given two recursion-free CHC systems $S$ and $S'$ and a
+  $\eta$ such that $(S', \eta) = \expand(S)$,
+  $S'$ is minimal CDD expansion of $S$ and $\eta$ is a correspondence
+  from $S'$ to $S$ (\autoref{lem:expand-corr}).
   %
-  There is some $\sigma'$ such that
-  $\sigma' = \solvecdd(S' )$, by
-  the definition of $\shara$.
+  Assume that $S$ is solvable. Then so is $S'$, by
+  \autoref{lem:expansion-complete}.
   %
-  $\sigma'$ is a solution of $S'$, by
-  \autoref{lem:cdd-soln-sound}.
+  Therefore, there exists some $\sigma'$ such that $\sigma' =
+  \solvecdd(S')$, by the definition of $\shara$.
+  %
+  $\sigma'$ is a solution of $S'$, by \autoref{lem:cdd-soln-sound}.
   %
   $\collapse{ \eta }{ \sigma' }$ is a solution of $S$, by
   \autoref{lem:expansion-sound}.
-
-  % if S is solvable, then shara returns a solution
-  Assume that a recursion-free $S$ is solvable.
   %
-  Let a recursion-free CHC system $S'$ and $\eta :
-  \predof{S'} \to \predof{S}$ be such that $(S',
-  \eta) = \expand(S)$.
-  %
-  $S'$ is a CDD expansion of $S$, by
-  \autoref{lem:expand-corr}.
-  %
-  $S'$ is solvable, by \autoref{lem:expansion-complete}.
-  %
-  $\solvecdd(S')$ returns a solution $\sigma$ of $S'$ by \autoref{lem:cdd-soln-complete}.
-  %
-  $\shara$ returns a solution of $S$ by calling $\collapse{ \eta }{ \sigma' }$, based on
-  \autoref{alg:shara}.
+  Therefore, $\shara$ returns a valid solution of $S$.
 \end{proof}
-
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: "p"
-%%% End: 
