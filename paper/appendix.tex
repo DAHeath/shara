@@ -171,7 +171,7 @@ Namely, the upper bound of $\solvecdd$ is in co-NP.
 \section{Proof of Correctness}
 \label{app:corr}
 %
-In this section, we give a proof that \sys is a correct solver for
+In this section, we prove that \sys is correct when applied to
 recursion-free CHC systems.
 %
 We first establish lemmas for the correctness of each procedure used
@@ -181,33 +181,29 @@ by \sys, namely \textsc{Collapse} (\autoref{lem:expansion-sound} and
 (\autoref{lem:vc}, \autoref{lem:cdd-soln-sound}, and
 \autoref{lem:cdd-soln-complete}).
 %
-We combine the lemmas to prove correctness of \sys
-(\autoref{thm:corr}).
+We combine the lemmas to prove \sys is correct (\autoref{thm:corr}).
 
 % lem: result connecting expansions to constructing solutions
-For recursion-free CHC systems $S$ and $S'$, if $S'$ is
+For two recursion-free CHC systems $S$ and $S'$, if $S'$ is
 an expansion of $S$, then the result of collapsing a
 solution of $S'$ is a solution of $S$.
 %
 \begin{lem}
   \label{lem:expansion-sound}
-  For recursion-free CHC system $S'$ and $S$,
-  $\sigma'$ is a solution of $S'$, and $\eta : \predof{S}' \to
-  \predof{S}$ a correspondence from $\predof{S}'$ to $\predof{S}$,
-  $\collapse{\eta}{\sigma'}$ is a solution of $S$.
+  For two recursion-free CHC system $S'$ and $S$ such that $\sigma'$
+  is a solution of $S'$ and $\eta$ is a correspondence from
+  $S'$ to $S$, $\collapse{\eta}{\sigma'}$ is a
+  solution of $S$.
 \end{lem}
 %
 \begin{proof}
   % introduce 
-  Let $\mathcal{B} \in \bodies{\mathcal{R}}$, $\varphi \in \formulas$,
-  and $R \in \mathcal{R}$ be such that $((\mathcal{B}, \varphi),
-  R(\vars{ \mathcal{S} }(R))) \in \mathcal{S}$.
   %
-  For each predicate $P' \in \predof{S}'$ such that $\eta(P') = P$, there is
-  some clause $C' \in S'$ such that $P' \in \bodyof{C'}$ by the fact that $S'$ is an expansion of
-  $S$ and the definition of an expansion.
+  For each predicate $P' \in \predof{S}'$ such that $\eta(P') = P$,
+  there must exist some clause $C' \in S'$ such that $P' \in \bodyof{C'}$
+  because $S'$ is an expansion of $S$.
   %
-  Let preicate $Q' \in \predof{S}'$ such that $Q'$ is the head of clause $C'$.
+  Let predicate $Q' \in \predof{S}'$ be the head of $C'$.
   % 
   $\sigma'[P'] \land \consof{C'} \entails \sigma'[Q']$ by
   the fact that $\sigma'$ is a solution of $S'$.
@@ -220,29 +216,27 @@ solution of $S'$ is a solution of $S$.
   \collapse{\eta}{\sigma'}[Q'] \right)
   \]
   % 
-  Therefore, $\collapse{\eta}{\sigma'}$ is a solution of $P$.
+  Therefore, $\collapse{\eta}{\sigma'}$ has a solution for $P$.
   %
-  Therefore, $\collapse{\eta}{\sigma'}$ is a solution of
-  $S$.
+  Since $\collapse{\eta}{\sigma'}$ has a solution for each predicate
+  in $S$, $\collapse{\eta}{\sigma'}$ is a solution of $S$.
 \end{proof}
 
+Every expansion of a solvable recursion-free CHC system is also
+solvable.
 % completeness of expansions:
-For a recursion-free CHC system $S$ is solvalbe, each expansion of $S$
-is solvable.
 \begin{lem}
   \label{lem:expansion-complete}
-  For a recursion-free CHC system $S$ is solvable, and
-  $S'$ is
-  an expansion of $S$, $S'$ is solvable.
+  If a recursion-free CHC system $S$ is solvable and
+  $S'$ is an expansion of $S$, then $S'$ is solvable.
 \end{lem}
 %
 \begin{proof}
-  Let $\sigma : P \to \formulas$ be a solution of
-  $S$, and let $\eta : \predof{S}' \to \predof{S}$ be a
+  Let $\sigma$ be a solution of $S$, and let $\eta$ be a
   correspondence from $S'$ to $S$.
   %
-  Let $\sigma' : \predof{S}' \to \formulas$ be such that for each $P'
-  \in \predof{S}'$, $\sigma'(P') = \sigma(\eta(P'))$.
+  Let $\sigma'$ be such that for each $P' \in \predof{S}'$,
+  $\sigma'(P') = \sigma(\eta(P'))$.
   %
   Then $\sigma'$ is a solution of $S'$.
 \end{proof}
@@ -252,32 +246,34 @@ $\expand$ always returns a CDD expansion of its input.
 %
 \begin{lem}
   \label{lem:expand-corr}
-  For a recursion-free CHC system $S$ and $S'$, and $\eta : \predof{S'} \to \predof{S}$ such that
-  $(S', \eta) = \expand(S)$, $\eta$
-  is a correspondence from $S'$ to $S$, $S'$ is an CDD system and an expansion
-  of $S$.
+  For two recursion-free CHC systems $S$ and $S'$ and a correspondence
+  from $S'$ to $S$, $\eta$, such that $(S', \eta) = \expand(S)$,
+  $S'$ is an CDD system and an expansion of $S$.
 \end{lem}
 %
 \begin{proof}
-  Proof by induction on the evaluation of $\expand$ on
+  By induction over the evaluation of $\expand$ on
   an arbitrary recursion-free CHC system $S$.
   % inductive fact:
-  The inductive fact is that in each step of evaluation \expandaux,
+  The inductive fact is that for each evaluation step, \expandaux,
   $\corr$ is a correspondence from argument
   $S'$ to $S$.
   % base case:
-  For the base case, \expandaux is called initially on $S$,
+  In the base case, \expandaux is called initially on $S$,
   by \autoref{alg:expand}.
-  % 
-  $\corr$ is a correspondence from $S$ to
-  itself, by the definition of $\corr$
+  %
+  $\corr$ is a correspondence from $S$ to itself, by the definition of
+  $\corr$
   (\autoref{app:cons-cdd}).
 
   % inductive case:
-  For the inductive case, for $C \in S$ and $P \in \predof{S}$, $\expandaux$ calls itself on 
-  $\copyrel(S, C, P)$.
+  In the inductive case,
+  $\expandaux$ constructs an argument
+  $\copyrel(S, C, P)$
+  where $C$ is a clause and $P$ is a predicate in $S$.
+  $\expandaux$ recusively invokes itself with this argument.
   %
-  For each recursion-free CHC system $S'$ that generated by $\copyrel(S, C, P)$,
+  For each recursion-free CHC system $S'$ generated by $\copyrel(S, C, P)$,
   $\corr$ is a correspondence from $S'$ to
   $S$ by definition of $\copyrel$
   (\autoref{app:cons-cdd}).
@@ -294,7 +290,7 @@ $\expand$ always returns a CDD expansion of its input.
 
   % prove that returned system is CDD:
   For a given recursion-free CHC system $S'$, if $(S', \eta) =
-  \expand(S')$, 
+  \expand(S')$,
   then $\sharingclause(S') = \none$, by the definition of $\expand$.
   %
   If $\sharingclause(S') = \none$, then $S'$ is
@@ -311,89 +307,98 @@ This fact is not required to prove \autoref{thm:corr}, and thus a
 complete proof is withheld.
 
 % lem: VC's characterize system sat:
-For each recursion-free CHC system $S$, $S$ has a solution if and
-only if all interpolants queries return interpolants.
+For each recursion-free CHC system $S$, $S$ has a solution if and only
+if all interpolants queries return interpolants.
 %
 \begin{lem}
   \label{lem:vc}
-  Given a recursion-free CHC system $S$ that is CDD and solvable, for all predicates $P \in \predof{S}$,
-   $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ returns a interpolatn $I$.
+  Given a recursion-free CHC system $S$ that is CDD and solvable, for
+  all predicates $P \in \predof{S}$,
+  $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ returns
+  an interpolant $I$.
 \end{lem}
 %
 \begin{proof}
   %
-  Assume that $S$ has solution $\sigma$ and there are
-  some predicates $P \in \predof{S}$ such that $\solveitp(\prectr(\cc{P},\sigma'),\postctr(\cc{P},\sigma'))$
-  returns $SAT$, which means there is a model $m$ for the conjuntion of $\prectr(\cc{P},\sigma')$
-  and $\postctr(\cc{P},\sigma')$.
+  Assume that $S$ has a solution $\sigma$ and there are some
+  predicates $P \in \predof{S}$ such that
+  $\solveitp(\prectr(\cc{P},\sigma'),\postctr(\cc{P},\sigma'))$
+  returns $SAT$. This means there must be a model $m$ for the
+  conjunction of $\prectr(\cc{P},\sigma')$ and
+  $\postctr(\cc{P},\sigma')$.
   %
   But $\postctr(\cc{P},\sigma) = \false$, by the definition of
   a solution of a CHC system.
   %
   Therefore, there can be no such model $m$.
   %
-  Therefore, $\solveitp(\prectr(\cc{P},\sigma'),\postctr(\cc{P},\sigma'))$ always returns interpolant.
+  Therefore,
+  $\solveitp(\prectr(\cc{P},\sigma'),\postctr(\cc{P},\sigma'))$ always
+  returns interpolant.
 \end{proof}
 
 \begin{lem}
   \label{lem:solve-aux}
-  Given a recursion-free CHC system $S$ that is CDD, if for all predciates $P \in \predof{S}$, 
-  $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ returns a interpolatn $I$, 
-  then $\solvecdd(S)$ is a solution of $S$.
+  Given a recursion-free CHC system $S$ that is CDD, if for all
+  predicates $P \in \predof{S}$,
+  $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ returns
+  an interpolant $I$, then $\solvecdd(S)$ is a solution of $S$.
 \end{lem}
 %
 \begin{proof}
   % overview of structure:
-  Proof by induction on the $\solvecdd(S)$ calles $\solveitp$ on all predicates $P \in \predof{S}$
-  in a topolgical order.
+  By induction on the $\solvecdd(S)$ calls to $\solveitp$ over all
+  predicates $P \in \predof{S}$
+  in topological order.
   %
-  The inductive fact is that at each step of calling $\solveitp$, $\sigma$ is a
-  partial solution of $S$.
+  The inductive fact is that after each call to $\solveitp$, $\sigma$
+  is a partial solution of $S$.
   % base case:
-  For the base case, $\predof{S} = \varnothing$,
+  In the base case, $\predof{S} = \varnothing$,
   %
   Therefore, $\sigma$ is a solution of $S$.
 
   % inductive case:
-  For the inductive case, in each step, $\solvecdd$ calls $\solveitp$ on
-  a predicate $P \in \predof{S}$ with partial solution $\sigma$, which
-  contains all solutions of predciates $P \in \depsof{S}$.
+  In the inductive case, $\solvecdd$ calls $\solveitp$ on a predicate
+  $P \in \predof{S}$ with partial solution $\sigma$.  Due to the
+  topological ordering, $\sigma$ contains interpretations for each
+  predicate $P \in \depsof{S}$.
   %
-  Based on the definition of an interpolant(\autoref{defn:itps}), $\sigma$
-  is a partial solution of $S$, then $\prectr(\cc{P},\sigma')$ and $\postctr(\cc{P},\sigma))$
-  are inconsistent.
+  Based on the definition of an interpolant(\autoref{defn:itps}),
+  $\prectr(\cc{P},\sigma)$ and $\postctr(\cc{P},\sigma))$ are
+  inconsistent.
   %
-  The interpolant $I$ returns by $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ entails
-  by all clause that head is $P$ and $\bodyof{P}$ is substituted by partial solution $\sigma$.
+  The interpolant $I$ returned by
+  $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ is
+  entailed by each clause $C$ where $P$ is the head where the
+  predicates in $\bodyof{C}$ are substituted by their interpretations
+  in$\sigma$.
   %
-  $I$ also is inconsistment with all constrains shows later that support the query clause.
+  $I$ is also inconsistment with all constraints that appear after $P$
+  that support the query clause.
   %
-  Then $\solvecdd$ updates $\sigma$ by binding $P$ to $I$, which makes the new $\sigma$ also a partial
-  solution of $S$.
-
-  %
-  Base case combined with the inductive case, imply that \solvecdd
-  returns a solution of $S$.
+  Therefore, when $\solvecdd$ updates $\sigma$ by binding $P$ to $I$
+  the result is a partial solution of $S$.
 \end{proof}
 
 % SolveCDD: establish soundness
-$\solvecdd$ is a
-correct CHC solver for CDD systems $S$.
+$\solvecdd$ is correct for CDD systems.
 %
 \begin{lem}
   \label{lem:cdd-soln-sound}
   For a given CDD system $S$, and $\sigma = \solvecdd(S)$, %
-  $\sigma$ is a solution of $\mathcal{S}$.
+  $\sigma$ is a solution of $S$.
 \end{lem}
 %
 \begin{proof}
   %
-  $\solvecdd{S}$ returns $\sigma$ implies that for all predicates 
-  $P \in \predof{S}$, $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ returns a interpolatn $I$, 
-  by the definition of $\solvecdd$ \autoref{alg:solve-cdd}. 
+  The fact that $\solvecdd(S)$ returns $\sigma$ implies that for each
+  predicate $P \in \predof{S}$,
+  $\solveitp(\prectr(\cc{P},\sigma),\postctr(\cc{P},\sigma))$ returns
+  a valid interpolant (\autoref{alg:solve-cdd}).
   %
-  Therefore, \autoref{lem:solve-aux} implies that \solvecdd
-  returns a complete solution of $S$.
+  Therefore, \autoref{lem:solve-aux} implies that \solvecdd~returns a
+  complete solution of $S$.
 \end{proof}
 
 % SolveCDD: establish completeness
