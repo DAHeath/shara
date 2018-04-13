@@ -30,58 +30,48 @@ and solving each tree.
 Previous work has proposed solvers for recursive systems that, given a
 system $S$, attempt to solve $S$ by generating and
 solving a series of recursion-free unwindings of $S$.
-
 %
 In particular, \eldarica attempts to solve each unwinding
 $S'$ by reducing to and solving body-disjoint systems~\cite{rummer13a,rummer13b}.
 %
-
-%
-\duality attempts to avoid solving all 
-derivation-trees (i.e body-disjoint system) by using lazy annotation~\cite{bjorner13}.
+\duality attempts to avoid solving all derivation-trees (i.e
+body-disjoint system) by using lazy annotation~\cite{bjorner13}.
 %
 Other optimizations selects derivation trees to solve using symbolic
 symbolic analogs of Prolog evaluation with
 tabling~\cite{jaffar09,mcmillan14}.
 %
 
-\whale attempts to verify a sequential recursive program by generating
-and solving hierarchical programs (i.e., programs that may contain
-conditional branches and procedure calls, but do not contain loops or
-recursion), which correspond to recursion-free CHC
+\whale attempts to verify sequential recursive programs by generating
+and solving hierarchical programs, which correspond to recursion-free CHC
 systems~\cite{albarghouthi12b}.
 %
-To solve a particular recursion-free system $S$, \whale
-generates a linear inlining $S'$ of $S$ and solves
-it using a procedure \vinta~\cite{albarghouthi12a}.
+To solve a particular recursion-free system, \whale solves a linear
+inlining of the input using a procedure named
+\vinta~\cite{albarghouthi12a}.
 %
-In general, $S'$ may have size exponential in the size of
-$S$.
+In general, the linear inlining may be exponentially larger than the
+input.
 
-% compare sys to all of the previous work:
-\sys is similar to all of the approaches given above for solving 
-recursion-free CHC systems in that it reduces the problem of solving a
-given recursion-free CHC system $S$ to solving a CHC system
-in a directly-solvable class.
+\sys is similar to the recursion free CHC approaches given above in
+that it reduces the problem to solving a CHC system in a
+directly-solvable class.
 %
-
-
-\sys is distinct from all of the approaches given above in that it
-reduces solving a recursion-free CHC system to solving a
-Clause-Dependent Disjoint (CDD) system.
+\sys is distinct in that it reduces to solving Clause-Dependent
+Disjoint (CDD) systems.
 %
-CDD systems strictly contain the union of all classes of
-directly-solvable CHC systems used by the above approaches, and can
-themselves be solved directly.
+As discussed in \autoref{sec:overview}, the class of CDD systems if a
+superset of classes used by the approaches above. And CDD systems can
+also be solved directly.
 
+\sys solves general CHC systems using the same strategy as proposed by
+the above approaches.
 %
-For solving genreal CHC system, \sys uses the same strategy that proposed
-by above approaches, that solving a series recursion-free CHC system that unwinding 
-from the original CHC system, and try to synthesize the solution for the original 
-CHC system by using solutions of recursion-free CHC systems.  
+Specifically, it solves a series of recursion-free unwindings of the
+original system, and tries to synthesize a general solution from the
+recursion-free solutions.
 
-% bullshit CADE papers:
-Previous work has given solvers for non-linear Horn clauses over
+Previous work describes solvers for non-linear Horn clauses over
 particular theories.
 %
 In particular, verifiers have been proposed for recursion-free systems
@@ -92,32 +82,23 @@ if it can be extended to richer theories that support interpolation,
 such as the combination of linear arithmetic with uninterpreted
 functions.
 %
-Other work gives a solver for the class of \emph{timed pushdown
-  systems}, a subclass of CHC systems over the theory of linear real
+Other work describes a solver for the class of \emph{timed pushdown
+systems}, a subclass of CHC systems over the theory of linear real
 arithmetic~\cite{hoder12}.
 %
-Unlike both approaches, \sys can solve systems over any theory that
+Unlike these approaches, \sys can solve systems over any theory that
 supports interpolation.
 
 % DAG inlining:
-DAG inlining, given a hierarchical program $P$, attempts to generate a
-compact verification condition for $P$~\cite{lal-qadeer15}.
+DAG inlining attempts to generate compact verification conditions for
+hierarchical programs~\cite{lal-qadeer15}.
 %
-\sys contains a procedure that, given a recursion-free Horn Clause
-system $S$, attempts to construct a compact CDD system
-$S'$ such that each solution of $S'$ defines a
-solution of $S$.
+\sys attempts to solve recursion-free CHC systems by attempting to
+reduce them to compact CDD systems.
 %
-Because hierarchical programs and recursion-free Horn Clauses
-correspond closely to each other, algorithms that operate on
-hierarchical programs directly correspond to algorithms that operate
-on recursion-free Horn Clauses.
+Because hierarchical programs and recursion-free CHC systems are
+closely related, algorithms that operate on hierarchical programs
+correspond to algorithms that operate on recursion-free Horn Clauses.
 %
-However, an algorithm for constructing a verification condition of
-hierarchical programs cannot apparently be directly used to synthesize
-a solution of a recursion-free CHC system.
-
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: "p"
-%%% End: 
+However, it is not apparent that such algorithms can be used directly
+to synthesize solutions for recursion-free CHC systems.

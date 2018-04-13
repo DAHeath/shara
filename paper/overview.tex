@@ -208,13 +208,14 @@ body of both clause (3) and clause (4).
 %
 In order to solve for $\mcchc$, a solver which uses
 body-disjoint systems would have to create a fresh copy of
-$\cc{L}_4$, as well copies for all clauses and relational predicates that
-$\cc{L}_4$ depends on.
+$\cc{L}_4$. 
+%
+Worse, if $\cc{L}_4$ had dependencies, each would also need to be copied.
 
 %linear systems:
 Previous work has also introduced the class of linear
-systems~\cite{albarghouthi12a}, where the body of each has at most
-one uninterpreted predicate.
+systems~\cite{albarghouthi12a}, where the body of each claouse has at
+most one uninterpreted predicate.
 %
 However, such systems cannot directly model the control flow of a
 program that contains procedure calls.
@@ -229,7 +230,7 @@ clauses~\cite{albarghouthi12b}.
 In the case of $\mcchc$, inlining the constraints of $\cc{dbl}$ is
 efficient, but in general such approaches can generate systems that
 are exponentially larger than the input. For example, if the procedure
-$\cc{dbl}$ were called more than once in $\cc{dblsAbs}$ then multiple
+$\cc{dbl}$ were called more than once in $\cc{dblAbs}$ then multiple
 copies of the body of the procedure would be inlined. And if the body
 of this procedure were large, the inlining would quickly become
 prohibitively expensive.

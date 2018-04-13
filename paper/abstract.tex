@@ -4,18 +4,21 @@
   problems that can model safety properties of programs with bounded
   iteration and recursion.
   %
-  In addition, many recursive CHC system solvers reduce inputs to a
-  series of recursion-free CHC systems that can each be solved
-  efficiently.
+  In addition, many CHC solvers which handle recursive systems reduce
+  their inputs to a series of recursion-free CHC systems that can each
+  be solved efficiently.
 
   % contribution:
   In this paper, we define a novel class of recursion-free systems,
   named \emph{Clause-Dependence Disjoint} (CDD), that
   generalizes classes defined in previous work.
   %
-  The advantage of this class is that many systems are significantly
-  smaller than equivalent systems in other classes which allows them
-  to be solved more efficiently.
+  The advantage of this class is that many CDD systems are smaller
+  than systems which express the same constraints but are part of a
+  different class.
+  %
+  This advantage in size allows CDD systems to be solved more
+  efficiently than their counterparts in other classes.
   %
   Based on the class of CDD systems, we implemented a CHC solver named
   \sys.  \sys~solves arbitrary CHC systems by reducing the input to a

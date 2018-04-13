@@ -13,7 +13,7 @@ directly.
 \autoref{sec:core-solver} describes how \sys solves a given
 recursion-free system by solving an CDD system.
 %
-Proofs of all theorems stated in this section are contained in appendix
+Proofs of all theorems stated in this section are in appendix
 \autoref{app:char} and \autoref{app:corr}.
 
 \subsection{Clause-Dependence Disjoint Systems}
@@ -156,11 +156,12 @@ solution, $\sigma$.
 %
 For a CDD system $S$, a predicate $P \in \predof{S}$, and a partial
 solution $\sigma$ that maps predicates to their solutions, the formula
-$\ctrof{P,\sigma}$ is a compact representation of the constraints of $P$.
+$\ctrof{P,\sigma}$ is a compact representation of the constraints of
+$P$.
 %
-If $\sigma$ does not contain $P$, then the constraint of $P$ is constructed
-from the clauses where $P$.  When $\sigma$ does contain $P$, $\ctrof{P,\sigma}$
-is a lookup from $\sigma$:
+If $\sigma$ does not contain $P$, then the constraint of $P$ is
+constructed from the clauses where $P$ is the head.  When $\sigma$
+does contain $P$, $\ctrof{P,\sigma}$ is a lookup from $\sigma$:
 %
 \[
   \ctrof{P,\sigma}=
@@ -223,8 +224,6 @@ indicators of the dependencies and the constraint of $P$:
 \begin{ex}
   \label{ex:pre-ctr}
   When $\solvecdd$ solves the uninterpreted predicate $\cc{L}_9$ in $\mcchc$,
-  $\sigma$ contains $\cc{L}_6$ and $\cc{L}_8$.
-  %
   $\sigma$ maps $\cc{L}_6$ to $n \ge 0$ and $\cc{L}_8$ to $n < 0$.
   %
   The pre-formula for $\cc{L}_9$ under $\sigma$ is therefore:
@@ -235,8 +234,7 @@ indicators of the dependencies and the constraint of $P$:
   The formula $\ctrof{\cc{L}_9,\sigma}$ is given in~\autoref{ex:ctr}.
 \end{ex}
 
-\subsubsection{Constructing the post-constraint of a relational
-  predicate}
+\subsubsection{Constructing post-formulas for predicates}
 \label{sec:cons-post}
 $\postctr(P, \sigma)$ denotes the post-formula for an arbitrary predicate $P$
 with respect to the partial solution map, $\sigma$. A valid post-constraint is
@@ -311,7 +309,6 @@ $S$, and $S'$).
 %
 If there is a correspondence from $S'$ to $S$, then $S'$ is an \emph{expansion}
 of $S$, denoted $S \expandsto S'$.
-%
 
 %
 \begin{defn}

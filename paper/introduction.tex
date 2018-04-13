@@ -9,20 +9,20 @@ problems~\cite{bjorner13,flanagan03,rummer13a,rummer13b}.
 %
 A CHC is a logical implication where the antecedent is a conjunction
 of uninterpreted predicates with a fact in a background
-theory and the consequent is an uninterpreted predicate. 
+theory and the consequent is an uninterpreted predicate.
 %
 In the context of a CHC we call the antecedent the body and the
 consequent the head.  A CHC system is a set of CHCs. 
 %
 The goal of a CHC solving problem is to find suitable interpretations
 for each predicate such that each CHC is logically
-consistent in isolation.\QZ{re-write this based on other papers}
+consistent in isolation.
 
 % introduce the problem of solving recursion-free systems:
 In this work we focus on the subclass of CHC systems which are known
 as \emph{recursion-free}. In a recursion-free CHC system, the
 derivation of each predicate will not contain
-itself. \QZ{\DAH{I still think we need a small example here}}
+itself.
 %
 Recursion-free CHC systems are an important subclass for two reasons.
 %
@@ -44,7 +44,7 @@ heavily on the performance of solving recursion-free CHC systems.
 % current general techniques for solving recursion-free systems
 Typically, recursion-free CHC systems are not solved directly.
 %
-Instead, they are rewritten to a more specific subclass of
+Instead, they are reduced to a more specific subclass of
 recursion-free CHC system.
 %
 These classes include those of
@@ -59,19 +59,21 @@ Such classes can be solved by issuing
 \emph{interpolation queries} to find suitable definitions for the
 uninterpreted predicates.
 %
-We refer to such classes as \emph{directly solvable}.
 
 % Time complexity
 In general, solving a recursion-free CHC system for
 propositional logic and the theory of linear integer arithmetic is
 co-NEXPTIME-complete~\cite{rummer13b}.
 %
-In contrast, solving a directly solvable system with the same logic
-and theories is in co-NP~\cite{rummer13b}.
+In contrast, solving a linear system or body-disjoint system with the
+same logic and theories is in co-NP~\cite{rummer13b}.
 %
-Therefore, the performance of solving a recursion-free system is
-highly reliant on the size of the synthesized directly solvable
-system.
+We refer to such classes that are solvable in co-NP time as
+\emph{directly solvable}.
+%
+Because solving an arbitrary recursion-free system is harder than
+solving a directly solvable system, solvers which reduce to directly
+solvable systems are highly reliant on the size of the reductions.
 
 % contribution of this paper: CDD systems:
 The first contribution of this paper is the introduction of a novel
@@ -82,24 +84,27 @@ The class consists of all recursion-free CHC systems such that each
 clause in the system has at most one dependency on the same relational
 predicate.
 %
-The key characteristic of this class is that CDD systems are often
-smaller than equivalent systems in other directly solvable classes,
-and therefore solving recursion free systems by rewriting them to CDD
-form is often less computationally expensive.
+The key characteristic of this class is that when an arbitrary
+recursion-free system is reduced to a CDD system and to a system from
+a different directly solvable class, the CDD system is frequently the
+smaller of the two.
+%
+Therefore, solving recursion free systems by reducing them to CDD form
+is often less computationally expensive than reducing them to a
+system in a different class.
 
 % a new solver
 The second contribution of this paper is a solver for CHC systems,
 named \sys.
 %
-Given a recursion-free system $S$, \sys reduces the problem
-of solving $S$ to solving an equivalent CDD system
-$S'$.
+Given a recursion-free system $S$, \sys reduces the problem of solving
+$S$ to solving a CDD system $S'$.
 %
 In the worst case, it is possible that the size of $S'$ may be
 exponential in the size of $S$.
 %
 However, empirically we have found that the size of $S'$ is usually
-close enough to the size of $S$ that \sys often outperforms the best
+close enough to the size of $S$ that \sys frequently outperforms the best
 known CHC solvers.
 %
 The procedure implemented in \sys is a generalization of existing
