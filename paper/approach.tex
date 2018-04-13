@@ -13,8 +13,7 @@ directly.
 \autoref{sec:core-solver} describes how \sys solves a given
 recursion-free system by solving an CDD system.
 %
-Proofs of all theorems stated in this section are in appendix
-\autoref{app:char} and \autoref{app:corr}.
+Proofs of all theorems stated in this section are in the appendix.
 
 \subsection{Clause-Dependence Disjoint Systems}
 \label{sec:CDD-defn}
@@ -292,7 +291,7 @@ characterization of all predicates $Q \in D$ and the query clause:
 
 % give the general procedure:
 $\shara$, given a recursion-free CHC system $S$,
-constructs an CDD system $S'$.
+constructs a CDD system $S'$.
 %
 \sys then directly solves $S'$ and, from this solution, constructs a solution
 for $S$.
@@ -300,7 +299,7 @@ for $S$.
 For two given recursion-free CHC systems $S$ and $S'$, if
 there is a homomorphism from $\predof{S'}$ to $\predof{S}$ that
 preserves the relationship between the clauses of $S'$ in
-the clauses of $S$, then $S'$ is an expansion of
+the clauses of $S$, then $S'$ is an \emph{expansion} of
 $S$ (all definitions in this section will be over fixed
 $S$, and $S'$).
 % formal defn:
@@ -336,7 +335,7 @@ of $S$, denoted $S \expandsto S'$.
   % Declare sub-program (procedure) markers.
   \SetKwProg{myproc}{Procedure}{}{}
   % Inputs: a heap program and an error location.
-  \Input{For a recursion-free CHC system $S$.}
+  \Input{A recursion-free CHC system $S$.}
   % Output: inductive invariants.
   \Output{A solution to $S$ or $\none$.}
   % expand procedure:

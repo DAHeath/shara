@@ -9,10 +9,10 @@
   % Declare sub-program (procedure) markers.
   \SetKwProg{myproc}{Procedure}{}{}
   % Inputs: a heap program and an error location.
-  \Input{A recruions-free CHC system $S$.}
+  \Input{A recursion-free CHC system $S$.}
   % Output: inductive invariants.
   \Output{A minimal CDD expansion $S'$ of $S$ and
-    correspondence from $S'$ to $S$.} %
+    a correspondence from $S'$ to $S$.} %
   \myproc{$\expand(S)$ %
     \label{line:expand-begin} }{ %
     % auxiliary procedure:
@@ -118,9 +118,9 @@ The following is a proof of \autoref{thm:cdd-contains}.
   system.
   %
   $S$ is CDD if for each clause $C$ in
-  $S$, each pair of distinct predicates in
-  the body of $C$, the transitive dependencies are disjoint and
-  no predicates appears more than once in the body of $C$.
+  $S$ \textbf{(1)} each pair of distinct predicates in
+  the body of $C$ has disjoint transitive dependencies and
+  \textbf{(2)} no predicate appears more than once in the body of $C$.
   (\autoref{defn:cdds}).
   %
   Let $C$ be an arbitrary clause in $S$.
@@ -162,7 +162,7 @@ Namely, the upper bound of $\solvecdd$ is in co-NP.
   CHC system. The satisfiability problem for the constructed formulas
   are in NP for linear arithmetic.
   %
-  $\solvecdd$ at issues (at worst) a linear number of interpolation
+  $\solvecdd$ issues (at worst) a linear number of interpolation
   queries in terms of number of predicate.
   %
   Therefore, the upper bound of $\solvecdd$ is co-NP.
@@ -199,11 +199,11 @@ solution of $S'$ is a solution of $S$.
 \begin{proof}
   % introduce 
   %
-  For each predicate $P' \in \predof{S}'$ such that $\eta(P') = P$,
+  For each predicate $P' \in \predof{S'}$ such that $\eta(P') = P$,
   there must exist some clause $C' \in S'$ such that $P' \in \bodyof{C'}$
   because $S'$ is an expansion of $S$.
   %
-  Let predicate $Q' \in \predof{S}'$ be the head of $C'$.
+  Let predicate $Q' \in \predof{S'}$ be the head of $C'$.
   % 
   $\sigma'[P'] \land \consof{C'} \entails \sigma'[Q']$ by
   the fact that $\sigma'$ is a solution of $S'$.
@@ -211,7 +211,7 @@ solution of $S'$ is a solution of $S$.
   Therefore,
   %
   \[ \collapse{ \eta }{ \sigma' }[P] \land \consof{C'} \entails %
-  \left( \bigland_{ \substack{Q' \in \predof{S}' \\ \eta(Q') = Q} }
+  \left( \bigland_{ \substack{Q' \in \predof{S'} \\ \eta(Q') = Q} }
   \sigma(Q') = %
   \collapse{\eta}{\sigma'}[Q'] \right)
   \]
@@ -235,7 +235,7 @@ solvable.
   Let $\sigma$ be a solution of $S$, and let $\eta$ be a
   correspondence from $S'$ to $S$.
   %
-  Let $\sigma'$ be such that for each $P' \in \predof{S}'$,
+  Let $\sigma'$ be such that for each $P' \in \predof{S'}$,
   $\sigma'(P') = \sigma(\eta(P'))$.
   %
   Then $\sigma'$ is a solution of $S'$.
@@ -255,7 +255,7 @@ $\expand$ always returns a CDD expansion of its input.
   By induction over the evaluation of $\expand$ on
   an arbitrary recursion-free CHC system $S$.
   % inductive fact:
-  The inductive fact is that for each evaluation step, \expandaux,
+  The inductive fact is that for each evaluation step
   $\corr$ is a correspondence from argument
   $S'$ to $S$.
   % base case:
@@ -365,7 +365,7 @@ if all interpolants queries return interpolants.
   predicate $P \in \depsof{S}$.
   %
   Based on the definition of an interpolant (\autoref{defn:itps}),
-  $\prectr(\cc{P},\sigma)$ and $\postctr(\cc{P},\sigma))$ are
+  $\prectr(\cc{P},\sigma)$ and $\postctr(\cc{P},\sigma)$ are
   inconsistent.
   %
   The interpolant of these two formulas returned by $\solveitp$, $I$,
@@ -411,9 +411,9 @@ The output of $\solvecdd$ is correct for a given input CDD system.
 %
 \begin{proof}
   % final claim:
-  for all predicates $P \in \predof{S}$, $\solveitp$ returns a
+  For all predicates $P \in \predof{S}$, $\solveitp$ returns a
   interpolant $I$, by
-  \autoref{lem:vc} and the fact that $\mathcal{S}$ is solvable.
+  \autoref{lem:vc} and the fact that $S$ is solvable.
   %
   Therefore, by \autoref{lem:solve-aux} and the fact that
   $S$ is solvable, $\solvecdd(S)$ returns a

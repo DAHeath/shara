@@ -209,11 +209,12 @@ uninterpreted predicate that occurs in the body of multiple clauses.
 $\mcchc$ is not a body-disjoint system because $\cc{L}_4$ shows in the
 body of both clause (3) and clause (4).
 %
-In order to solve for $\mcchc$, a solver that uses
+In order to handle $\mcchc$, a solver that uses
 body-disjoint systems would have to create a fresh copy of
 $\cc{L}_4$. 
 %
-Worse, if $\cc{L}_4$ had dependencies, each would also need to be copied.
+Worse, if $\cc{L}_4$ had dependencies, then each dependency would also
+need to be copied.
 
 %linear systems:
 Previous work has also introduced the class of linear
@@ -224,7 +225,7 @@ However, such systems cannot directly model the control flow of a
 program that contains procedure calls.
 %
 $\mcchc$ is not a linear system because the body of clause (7) has two
-predicates \cc{L9} and \cc{dbl}.
+predicates, \cc{L9} and \cc{dbl}.
 %
 CHC solvers that use linear systems effectively inline the
 constraints for relational predicates that occur in non-linear
