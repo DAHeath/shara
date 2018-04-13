@@ -24,12 +24,14 @@ directly solvable classes introduced in previous work.
     \ffigbox[.3\textwidth] {%
       \caption{\cc{dblAbs}: an example hierarchical program.} %
       \label{fig:multicall-code} }
-    {\lstinputlisting[
-      basicstyle=\small,
-      xleftmargin=\parindent,
-      numbers=left,
-      morekeywords={def, return, if, else, assert}]{code/dblAbs.java}
-        % \input{code/dblAbs.java}}
+    {
+      \lstinputlisting[
+        basicstyle=\small,
+        xleftmargin=\parindent,
+        numbers=left,
+        escapeinside={(*@}{@*)},
+        morekeywords={def, return, if, else, assert}]
+        {code/dblAbs.java}
     }
     %
     \ffigbox[.66\textwidth]{%
