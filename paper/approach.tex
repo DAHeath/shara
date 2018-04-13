@@ -20,11 +20,7 @@ Proofs of all theorems stated in this section are in appendix
 \label{sec:CDD-defn}
 %
 The key contribution of our work is the introduction of the class of
-Clause-Dependence Disjoint (CDD) systems.
-%
-CDD systems can be solved
-in co-NP time and contains the union of all previous introduced classes
-that can be solved in co-NP time.
+Clause-Dependence Disjoint (CDD) CHC systems:
 %
 \begin{defn}
   \label{defn:cdds}
@@ -160,6 +156,10 @@ Proof is given in \autoref{app:solve-cp}.
 %
 \subsubsection{Constructing constraints for predicates}
 %
+In order to construct efficiently sized pre and post formulas for
+relational predicates, we need a method of compactly expressing the
+constraints on a given predicate.
+%
 For a CDD system $S$, a predicate $P \in \predof{S}$, and a partial
 solution $\sigma$ that maps predicates to their solutions, the formula
 $\ctrof{P,\sigma}$ is a compact representation of the constraints of
@@ -167,7 +167,10 @@ $P$.
 %
 If $\sigma$ does not contain $P$, then the constraint of $P$ is
 constructed from the clauses where $P$ is the head.  When $\sigma$
-does contain $P$, $\ctrof{P,\sigma}$ is a lookup from $\sigma$:
+does contain $P$, $\ctrof{P,\sigma}$ is a lookup from $\sigma$.
+%
+Each $P \in \predof{S}$ has a corresponding boolean variable
+$\cc{b}_P$:
 %
 \[
   \ctrof{P,\sigma}=
@@ -182,10 +185,11 @@ does contain $P$, $\ctrof{P,\sigma}$ is a lookup from $\sigma$:
 \]
 %
 % introduce the isused predicates:
-Each $P \in \predof{S}$ has a corresponding boolean variable $\cc{b}_P$.
+The counterexample characterization of $P$ is a small extension of the
+compact constraint of $P$.
 %
-The counterexample characterization of $P$ constrains that if $P$ is used
-(meaning $\cc{b}_{P} = True$), then its constraint must hold:
+It states that if $P$ is used
+(meaning $\cc{b}_{P} = True$), then the constraint of $P$ must hold:
 \[
   \vc{P,\sigma} = \neg \cc{b}_{P} \lor \ctrof{P,\sigma}
 \]
@@ -200,7 +204,7 @@ The counterexample characterization of $P$ constrains that if $P$ is used
     \lor
     (\cc{abs'} = -\cc{n} \land \cc{b}_{\cc{L}_8})$$
   The counterexample characterization for $\cc{L}_9$ is based on its boolean
-  indicator and this constraint:
+  indicator and its constraint:
   $$\vc{\cc{L}_9,\sigma} = \neg \cc{b}_{\cc{L}_9} \lor \ctrof{\cc{L}_9,\sigma}$$
 \end{ex}
 
@@ -375,15 +379,20 @@ $S'$ of $S$.
 When \solvecdd~returns that $S'$ has
 no solution, \sys~propogates $\none$ (\autoref{line:shara-ret-none}).
 %
-Otherwise, \sys constructs a solution from the CDD solution, $\sigma'$, by
-invoking $\collapse{ \eta }{ \sigma' }$ (\autoref{line:shara-ret-collapse}).
-
-% define collapse:
-For $\sigma'$ and %
-correspondence $\eta$ from $P' \in \predof{S'}$ to $P \in \predof{S}$,
-$\collapse{\eta}{\sigma'}$ maps solution $\sigma'$ to
-$\sigma$[$P \to \bigland_{ \eta(P') = P}
-\sigma'(P')$].
+Otherwise, \sys constructs a solution from the CDD solution,
+$\sigma'$, by invoking $\collapse{ \eta }{ \sigma' }$
+(\autoref{line:shara-ret-collapse}).
+%
+$\textsc{Collapse}$ is designed to convert the solution for the CDD system
+back to a sensible solution for the original problem. It does this by
+taking the conjunction of all interpretations of predicates which
+correspond to one predicate in the original problem.
+%
+That is, given a CDD solution $\sigma'$ and a correspondence $\eta$ from
+$P' \in \predof{S'}$ to $P \in \predof{S}$,
+$\collapse{\eta}{\sigma'}$ generates an entry in $\sigma$ for each
+predicate in the original system:
+$\sigma[P] \assign \bigland_{ \eta(P') = P} \sigma'(P')$.
 %
 $\expand$ is given in \autoref{app:cons-cdd}.
 

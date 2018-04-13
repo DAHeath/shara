@@ -7,12 +7,17 @@ solving systems of Constrained Horn Clauses (CHCs), a class of
 logic-programming
 problems~\cite{bjorner13,flanagan03,rummer13a,rummer13b}.
 %
-A CHC is a logical implication where the antecedent is a conjunction
-of uninterpreted predicates with a fact in a background
-theory and the consequent is an uninterpreted predicate.
+A CHC is a logical implication with the following form:
+$$
+  R_1(\vec{v_1}) \leftarrow R_2(\vec{v_2}) \land R_3(\vec{v_3}) \land
+  ... \land \varphi(\vec{v_0}, \vec{v_1}, \vec{v_2}, \vec{v_3},...)
+$$
+Here, the left side of the implication, called the head, contains an
+uninterpreted relational predicate applied to a vector of variables.
 %
-In the context of a CHC we call the antecedent the body and the
-consequent the head.  A CHC system is a set of CHCs. 
+The right side has any number of such predicates conjoined together
+with a \emph{fact} ($\varphi$). The fact is a logical formula in a background
+theory and may use variables named by the predicates.
 %
 The goal of a CHC solving problem is to find suitable interpretations
 for each predicate such that each CHC is logically
@@ -21,8 +26,11 @@ consistent in isolation.
 % introduce the problem of solving recursion-free systems:
 In this work we focus on the subclass of CHC systems which are known
 as \emph{recursion-free}. In a recursion-free CHC system, the
-derivation of each predicate will not contain
-itself.
+derivation of each predicate will not contain itself.
+%
+Less formally, a recursion-free CHC system is one where following
+implication arrows through the system will never reach the same clause
+twice.
 %
 Recursion-free CHC systems are an important subclass for two reasons.
 %
