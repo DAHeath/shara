@@ -32,7 +32,7 @@ that can be solved in co-NP time.
   %
   if for all sibling pairs, $P, Q \in \predof{S}$,
   %
-  the transitive dependences of $P$ and $Q$ are disjoint ($\tdepsof{P} \cap
+  the transitive dependencies of $P$ and $Q$ are disjoint ($\tdepsof{P} \cap
   \tdepsof{Q} = \emptyset$)
   %
   and no predicate shows more than once in the body of a single clause,
@@ -63,8 +63,8 @@ predicate, then $\cc{S}$ is \emph{linear}~\cite{albarghouthi12a}.
 % talk about linear system
 \begin{thm}
 \label{thm:cdd-contains}
-  The class of CDD systems strictly contains the union of the classes
-  of body-disjoint and linear systems.
+  The class of CDD systems is a strict superset of the union of the
+  class of body-disjoint systems and the class of linear systems.
 \end{thm}
 %
 Proof is given in \autoref{app:char}.
@@ -89,17 +89,19 @@ Proof is given in \autoref{app:char}.
     otherwise, the value $\nosoln$.}
   % 
   \myproc{$\solvecdd(\cc{S})$ %
-    \label{line:solve-begin}}{ %
+    \label{line:solve-begin}}{%
     $\sigma \assign \emptyset$ \\
     $\cc{Preds} \assign \topSort(\predof{S})$ \\
+    \label{line:top-sort}}{%
     \For {$P \in \cc{Preds}$}
-    {$\cc{interpolant} \assign \solveitp(\prectr(P,\sigma),\postctr(P,\sigma))$\\
-     \Switch{\cc{interpolant}}{
-       \lCase{\cc{SAT}:}{\Return{$\nosoln$}}
-       \lCase{$\cc{I}$:}{$\sigma$ [$P$] $\assign$ $\cc{I}$}
+    {$\cc{interpolant} \assign \solveitp(\prectr(P,\sigma),\postctr(P,\sigma))$
+      \label{line:interp}\\
+     \Switch{\cc{interpolant}}{%
+       \lCase{\cc{SAT}:}{\Return{$\nosoln$}}\label{line:interp-sat}
+       \lCase{$\cc{I}$:}{$\sigma$ [$P$] $\assign$ $\cc{I}$}\label{line:interp-valid}
      }
     }
-    \Return{$\sigma$}
+    \Return{$\sigma$}\label{line:solve-done}
     }
   %
   \caption{$\solvecdd$: for a CDD system $\cc{S}$, returns a
@@ -114,10 +116,11 @@ Proof is given in \autoref{app:char}.
 CDD systems.
 %
 Given a CDD system $\cc{S}$, $\solvecdd$ topologically sorts the uninterpreted
-predicates in $\cc{S}$ based on their dependency relations.
+predicates in $\cc{S}$ based on their dependency relations
+(\autoref{line:top-sort}).
 %
 Then, the algorithm calculates interpretations for each predicate in this order
-by invoking $\solveitp$.
+by invoking $\solveitp$ (\autoref{line:interp}).
 %
 $\solveitp$ computes a binary interpolant of the pre and post formulas of the
 given predicate, where these formulas are based on the current, partial
@@ -126,15 +129,16 @@ solution.
 The pre and post formulas are computed respectively by $\prectr$ and
 $\postctr$, which we define in \autoref{sec:cons-pre} and \autoref{sec:cons-post}.
 %
-It is possible that the pre and post formulas may be mutually satisifiable, in
-which case $\solveitp$ returns \cc{SAT}. In this case, $\solvecdd$ returns
+It is possible that the pre and post formulas may be mutually
+satisifiable, in which case $\solveitp$ returns \cc{SAT}
+(\autoref{line:interp-sat}). In this case, $\solvecdd$ returns
 $\nosoln$ to indicate that $\cc{S}$ is not solvable.
 %
 Otherwise, $\solvecdd$ updates the partial solution by setting the
-interpretation of $P$ to $\cc{I}$.
+interpretation of $P$ to $\cc{I}$ (\autoref{line:interp-valid}).
 %
 Once all predicates have been interpolated, $\solvecdd$ returns the complete
-solution, $\sigma$.
+solution, $\sigma$ (\autoref{line:solve-done}).
 
 %
 \begin{ex}
@@ -149,7 +153,7 @@ solution, $\sigma$.
 \begin{thm}
   \label{thm:solve-cp}
   Given a CDD system $S$, $\solvecdd$ either returns the solution of $S$ or $\none$
-  in coNP time.
+  in co-NP time.
 \end{thm}
 Proof is given in \autoref{app:solve-cp}.
 
@@ -180,8 +184,8 @@ does contain $P$, $\ctrof{P,\sigma}$ is a lookup from $\sigma$:
 % introduce the isused predicates:
 Each $P \in \predof{S}$ has a corresponding boolean variable $\cc{b}_P$.
 %
-The counterexample characterization of $P$ constrains that if $P$ is used,
-(meaning $\cc{b}_{P} = True$) then its constraint must hold:
+The counterexample characterization of $P$ constrains that if $P$ is used
+(meaning $\cc{b}_{P} = True$), then its constraint must hold:
 \[
   \vc{P,\sigma} = \neg \cc{b}_{P} \lor \ctrof{P,\sigma}
 \]
@@ -189,7 +193,7 @@ The counterexample characterization of $P$ constrains that if $P$ is used,
 
 \begin{ex}
   \label{ex:ctr}
-  When $\solvecdd$ solves the predicate $\cc{L}_9$ in $\mcchc$, it generates a
+  When $\solvecdd$ solves predicate $\cc{L}_9$ in $\mcchc$, it generates a
   constraint based on clauses (5) and (6):
   $$\ctrof{\cc{L}_9,\sigma} =
     (\cc{abs'} = \cc{n} \land \cc{b}_{\cc{L}_6})
@@ -225,7 +229,7 @@ indicators of the dependencies and the constraint of $P$:
 %
 \begin{ex}
   \label{ex:pre-ctr}
-  When $\solvecdd$ solves the uninterpreted predicate $\cc{L}_9$ in $\mcchc$,
+  When $\solvecdd$ solves predicate $\cc{L}_9$ in $\mcchc$,
   $\sigma$ maps $\cc{L}_6$ to $n \ge 0$ and $\cc{L}_8$ to $n < 0$.
   %
   The pre-formula for $\cc{L}_9$ under $\sigma$ is therefore:
@@ -239,22 +243,22 @@ indicators of the dependencies and the constraint of $P$:
 \subsubsection{Constructing post-formulas for predicates}
 \label{sec:cons-post}
 $\postctr(P, \sigma)$ denotes the post-formula for an arbitrary predicate $P$
-with respect to the partial solution map, $\sigma$. A valid post-constraint is
-mutually inconsistent with the solution of $P$.
+with respect to the partial solution map, $\sigma$. A valid
+post-formula is mutually inconsistent with the solution of $P$.
 %
-The post formula is constructed based on the predicates which depend on $P$.
+and is constructed based on the predicates which depend on $P$.
 %
 % dependents of R:
 Let $D_0$ be the \emph{reflexive transitive dependents} of $P$ in $S$,
 % clause siblings of dependents:
 let $D_1$ be the siblings in $S$ of $(D_0 \union {P})$,
 %
-let $D_2$ be all transitive dependences of $D_1$, and
+let $D_2$ be all transitive dependencies of $D_1$, and
 % collect all predicates that we define a constraint over:
 let $D = D_0 \union D_1 \union D_2$.
 % define instantiation of C
-The post constraint for $P$ under $\sigma$ is the conjunction of counterexample
-characterization of all predicates $Q \in D$ and the query clause.
+The post-formula for $P$ under $\sigma$ is the conjunction of counterexample
+characterization of all predicates $Q \in D$ and the query clause:
 %
 \[
 \postctr(R, \sigma) =\cc{query} \land (\bigland_{\cc{Q} \in D} \vc{Q,\sigma})
@@ -269,13 +273,13 @@ characterization of all predicates $Q \in D$ and the query clause.
   %
   The siblings set $D_1$ is \{\cc{dbl}\}.
   %
-  The transitive dependences of $D_1$ is $\varnothing$. 
+  The transitive dependencies of $D_1$ is $\varnothing$. 
   %
   Therefore, the $D$ set is \{\cc{main},\cc{dbl}\}.
   %
   The \cc{query} is $\cc{b}_{main} \land res<0$.
   %
-  The post constraint for $\cc{L}_9$ under $\sigma$ is
+  The post-formula for $\cc{L}_9$ under $\sigma$ is:
   $$\cc{query} \land \vc{\cc{main},\sigma} \land \vc{\cc{dbl},\sigma}$$
 \end{ex}
 
@@ -314,6 +318,7 @@ of $S$, denoted $S \expandsto S'$.
 
 %
 \begin{defn}
+  \label{defn:min-expansion}
   If $S'$ is CDD, $S \expandsto S'$, and there is no CDD system $S''$ such that $S \expandsto S' \expandsto S''$ and
   $S'' \neq S'$, then $S'$ is a minimal CDD expansion of $S$.
 \end{defn}

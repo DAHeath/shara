@@ -43,16 +43,14 @@
     CDD expansion $S'$ of $S$ and its correspondence.}
   \label{alg:expand}
 \end{algorithm}
+%
 % walk through top-level procedure:
-\autoref{alg:expand}, given a recruion-free CHC system $S$
-(\autoref{line:expand-begin}), returns an minimal CDD expansion $S'$ of
-$S$ with a correspondence from $S'$ to
-$S$.
+Given a recursion-free CHC system $S$, \autoref{alg:expand} returns a
+minimal CDD expansion of $S$ (\autoref{defn:min-expansion}).
 %
 $\expand$ defines a procedure $\expandaux$
 (\autoref{line:expand-aux-begin}---\autoref{line:expand-aux-end}) that
-takes a CHC system $S$ and returns an minimal CDD expansion of 
-$S$.
+takes a CHC system $S$ and returns a minimal CDD expansion of $S$.
 %
 $\expand$ runs $\expandaux$ on $S$ and
 returns the result, paired with the map $\corr: \predof{S'} \to \predof{S}$ 
@@ -61,28 +59,28 @@ returns the result, paired with the map $\corr: \predof{S'} \to \predof{S}$
 % walk through aux procedure:
 $\expandaux$, given a recursion-free CHC system $S'$,
 runs a procedure $\sharingclause$ on $S'$, which tries to
-find clause $C \in S'$ and predicate $P \in \bodyof{C}$
-that $P$ is in both transitive dependences of two predicates $Q_0$ and $Q_1$ are siblings 
-in $\predof{S}'$.
+find a clause $C \in S'$ and a predicate $P \in \bodyof{C}$
+such that $P$ is in the transitive dependencies of two sibling
+predicates.
 %
 In such a case, we say that $(C, P)$ is a
-\emph{sibling-shared dependence}.
+\emph{sibling-shared dependency}.
 
 % case: no sibling-shares
-If $\sharingclause$ determines that no sibling-shared dependence
+If $\sharingclause$ determines that no sibling-shared dependency
 exists, then $\expandaux$ returns $S'$
 (\autoref{line:expand-ret}).
 
-% case: there is a sibling-shared dependence:
-Otherwise, for sibling-shared dependence $(C, P)$ returned
-by $\sharingclause$, $\expandaux$ runs $\copyrel $ on
-$S'$, $C$, and $P$, which returns an expansion of
-$S'$ by creates fresh copy $P'$ of $P$ and updates $\bodyof{C}$ 
-to avoid transitive dependents shared by $Q_0$ and $Q_1$.
+% case: there is a sibling-shared dependency:
+Otherwise, $\sharingclause$ must have located a sibling-shared
+dependency $(C, P)$. In this case, $\expandaux$ runs $\copyrel $ on
+$S'$, $C$, and $P$, which returns an expansion of $S'$ by creating a
+fresh copy of $P$ and updating $\bodyof{C}$ to avoid the shared
+dependency.
 %
-$\expandaux$ recurses on the CHC system returned by $\copyrel $ and returns the result
+$\expandaux$ recurses on this expansion and returns the result
 (\autoref{line:expand-recurse}).
-%  
+%
 
 % CDD systems:
 $\expand$ always returns a CDD expansion of its input
@@ -107,14 +105,12 @@ The following is a proof of \autoref{thm:cdd-contains}.
 %
 \begin{proof}
   % proof structure:
-  To prove that the union of the classes of linear systems and
-  body-disjoint systems are strictly contained by the class of CDD
-  systems, we prove %
-  \textbf{(1)} the class of linear systems are contained by the class
-  of CDD systems, %
-  \textbf{(2)} the class of body-disjoint systems are contained by the
-  class of CDD systems, and %
-  \textbf{(3)} there is some CDD system that is not linear or
+  To prove that CDD is a strict superset of the union of the class
+  of linear systems and the class of body-disjoint systems, we prove
+  %
+  \textbf{(1)} CDD contains the class of linear systems,
+  \textbf{(2)} CDD contains the class of body-disjoint systems, and
+  \textbf{(3)} there is some CDD system that is neither linear nor
   body-disjoint.
 
   % contains linear systems:
@@ -123,14 +119,15 @@ The following is a proof of \autoref{thm:cdd-contains}.
   %
   $S$ is CDD if for each clause $C$ in
   $S$, each pair of distinct predicates in
-  the body of $C$, the transitive dependence are disjoint, and
-  no predicates shows more than once in the body of $C$.
+  the body of $C$, the transitive dependencies are disjoint and
+  no predicates appears more than once in the body of $C$.
   (\autoref{defn:cdds}).
   %
   Let $C$ be an arbitrary clause in $S$.
   %
-  The body of $C$ has no pair of distinct predicates or a predicates shows more than once, by the fact that
-  $S$ is linear.
+  Since $C$ is a linear clause, it has at most one relational
+  predicate in its body. Therefore, the transitive dependencies are
+  trivially disjoint and there can be no repeated predicate.
   %
   Therefore, $S$ is CDD.
 
@@ -144,28 +141,32 @@ The following is a proof of \autoref{thm:cdd-contains}.
   Let $C$ be an arbitrary clause in $S$, with
   distinct relational predicates $R_0$ and $R_1$ in its body.
   %
-  All dependences of $R_0$ and $R_1$ are in subtrees of $T$, which
+  All dependencies of $R_0$ and $R_1$ are in subtrees of $T$, which
   are disjoint by the definition of a tree.
   %
   Thus, $S$ is CDD, by \autoref{defn:cdds}.
 
   % distinguishing example:
-  For goal \textbf{(3)}, the system $\mcchc$ is CDD, but is not linear
-  or body-disjoint.
+  For goal \textbf{(3)}, the system $\mcchc$ is CDD, but is neither linear
+  nor body-disjoint.
 \end{proof}
 
-\section{Proof of the upper bound of $\solvecdd$ is coNP}
+\section{Proof $\solvecdd$ is in co-NP}
 \label{app:solve-cp}
 The following is a proof of \autoref{thm:solve-cp}.
 %
-In this section, we give a proof that the upper bound of $\solvecdd$ is coNP.
+Namely, the upper bound of $\solvecdd$ is in co-NP.
 %
-It is easy to see that $\prectr$ and $\postctr$ construct the formula as the linear size
-of the whole CHC system, and with satisfiability problem in NP for linear arithmetic.
-%
-$\solvecdd$ at most issues linear number of interpolation queries in terms of number of predicate.
-%
-Therefore, the upper bound of $\solvecdd$ is coNP.
+\begin{proof}
+  $\prectr$ and $\postctr$ construct formulas linear in the size of the
+  CHC system. The satisfiability problem for the constructed formulas
+  are in NP for linear arithmetic.
+  %
+  $\solvecdd$ at issues (at worst) a linear number of interpolation
+  queries in terms of number of predicate.
+  %
+  Therefore, the upper bound of $\solvecdd$ is co-NP.
+\end{proof}
 
 \section{Proof of Correctness}
 \label{app:corr}
