@@ -3,8 +3,7 @@
 
 %first introduce the question
 In \autoref{sec:running-ex}, we describe a recursion-free CHC system,
-$\mcchc$ (\autoref{fig:chc}), that models the safety of a small program,
-\cc{dblAbs} (\autoref{fig:multicall-code}).
+$\mcchc$ (\autoref{fig:chc}), that models the safety of program \cc{dblAbs} (\autoref{fig:multicall-code}).
 %
 In \autoref{sec:solve-ex}, we show that $\mcchc$ is a CDD system and
 how \sys can solve it by encoding it into binary interpolants.
@@ -60,7 +59,7 @@ directly solvable classes introduced in previous work.
 \end{figure}
 % walk through code of running example:
 %
-\cc{dblAbs} is a small procedure that doubles the absolute value of
+\cc{dblAbs} is a procedure that doubles the absolute value of
 its input and stores the result in \cc{res}.
 % state the safety problem:
 The program also asserts that \cc{res} is greater than or equal to $0$
@@ -173,7 +172,7 @@ $\cc{L}_9$. The post-formula is composed from clauses (1), (7), and
     \land \cc{abs'}= \cc{x}
     \land \cc{res}=\cc{d} ))
   \land
-  (\cc{b}_{\cc{main}} \land \cc{res'} < 0)
+  (\cc{b}_{\cc{main}} \land \cc{res} < 0)
 \end{gather}
 %
 Interpolating the pre and post formulas yields an intepretation

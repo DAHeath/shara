@@ -24,7 +24,8 @@ programs in the SV-COMP 2015~\cite{svcomp15} verification benchmark
 suite.
 %
 To generate CHC systems, we ran the \seahorn~\cite{gurfinkel15}
-verification framework with its default settings, set to timeout at 90
+verification framework with its default settings which not inlining procedure call and each 
+loop-free fragment is a clause, set to timeout at 90
 seconds.
 %
 We used the benchmarks in SV-COMP 2015~\cite{svcomp15} because they
