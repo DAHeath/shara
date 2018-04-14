@@ -91,7 +91,7 @@ generating a minimal CDD expansion.
 %
 In particular, feasible variations of $\expand$ can be
 generated from different implementations of $\sharingclause$, each of
-which chooses clause-relations pairs to return based on different
+which chooses clause-relation pairs to return based on different
 heuristics.
 %
 We expect that other expansion algorithms can also be developed by
@@ -118,7 +118,7 @@ The following is a proof of \autoref{thm:cdd-contains}.
   system.
   %
   $S$ is CDD if for each clause $C$ in
-  $S$ \textbf{(1)} each pair of distinct predicates in
+  $S$ \textbf{(1)} and each pair of distinct predicates in
   the body of $C$ has disjoint transitive dependencies and
   \textbf{(2)} no predicate appears more than once in the body of $C$.
   (\autoref{defn:cdds}).
@@ -126,8 +126,9 @@ The following is a proof of \autoref{thm:cdd-contains}.
   Let $C$ be an arbitrary clause in $S$.
   %
   Since $C$ is a linear clause, it has at most one relational
-  predicate in its body. Therefore, the transitive dependencies are
-  trivially disjoint and there can be no repeated predicate.
+  predicate in its body. And since the system is recursion-free, the
+  transitive dependencies are trivially disjoint and there can be no
+  repeated predicate.
   %
   Therefore, $S$ is CDD.
 
@@ -155,7 +156,7 @@ The following is a proof of \autoref{thm:cdd-contains}.
 \label{app:solve-cp}
 The following is a proof of \autoref{thm:solve-cp}.
 %
-Namely, the upper bound of $\solvecdd$ is in co-NP.
+Namely, $\solvecdd$ is in co-NP.
 %
 \begin{proof}
   $\prectr$ and $\postctr$ construct formulas linear in the size of the
@@ -308,7 +309,7 @@ complete proof is withheld.
 
 % lem: VC's characterize system sat:
 For each recursion-free CHC system $S$, $S$ has a solution if and only
-if all interpolants queries return interpolants.
+if all interpolation queries return interpolants.
 %
 \begin{lem}
   \label{lem:vc}

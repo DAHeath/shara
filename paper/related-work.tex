@@ -5,15 +5,10 @@ A significant body of previous work has presented solvers for
 different classes of Constrained Horn Clauses, or finding inductive
 invariants of programs that correspond to solutions of CHCs.
 % solving linear systems:
-\impact attempts to verify a given sequential procedure, which
-corresponds to solving a recursive linear CHC
+\impact attempts to verify a given sequential procedure by iteratively
+selecting paths and synthesizing invariants for each path. This
+approach corresponds to solving a recursive linear CHC
 system~\cite{mcmillan06}.
-%
-\impact attempts to verify a given procedure by iteratively selecting
-paths and synthesizing invariants for each path.
-%
-Such an approach corresponds to iteratively and selecting and solving
-derivations of a corresponding linear CHC system.
 
 % interprocedural verification:
 Previous work also proposed a verifier for recursive
@@ -35,9 +30,9 @@ In particular, \eldarica attempts to solve each unwinding
 $S'$ by reducing to and solving body-disjoint systems~\cite{rummer13a,rummer13b}.
 %
 \duality attempts to avoid solving all derivation-trees (i.e
-body-disjoint system) by using lazy annotation~\cite{bjorner13}.
+body-disjoint systems) by using lazy annotation~\cite{bjorner13}.
 %
-Other optimizations selects derivation trees to solve using symbolic
+Other optimizations select derivation trees to solve using
 symbolic analogs of Prolog evaluation with
 tabling~\cite{jaffar09,mcmillan14}.
 %
@@ -93,12 +88,12 @@ supports interpolation.
 DAG inlining attempts to generate compact verification conditions for
 hierarchical programs~\cite{lal-qadeer15}.
 %
-\sys attempts to solve recursion-free CHC systems by attempting to
-reduce them to compact CDD systems.
+\sys attempts to solve recursion-free CHC systems by reducing them to
+compact CDD systems.
 %
 Because hierarchical programs and recursion-free CHC systems are
 closely related, algorithms that operate on hierarchical programs
 correspond to algorithms that operate on recursion-free Horn Clauses.
 %
-However, it is not apparent that such algorithms can be used directly
+However, it is not apparent whether such algorithms can be used directly
 to synthesize solutions.

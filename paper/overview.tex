@@ -203,18 +203,18 @@ predicate appears in the body of at most one clause and appears in
 such a clause exactly once.
 %
 Such systems cannot model a program with multiple control paths that
-share a common pre-subpath, typically modeled as a CHC system with a
+share a common prefix, typically modeled as a CHC system with an
 uninterpreted predicate that occurs in the body of multiple clauses.
 %
-$\mcchc$ is not a body-disjoint system because $\cc{L}_4$ shows in the
+$\mcchc$ is not a body-disjoint system because $\cc{L}_4$ appears in the
 body of both clause (3) and clause (4).
 %
 In order to handle $\mcchc$, a solver that uses
-body-disjoint systems would have to create a fresh copy of
+body-disjoint systems would have to duplicate
 $\cc{L}_4$. 
 %
 Worse, if $\cc{L}_4$ had dependencies, then each dependency would also
-need to be copied.
+need to be duplicated.
 
 %linear systems:
 Previous work has also introduced the class of linear
@@ -265,7 +265,7 @@ prohibitively expensive.
 The hierarchy of discussed classes of recursion-free systems is
 depicted in \autoref{fig:hierarchy}.
 %
-As shown, the class of CDD systems is a superclass of both the class
+As shown, the class of CDD systems is a superset of both the class
 of body-disjoint systems and the class of linear systems. So any
 recursion-free system that is efficiently expressible in body-disjoint
 or linear form is also efficiently expressible in CDD form.

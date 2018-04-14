@@ -45,7 +45,8 @@ predicate in the head.
 A CHC system is a set of CHCs where exactly one clause is a query.
 %
 For a given CHC system $S$, $\predof{S}$ denotes the set of all
-uninterpreted predicates.
+uninterpreted predicates and $\cc{query}$ denotes the body of the
+query clause.
 
 To explain the structure of a CDD system, we need terminology that relates
 predicates in a CHC system including the terms \emph{predicate dependency},
@@ -55,7 +56,7 @@ predicates in a CHC system including the terms \emph{predicate dependency},
   Given a CHC system $\cc{S}$ and two uninterpreted predicates
   $\cc{P}$ and $\cc{Q} \in \predof{S}$, if $\exists \cc{C} \in \cc{S}$
   such that $\cc{P} = \headof{C}$ and $\cc{Q} \in \bodyof{C}$, then
-  $\cc{Q}$ is a predicate dependency of $\cc{P}$.
+  $\cc{Q}$ is a \emph{predicate dependency} of $\cc{P}$.
 \end{defn}
 %
 \begin{ex}
@@ -72,12 +73,12 @@ in $\cc{S}$.
 \begin{defn}
   Given a CHC system $\cc{S}$ and three uninterpreted predicates
   $\cc{P}, \cc{Q}$, and $\cc{R} \in \predof{S}$, if $\cc{Q} \in
-  \depsof{P}$ then \cc{Q} is a transitive predicate dependency of
+  \depsof{P}$ then \cc{Q} is a \emph{transitive predicate dependency} of
   \cc{P}.
   %
   If \cc{Q} is a transitive predicate dependency of \cc{P} and \cc{R}
   is a transitive predicate dependency of \cc{Q}, then $\cc{R}$ is a
-  transitive predicate dependency of $\cc{P}$.
+  \emph{transitive predicate dependency} of $\cc{P}$.
 \end{defn}
 %
 \begin{ex}
@@ -103,15 +104,12 @@ of $\cc{P}$ in $\cc{S}$.
 \end{defn}
 %
 \begin{ex}
-  Because uninterpreted predicates $\cc{L}_9$ and $\cc{db}$ both
-  appear in the body of clause (7), $\cc{L}_9$ and $\cc{db}$ are
+  Because uninterpreted predicates $\cc{L}_9$ and $\cc{dbl}$ both
+  appear in the body of clause (7), $\cc{L}_9$ and $\cc{dbl}$ are
   siblings.
   %
 \end{ex}
 %
-Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$,
-$\siblingof{P}$ denotes the set of all siblings of $\cc{P}$
-in $\cc{S}$.
 %
 For a given CHC system $\cc{S}$, if there is no uninterpreted
 predicate $\cc{P} \in \predof{S}$ such that $\cc{P} \in \tdepsof{P}$,
@@ -135,7 +133,7 @@ variables, $X$.
 For a theory $T$, the space of $T$
 formulas over $X$ is denoted $\tformulas{T}$.
 %
-For each formula $\varphi \in \tformulas{T}$, the set of
+For each formula $\varphi \in \tformulas{T}$, the set of free
 variables that occur in $\varphi$ (i.e., the \emph{vocabulary} of
 $\varphi$) is denoted $\vocab(\varphi)$.
 %

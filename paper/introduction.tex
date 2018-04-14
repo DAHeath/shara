@@ -21,14 +21,14 @@ theory and may use variables named by the predicates.
 %
 A CHC system is a set of CHCs.
 %
-The goal of a CHC solving problem is to find suitable interpretations
+The goal of the CHC solving problem is to find suitable interpretations
 for each predicate such that each CHC is logically
 consistent in isolation.
 
 % introduce the problem of solving recursion-free systems:
 In this work we focus on the subclass of CHC systems which are known
-as \emph{recursion-free}. In a recursion-free CHC system, the
-derivation of each predicate will not contain itself.
+as \emph{recursion-free}. In a recursion-free CHC system, no
+derivation of a predicate will invoke that predicate.
 %
 Less formally, a recursion-free CHC system is one where following
 implication arrows through the system will never reach the same clause
@@ -52,7 +52,7 @@ heavily on the performance of solving recursion-free CHC systems.
 %
 
 % current general techniques for solving recursion-free systems
-Typically, recursion-free CHC systems are not solved directly.
+Typically, even recursion-free CHC systems are not solved directly.
 %
 Instead, they are reduced to a more specific subclass of
 recursion-free CHC system.
@@ -115,8 +115,8 @@ In the worst case, it is possible that the size of $S'$ may be
 exponential in the size of $S$.
 %
 However, empirically we have found that the size of $S'$ is usually
-close enough to the size of $S$ that \sys frequently outperforms the best
-known CHC solvers.
+close enough to the size of $S$ that \sys frequently outperforms
+\duality, one of the best known CHC solvers.
 %
 The procedure implemented in \sys is a generalization of existing
 techniques that synthesize compact verification conditions for
@@ -138,8 +138,7 @@ prover~\cite{moura08}.
 We evaluated the effectiveness of \sys on standard benchmarks drawn
 from SVCOMP15~\cite{svcomp15}.
 %
-The results indicate that \sys outperforms modern solvers in a strong
-majority of cases.
+The results indicate that \sys outperforms modern solvers many cases.
 %
 Futhermore, the results indicate that combining the strengths of \sys
 with that of other existing approaches (as discussed in

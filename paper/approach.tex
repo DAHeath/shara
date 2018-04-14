@@ -44,11 +44,11 @@ that each execution path invokes each statement at most once.
 \end{ex}
 
 % talk about previous system
-As discussed in \autoref{sec:overview}, CDD is a superclass of the union of
+As discussed in \autoref{sec:overview}, CDD is a superset of the union of
 the class of body-disjoint systems and the class of linear systems.
 %
 For a given recursion-free system $S$, if each uninterpreted predicate $Q \in
-\predof{S}$, appears in at most one in the body of a clause and, no
+\predof{S}$ appears in the body of at most one clause and no
 predicate appears more than once in the body of a single clause,
 then $S$ is \emph{body-disjoint}~\cite{rummer13a,rummer13b}.
 %
@@ -147,16 +147,25 @@ solution, $\sigma$ (\autoref{line:solve-done}).
 % solve-cdd in coNP
 \begin{thm}
   \label{thm:solve-cp}
-  Given a CDD system $S$, $\solvecdd$ either returns the solution of $S$ or $\none$
-  in co-NP time.
+  Given a CDD system $S$ over the theory of linear integer arithmetic,
+  $\solvecdd$ either returns the solution of $S$ or $\none$ in co-NP
+  time.
 \end{thm}
 Proof is given in \autoref{app:solve-cp}.
+
+In order to solve a CDD system, we construct efficiently sized pre and
+post formulas for each relational predicate and interpolate over these
+formulas. These pre and post formulas are built from \textbf{(1)} the
+\emph{constraint} of a given predicate, which explains under what
+conditions the predicate holds, and \textbf{(2)} the
+\emph{counterexample characterization}, which explains what condition
+must be true if the predicate holds.
 
 %
 \subsubsection{Constructing constraints for predicates}
 %
 In order to construct efficiently sized pre and post formulas for
-relational predicates, we need a method of compactly expressing the
+relational predicates, we use a method for compactly expressing the
 constraints on a given predicate.
 %
 For a CDD system $S$, a predicate $P \in \predof{S}$, and a partial
@@ -184,8 +193,8 @@ $\cc{b}_P$:
 \]
 %
 % introduce the isused predicates:
-The counterexample characterization of $P$ is a small extension of the
-compact constraint of $P$.
+The \emph{counterexample characterization} of $P$ is a small extension
+of the compact constraint of $P$.
 %
 It states that if $P$ is used
 (meaning $\cc{b}_{P} = True$), then the constraint of $P$ must hold:
@@ -252,7 +261,8 @@ post-formula is mutually inconsistent with the solution of $P$.
 and is constructed based on the predicates which depend on $P$.
 %
 % dependents of R:
-Let $D_0$ be the \emph{reflexive transitive dependents} of $P$ in $S$,
+Let $D_0$ be the \emph{transitive dependents} of $P$ in $S$ (i.e the
+predicates that have $P$ as a transitive dependency),
 % clause siblings of dependents:
 let $D_1$ be the siblings in $S$ of $(D_0 \union {P})$,
 %
@@ -272,13 +282,13 @@ characterization of all predicates $Q \in D$ and the query clause:
   When $\solvecdd$ solves $\cc{L}_9$ in $\mcchc$, it must consider
   the dependents of $\cc{L}_9$.
   %
-  The \emph{reflexive transitive dependents} $D_0$ of $\cc{L}_9$ is \{\cc{main}\}.
+  The \emph{transitive dependents} $D_0$ of $\cc{L}_9$ is \{\cc{main}\}.
   %
   The siblings set $D_1$ is \{\cc{dbl}\}.
   %
-  The transitive dependencies of $D_1$ is $\varnothing$. 
+  The set of transitive dependencies of $D_1$ is $\varnothing$. 
   %
-  Therefore, the $D$ set is \{\cc{main},\cc{dbl}\}.
+  Therefore, $D$ is \{\cc{main},\cc{dbl}\}.
   %
   The \cc{query} is $\cc{b}_{main} \land res<0$.
   %
@@ -290,8 +300,8 @@ characterization of all predicates $Q \in D$ and the query clause:
 \label{sec:core-solver}
 
 % give the general procedure:
-$\shara$, given a recursion-free CHC system $S$,
-constructs a CDD system $S'$.
+Given a recursion-free CHC system $S$, \shara~constructs a CDD system
+$S'$.
 %
 \sys then directly solves $S'$ and, from this solution, constructs a solution
 for $S$.
@@ -305,15 +315,18 @@ $S$, and $S'$).
 % formal defn:
 \begin{defn}
   \label{defn:expansion}
-  Let $f : \predof{S'} \to \predof{S}$ be such that
+  Let $\eta : \predof{S'} \to \predof{S}$ be such that
   % preserves arity:
   \textbf{(1)} for all $P' \in \predof{S'}$, $P'$ has the
-  same vector of parameters as $f(P')$;
+  same parameters as $\eta(P')$;
   % preserves clause structure:
-  \textbf{(2)} for each clause $C' \in S'$, the clause $C$ (constructed
-  by substituting all predicates $P'$ by $f(P')$) is in $S$.
+  \textbf{(2)} for each clause $C' \in S'$, the clause $C$, constructed
+  by substituting all predicates $P'$ by $\eta(P')$, is in $S$; and
+  \textbf{(3)} each predicate $P$ in $S$ has at least one predicate
+  $P'$ in $S'$ such that $\eta(P') = P$.
   %
-  Then $f$ is a \emph{correspondence} from $S'$ to $S$.
+  %
+  Then $\eta$ is a \emph{correspondence} from $S'$ to $S$.
 \end{defn}
 %
 If there is a correspondence from $S'$ to $S$, then $S'$ is an \emph{expansion}
@@ -371,7 +384,7 @@ to $S$ or the value $\none$ to denote that $S$ is
 unsolvable.
 %
 \sys first runs a procedure $\expand$ on $S$ to obtain a CDD expansion
-$S'$ of $S$.
+$S'$ of $S$ ($\expand$ is given in \autoref{app:cons-cdd}).
 %
 \sys then invokes $\solvecdd$ on $S'$.
 %
@@ -383,22 +396,20 @@ $\sigma'$, by invoking $\collapse{ \eta }{ \sigma' }$
 (\autoref{line:shara-ret-collapse}).
 %
 $\textsc{Collapse}$ is designed to convert the solution for the CDD system
-back to a sensible solution for the original problem. It does this by
+back to a solution for the original problem. It does this by
 taking the conjunction of all interpretations of predicates which
-correspond to one predicate in the original problem.
+correspond to the same predicate in the original problem.
 %
 That is, given a CDD solution $\sigma'$ and a correspondence $\eta$ from
 $P' \in \predof{S'}$ to $P \in \predof{S}$,
 $\collapse{\eta}{\sigma'}$ generates an entry in $\sigma$ for each
 predicate in the original system:
 $\sigma[P] \assign \bigland_{ \eta(P') = P} \sigma'(P')$.
-%
-$\expand$ is given in \autoref{app:cons-cdd}.
 
 % shara correctness
 \begin{thm}
   \label{thm:corr}
-  $S$ is solvable if and only if $\shara$ returns solution $\sigma$.
+  $S$ is solvable if and only if $\shara$ returns a solution $\sigma$.
 \end{thm}
 Proof is given in \autoref{app:corr}.
 
