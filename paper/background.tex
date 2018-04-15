@@ -11,12 +11,12 @@
 A Constrained Horn Clause is a logical implication where the
 antecedent is called the body and the consequent is called the head.
 %
-The body is a conjunction of a logical formula, called the fact,
-and a vector of uninterpreted predicates. The fact is an arbitrary
+The body is a conjunction of a logical formula, called the constraint,
+and a vector of uninterpreted predicates. The constraint is an arbitrary
 formula in some background logic, such as linear integer arithmetic.
 %
 The uninterpreted predicates are applied to variables which may or may
-not appear in the fact.
+not appear in the constraint.
 %
 A head can be either an uninterpreted predicate applied to variables or $False$.
 %
@@ -35,7 +35,7 @@ defined structurally:
 %
 % define a body function, head function, and recursion-free
 For a given CHC $C$, $\bodyof{C}$ denotes the vector of uninterpreted
-predicates in the body and $\consof{C}$ denotes the fact in the
+predicates in the body and $\consof{C}$ denotes the constraint in the
 body.
 %
 If $C$ is not a query, then $\headof{C}$ denotes the uninterpreted
