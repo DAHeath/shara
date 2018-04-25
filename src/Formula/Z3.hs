@@ -5,15 +5,12 @@ module Formula.Z3 where
 import           Control.Lens
 import           Control.Monad.State
 import           Control.Monad.Except
-
-import           Data.List (partition)
+import           Data.List (partition, nub)
 import           Data.Maybe
 import qualified Data.Map as M
 import           Data.Map (Map)
-
 import           Formula (Expr((:@)), Chc, Type((:=>)), Var(..))
 import qualified Formula as F
-
 import           Z3.Monad hiding (local)
 
 data Env = Env { _envVars :: Map Var AST

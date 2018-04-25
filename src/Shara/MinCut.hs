@@ -201,31 +201,3 @@ dfsFrom s = do
 
 search :: Ord k => k -> Map k (Set a) -> Set a
 search = M.findWithDefault S.empty
-
-testG :: Graph
-testG =
-  empty
-  & addEdge 0 1
-  & addEdge 0 2
-  & addEdge 1 2
-  & addEdge 1 3
-  & addEdge 1 4
-  & addEdge 2 4
-  & addEdge 3 5
-  & addEdge 4 3
-  & addEdge 4 5
-  & addInitial 0
-  & addTerminal 5
-
-testCap :: Map (Symbol, Symbol) Rational
-testCap =
-  mempty
-  & M.insert (0, 1) 10
-  & M.insert (0, 2) 10
-  & M.insert (1, 2) 2
-  & M.insert (1, 3) 4
-  & M.insert (1, 4) 8
-  & M.insert (2, 4) 9
-  & M.insert (3, 5) 10
-  & M.insert (4, 3) 6
-  & M.insert (4, 5) 10

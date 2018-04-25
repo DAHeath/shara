@@ -9,9 +9,8 @@ import           Data.Maybe                (fromMaybe)
 import qualified Data.Set                  as S
 import           Formula
 import qualified Formula.Z3                as Z3
-import           Shara.Cut
 import           Shara.Grammar
-import           Shara.Graph
+import           Shara.GrammarCut
 import qualified Shara.Reg                 as R
 
 import           Data.Text.Prettyprint.Doc
