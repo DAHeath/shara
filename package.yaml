@@ -17,12 +17,13 @@ default-extensions:
 - FlexibleContexts
 - FlexibleInstances
 - NoMonomorphismRestriction
+- PatternSynonyms
 
 dependencies:
-- base >=4.9 && <5
+- base
 - ghc-paths
 - temporary
-- containers >=0.5.8
+- containers
 - parsec
 - parsec-numbers
 - unordered-containers
@@ -33,7 +34,7 @@ dependencies:
 - lens
 - prettyprinter
 - split
-- template-haskell >=2.11
+- template-haskell
 - syb
 - z3 >=4.1
 - turtle
@@ -42,22 +43,13 @@ dependencies:
 - stm
 - QuickCheck
 - hspec
+- semiring-simple
 
 library:
   ghc-options: -Wall
   source-dirs: src
 
   exposed-modules:
-  - Formula
-  - Formula.Z3
-  - Grammar
-  - Solver.Shara
-  - Solver.Chc
-  - Solver.Types
-  - Solver.Interpolate
-  - Solver.TreeUnwind
-  - Data.Grammar
-  - Data.InfGrammar
 
 executable:
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N

@@ -282,3 +282,6 @@ esub m = transform (\case
 
 substitute :: Map Var Var -> Expr -> Expr
 substitute = undefined
+
+copyVars :: [Var] -> [Var] -> Expr
+copyVars vs1 vs2 = manyAnd (zipWith (\v1 v2 -> mkEql (view varType v1) (V v1) (V v2)) vs1 vs2)

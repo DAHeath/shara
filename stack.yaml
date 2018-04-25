@@ -1,25 +1,18 @@
-resolver: lts-11.4
-
+flags: {}
+extra-include-dirs:
+- /usr/local/include
+extra-package-dbs: []
+extra-lib-dirs:
+- /usr/local/lib
 packages:
-- '.'
+- .
 - location:
     git: https://github.com/DAHeath/z3-haskell
     commit: f18110558d74dd8df8560f2b0fc2cc0704673917
   extra-dep: true
-
 extra-deps:
 - parsec-numbers-0.1.0
 - prettyprinter-1.1.1
-- fixplate-0.1.7
-- containers-0.5.8.2
 - global-lock-0.1
-
-flags: {}
-
-extra-package-dbs: []
-
-extra-include-dirs:
-- /usr/local/include
-
-extra-lib-dirs:
-- /usr/local/lib
+# resolver: lts-11.4
+resolver: lts-9.1
