@@ -16,18 +16,21 @@ import qualified Shara.Reg                 as R
 
 import           Data.Text.Prettyprint.Doc
 
+data SolveKind
+  = Topological
+  | LicketySplit InterpolationStrategy
+  deriving (Show, Read, Eq, Ord)
+
 shara ::
      MonadIO m
-  => Map NT [Var]
+  => SolveKind
+  -> Map NT [Var]
   -> SGrammar [Var] Expr
   -> m (Either Model (Map NT Expr))
-shara vocab sg = evalStateT (go =<< cdd sg) (emptyCDDState vocab)
+shara sk vocab sg = evalStateT (go =<< cdd sg) (emptyCDDState vocab)
   where
-    go g
-      -- liftIO $ print (topologicalOrder $ finitePrefix g)
-      -- licketySplit SequentialInterpolation (finitePrefix g) >>= \case
-     = do
-      topologicalInterpolation (finitePrefix g) >>= \case
+    go g =
+      solveDirect sk (finitePrefix g) >>= \case
         Left m -> pure (Left m)
         Right m -> do
           cs <- use clones
@@ -36,6 +39,13 @@ shara vocab sg = evalStateT (go =<< cdd sg) (emptyCDDState vocab)
           inductive vocab sol sg >>= \case
             Nothing -> pure (Right sol)
             Just inds -> go =<< unrollCDD g {- inds -}
+
+solveDirect ::
+     MonadIO m => SolveKind -> Grammar Expr -> m (Either Model (Map NT Expr))
+solveDirect =
+  \case
+    Topological -> topologicalInterpolation
+    LicketySplit strat -> licketySplit strat
 
 inductive ::
      MonadIO m
@@ -56,13 +66,9 @@ inductive vars sols g
     indRule nt r =
       let cons = M.findWithDefault (LBool False) nt sols
           ante = expr r
-      in do liftIO $ putStrLn "ENTAILMENT!"
-            liftIO $ print (pretty ante)
-            liftIO $ print (pretty cons)
-            liftIO $ putStrLn ""
-            Z3.entails ante cons >>= \case
-              True -> pure [nt]
-              False -> pure []
+      in Z3.entails ante cons >>= \case
+           True -> pure [nt]
+           False -> pure []
     expr =
       \case
         R.Seq x y -> mkAnd (expr x) (expr y)

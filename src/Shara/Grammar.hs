@@ -98,8 +98,8 @@ reverseRules g = runReader (go $ start g) R.Eps
         R.Alt a b -> M.union <$> go a <*> go b
         Nonterm nt -> do
           r <- ask
-          M.union <$> local (const (Nonterm nt)) (go (ruleFor nt g)) <*>
-            pure (M.singleton nt (R.Neg r))
+          M.union <$> local (const (R.Neg $ Nonterm nt)) (go (ruleFor nt g)) <*>
+            pure (M.singleton nt r)
         _ -> pure mempty
 
 grammarFromMap :: NT -> Map NT (SRule s a) -> SGrammar s a

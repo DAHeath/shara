@@ -29,6 +29,16 @@ initials g = S.filter (\s -> all null (predecessors s g)) (symbols g)
 terminals :: Graph -> Set Symbol
 terminals g = symbols g `S.difference` M.keysSet (graphForward g)
 
+clear :: Set Symbol -> Graph -> Graph
+clear toClear (Graph for back) = Graph for' back'
+  where
+    for' =
+      M.filterWithKey (\k _ -> k `notElem` toClear) $
+      fmap (filter (`notElem` toClear)) for
+    back' =
+      M.filterWithKey (\k _ -> k `notElem` toClear) $
+      fmap (map (filter (`notElem` toClear))) back
+
 grammarToGraph :: Grammar a -> Graph
 grammarToGraph (SGrammar _ rs) = Graph forw back
   where
@@ -43,6 +53,7 @@ grammarToGraph (SGrammar _ rs) = Graph forw back
       \case
         R.Null -> []
         R.Eps -> []
+        R.Neg a -> ruleSymbols a
         R.Alt a b -> ruleSymbols a ++ ruleSymbols b
         R.Seq a b ->
           let as = ruleSymbols a

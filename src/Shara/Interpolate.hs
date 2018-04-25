@@ -43,20 +43,21 @@ loop ::
   -> Map NT (Rule Expr)
   -> Map NT Expr
   -> IO (Either Model (Map NT Expr))
-loop strategy g@(SGrammar _ rs) rg m =
+loop strategy g@(SGrammar _ rs) rev m =
   if null (M.keysSet rs S.\\ M.keysSet m)
     then pure (Right m)
     else do
-      let gr = grammarToGraph g
+      let gr = clear (M.keysSet m) $ grammarToGraph g
+      -- let gr = grammarToGraph g
       let (now, _, _) = cut gr
-      runStateT (runExceptT $ mapM_ (\nt -> interpolateNT' g rg nt) now) m >>=
+      runStateT (runExceptT $ mapM_ (\nt -> interpolateNT' g rev nt) now) m >>=
       -- We only proceed when none of the solved symbols failed.
        \case
         (Left m', _) -> pure (Left m')
         (_, m') -> do
           let (g1, g2) = partition (S.toList now) g
           (m1, m2) <-
-            evaluator (loop strategy g1 rg m') (loop strategy g2 rg m')
+            evaluator (loop strategy g1 rev m') (loop strategy g2 rev m')
         -- A simple union of the two maps suffices since there should be no
         -- possibility that the two subiterations computed interpolants for the
         -- same vertices.
@@ -107,16 +108,7 @@ interpolateNT ::
 interpolateNT solns g rg target =
   let phi1 = mkForm solns g
       phi2 = mkForm solns rg
-  in do liftIO $ print (pretty phi1)
-        liftIO $ print (pretty phi2)
-        sol <- Z3.interpolate phi1 phi2
-        case sol of
-          Left m -> pure ()
-          Right f -> liftIO $ print (pretty f)
-        liftIO $ putStrLn ""
-        pure sol
-  -- let (phi1, phi2) = interpolationForms target solns g
-  --       Z3.interpolate phi1 phi2
+  in Z3.interpolate phi2 phi1
 
 mkForm :: Map NT Expr -> Grammar Expr -> Expr
 mkForm m g = evalState (go (start g)) S.empty
@@ -127,79 +119,18 @@ mkForm m g = evalState (go (start g)) S.empty
         R.Alt a b -> mkOr <$> go a <*> go b
         R.Eps -> pure $ LBool True
         R.Null -> pure $ LBool False
-        R.Neg a -> mkNot <$> go a
         Term t -> pure t
-        Nonterm nt ->
-          elem nt <$> get >>= \case
-            True -> pure $ mark nt
-            False -> do
-              modify (S.insert nt)
-              phi <-
-                case M.lookup nt m of
-                  Nothing -> go (ruleFor nt g)
-                  Just f -> pure f
-              pure (mkAnd (mark nt) (mkImpl (mark nt) phi))
+        R.Neg (Nonterm nt) -> handleNT mkNot nt
+        Nonterm nt -> handleNT id nt
+        R.Neg a -> mkNot <$> go a
+    handleNT f nt =
+      elem nt <$> get >>= \case
+        True -> pure $ mark nt
+        False -> do
+          modify (S.insert nt)
+          phi <-
+            case M.lookup nt m of
+              Nothing -> go (ruleFor nt g)
+              Just phi' -> pure (f phi')
+          pure (mkAnd (mark nt) (mkImpl (mark nt) phi))
     mark nt = V $ Var ("__b" ++ show nt) Bool
-
-data Polarity
-  = Positive
-  | Negative
-  deriving (Show, Read, Eq, Ord)
-
--- | Find the two formulas on either side of the target nonterminal. The two
--- formulas are found by partitioning the grammar at the location of the
--- nonterminal.
-interpolationForms :: NT -> Map NT Expr -> Grammar Expr -> (Expr, Expr)
-interpolationForms target solns g =
-  let (SGrammar st rs, reached) = partition [target] g
-  in ( grammarExpr
-         Negative
-         target
-         solns
-         (SGrammar st (M.insertWith R.seq target R.Eps rs))
-     , grammarExpr Positive target solns reached)
-
-knownInterpolant :: NT -> NT -> Expr -> Expr
-knownInterpolant target nt e = nontermMark target nt `mkImpl` e
-
--- | Find the formula for the given grammar.
-grammarExpr :: Polarity -> NT -> Map NT Expr -> Grammar Expr -> Expr
-grammarExpr pol target solns g =
-  let nts = S.toList $ nonterminals g
-      ntPhi = map (\nt -> productionExpr pol target solns nt (ruleFor nt g)) nts
-  in manyAnd (ruleExpr pol target solns (start g) : ntPhi)
-
--- | Find the formula for the given production.
-productionExpr :: Polarity -> NT -> Map NT Expr -> NT -> Rule Expr -> Expr
-productionExpr pol target solns nt r =
-  mkImpl (nontermExpr Negative target solns nt) (ruleExpr pol target solns r)
-
--- | Find the formula for the given rule.
-ruleExpr :: Polarity -> NT -> Map NT Expr -> Rule Expr -> Expr
-ruleExpr pol target solns = go
-  where
-    go =
-      \case
-        R.Null -> LBool False
-        R.Eps -> LBool True
-        R.Alt a b -> mkOr (go a) (go b)
-        R.Seq a b -> mkAnd (go a) (go b)
-        Term t -> t
-        Nonterm nt -> nontermExpr pol target solns nt
-
--- | Find the formula for the given nonterminal. If the definition is known,
--- the formula is the definition. Otherwise, it is a representative boolean
--- variable.
-nontermExpr :: Polarity -> NT -> Map NT Expr -> NT -> Expr
-nontermExpr pol target solns nt =
-  let modif =
-        case pol of
-          Positive -> id
-          Negative -> mkNot
-  in fromMaybe (nontermMark target nt) (modif <$> M.lookup nt solns)
-
-nontermMark :: NT -> NT -> Expr
-nontermMark target nt =
-  if target == nt
-    then LBool True
-    else V $ Var ("__b" ++ show nt) Bool
