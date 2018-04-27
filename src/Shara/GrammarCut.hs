@@ -35,14 +35,14 @@ terminals :: HyperGraph -> Set Symbol
 terminals g = symbols g `S.difference` M.keysSet (graphForward g)
 
 clear :: Set Symbol -> HyperGraph -> HyperGraph
-clear toClear (HyperGraph for back) = HyperGraph for' back'
+clear toKeep (HyperGraph for back) = HyperGraph for' back'
   where
     for' =
-      M.filterWithKey (\k _ -> k `notElem` toClear) $
-      fmap (filter (`notElem` toClear)) for
+      M.filterWithKey (\k _ -> k `elem` toKeep) $
+      fmap (filter (`elem` toKeep)) for
     back' =
-      M.filterWithKey (\k _ -> k `notElem` toClear) $
-      fmap (map (filter (`notElem` toClear))) back
+      M.filterWithKey (\k _ -> k `elem` toKeep) $
+      fmap (map (filter (`elem` toKeep))) back
 
 grammarToGraph :: Grammar a -> HyperGraph
 grammarToGraph (SGrammar _ rs) = HyperGraph forw back
@@ -58,7 +58,6 @@ grammarToGraph (SGrammar _ rs) = HyperGraph forw back
       \case
         R.Null -> []
         R.Eps -> []
-        R.Neg a -> ruleSymbols a
         R.Alt a b -> ruleSymbols a ++ ruleSymbols b
         R.Seq a b ->
           let as = ruleSymbols a

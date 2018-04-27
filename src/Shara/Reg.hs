@@ -16,7 +16,6 @@ data Reg a
         (Reg a) -- Sequence two expressions one after the other.
   | Alt (Reg a)
         (Reg a) -- Alternation: Choose one or the other.
-  | Neg (Reg a)
   | Eps -- The expression that matches the empty string.
   | Null -- The expression that matches nothing.
   | Symbol a -- The expression that matches exactly the given symbol.
@@ -47,7 +46,6 @@ instance Functor Reg where
     \case
       Seq a b -> seq (fmap f a) (fmap f b)
       Alt a b -> alt (fmap f a) (fmap f b)
-      Neg a -> Neg (fmap f a)
       Null -> Null
       Eps -> Eps
       Symbol a -> Symbol (f a)
@@ -60,7 +58,6 @@ instance Monad Reg where
         \case
           Seq a b -> seq (join' a) (join' b)
           Alt a b -> alt (join' a) (join' b)
-          Neg a -> Neg (join' a)
           Eps -> Eps
           Null -> Null
           Symbol a -> a
@@ -86,7 +83,6 @@ instance Arbitrary a => Arbitrary (Reg a) where
     oneof
       [ seq <$> arbitrary <*> arbitrary
       , alt <$> arbitrary <*> arbitrary
-      , Neg <$> arbitrary
       , pure Eps
       , pure Null
       , Symbol <$> arbitrary

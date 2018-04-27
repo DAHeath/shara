@@ -2,19 +2,17 @@ module Shara.Shara where
 
 import           Control.Lens
 import           Control.Monad.State
-import           Data.List.Split           (splitOn)
-import           Data.Map                  (Map)
-import qualified Data.Map                  as M
-import           Data.Set                  (Set)
-import qualified Data.Set                  as S
+import           Data.List.Split     (splitOn)
+import           Data.Map            (Map)
+import qualified Data.Map            as M
+import           Data.Set            (Set)
+import qualified Data.Set            as S
 import           Formula
-import qualified Formula.Z3                as Z3
+import qualified Formula.Z3          as Z3
 import           Shara.CDD
 import           Shara.Grammar
 import           Shara.Interpolate
-import qualified Shara.Reg                 as R
-
-import           Data.Text.Prettyprint.Doc
+import qualified Shara.Reg           as R
 
 data SolveKind
   = Topological
@@ -29,13 +27,12 @@ shara ::
   -> m (Either Model (Map NT Expr))
 shara sk vocab sg = evalStateT (go =<< cdd sg) (emptyCDDState vocab)
   where
-    go g =
+    go g = do
       solveDirect sk (finitePrefix g) >>= \case
         Left m -> pure (Left m)
         Right m -> do
           cs <- use clones
           let sol = collapse cs m
-          -- liftIO $ print (fmap pretty sol)
           inductive vocab sol sg >>= \case
             Nothing -> pure (Right sol)
             Just inds -> go =<< unrollCDD g {- inds -}
@@ -53,9 +50,7 @@ inductive ::
   -> Map NT Expr
   -> SGrammar [Var] Expr
   -> m (Maybe (Set NT))
-inductive vars sols g
-  -- liftIO $ print sols
- = do
+inductive vars sols g = do
   s <- (S.fromList . concat) <$> M.traverseWithKey indRule (rules g)
   pure $
     if null (nonterminals g S.\\ s)

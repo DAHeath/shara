@@ -2,6 +2,7 @@
 
 module Shara.Grammar where
 
+import           Control.Arrow
 import           Control.Applicative
 import           Control.Lens
 import           Control.Monad.Reader
@@ -52,9 +53,6 @@ alt :: SGrammar s a -> SGrammar s a -> SGrammar s a
 alt (SGrammar s rs) (SGrammar s' rs') =
   SGrammar (s `R.alt` s') (M.unionWith R.alt rs rs')
 
-neg :: SGrammar s a -> SGrammar s a
-neg (SGrammar s rs) = SGrammar (R.Neg s) rs
-
 abstract :: s -> NT -> SGrammar s a -> SGrammar s a
 abstract sc nt (SGrammar s rs) =
   SGrammar (SNonterm (sc, nt)) (M.insertWith R.alt nt s rs)
@@ -87,19 +85,18 @@ after nt g =
         R.Seq x y -> go x >> go y
         _ -> pure ()
 
--- | This only works for commutative semirings.
-reverseRules :: Grammar a -> Map NT (Rule a)
-reverseRules g = runReader (go $ start g) R.Eps
+reverseRules :: Grammar a -> Map NT [(Maybe NT, Rule a)]
+reverseRules g = runReader (go $ start g) (Nothing, R.Eps)
   where
     go =
       \case
         R.Seq a b -> do
-          M.union <$> local (R.seq b) (go a) <*> local (R.seq a) (go b)
+          M.unionWith (++) <$> local (second (R.seq b)) (go a) <*> local (second (R.seq a)) (go b)
         R.Alt a b -> M.union <$> go a <*> go b
         Nonterm nt -> do
-          r <- ask
-          M.union <$> local (const (R.Neg $ Nonterm nt)) (go (ruleFor nt g)) <*>
-            pure (M.singleton nt r)
+          ctx <- ask
+          M.unionWith (++) <$> local (const (Just nt, R.Eps)) (go (ruleFor nt g)) <*>
+            pure (M.singleton nt [ctx])
         _ -> pure mempty
 
 grammarFromMap :: NT -> Map NT (SRule s a) -> SGrammar s a
@@ -144,8 +141,6 @@ partition nts g = (bef, aft)
              SGrammar (R.alt st st') (M.unionWith R.alt rs rs')) <$>
           go x <*>
           go y
-        R.Neg x -> go x >>= \case
-                     SGrammar st rs -> pure $ SGrammar (R.Neg st) rs
         Term t -> pure $ singleton t
         Nonterm nt -> do
           vis <- get
@@ -180,7 +175,6 @@ topologicalOrder g = evalState (topo (start g))  S.empty
       R.Eps -> pure []
       R.Seq x y -> (++) <$> topo x <*> topo y
       R.Alt x y -> (++) <$> topo x <*> topo y
-      R.Neg x -> topo x
       STerm _ -> pure []
       SNonterm (_, nt) -> (nt `elem`) <$> get >>= \case
         False -> do
@@ -208,7 +202,6 @@ instance Monad (SGrammar s) where
             R.Eps -> pure R.Eps
             R.Seq a b -> R.seq <$> joinRule a <*> joinRule b
             R.Alt a b -> R.alt <$> joinRule a <*> joinRule b
-            R.Neg a -> R.Neg <$> joinRule a
             SNonterm nt -> pure $ SNonterm nt
             STerm (SGrammar st' rs') ->
               modify (M.unionWith R.alt rs') >> pure st'

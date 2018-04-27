@@ -1,0 +1,128 @@
+\documentclass{article}
+
+\usepackage{relsize}
+\usepackage{amsmath}
+
+\newcommand{\cc}[1]{\mbox{\smaller[0.5]\texttt{#1}}}
+
+\newcommand{\DUALITY}{\textsc{Duality}}
+\newcommand{\SHARA}{\textsc{Shara}}
+\newcommand{\RHORT}{\textsc{Rhort}}
+
+\begin{document}
+When \DUALITY~attempts to interpolate a DAG, it is forced to unwind the DAG to a
+tree.
+%
+When this DAG happens to have been constructed from complex proof rules (such
+as in the case of Relational, Higher-Order Refinement Type Inference) this tree
+will probably be far too large for \DUALITY~to solve in a reasonable amount of
+time.
+%
+There are three sources of inefficiency which we can fix with a more
+appropriate solver for this type of problem.
+
+\begin{enumerate}
+\item The solver need not unwind the DAG to a tree, but rather only a disjoin
+dependency DAG (\SHARA). The importance of this optimization is greatly
+exaggerated by proof systems that include a context, since these contexts often
+end up being used across various branches of the same proof.
+%
+This means that it is very likely that \SHARA~could reduce the number of
+required interpolants exponentially compared to \DUALITY~in most cases.
+%
+\item The Solver need not calculate every interpolant. The reason for this is
+quite simple: We \emph{can't} use certain interpolants to help us construct a
+proof. So there is no reason to calculate an interpolant there in the first
+place. The biggest source of this is, again, contexts. In \RHORT, every Lambda
+and Match expression spawns new context vertices. However, none of the facts at
+these interpolants can be used to help generalize a proof.
+%
+\item The interpolants need not be solved in any particular order. The approach
+taken in \SHARA~was to solve the interpolants in topological order. However,
+this is not essential, merely convenient. A more appropriate strategy would be
+to try to maximally reduce the number of dependencies in the DAG at each step.
+
+\end{enumerate}
+
+I propose a solver which takes advantage of these three facts. First, I propose
+a modification to the solver's type. \DUALITY~can be seen as having the following type:
+
+\begin{align*}
+\DUALITY : \mathsf{CHC} \rightarrow \mathsf{Query} \rightarrow (\mathsf{Model} + \mathsf{Proof})
+\end{align*}
+
+\DUALITY~takes a (potentially recursive) CHC system and a query, and finds a
+counterexample model or a valid proof. \SHARA~should instead have the following type:
+
+\begin{align*}
+\SHARA &: \mathsf{ProofStructure} \\
+  &\rightarrow \mathsf{NonrecCHC} \\
+  &\rightarrow \mathsf{Query} \\
+  &\rightarrow (\mathsf{Model} + \mathsf{PartialProof} + \mathsf{Proof})
+\end{align*}
+
+In addition to asking the CHC system to be nonrecursive, this new signature
+asks the user to provide a structure for the current proof. This structure
+contains the information needed to construct entailments whose validity would
+generalize a hierarchical proof.
+%
+\SHARA~can use this information to 1) reduce the number of interpolant
+calculations and to 2) parallelize computing entailments of the interpolants.
+%
+\SHARA~has three possible terminating outcomes.
+\begin{enumerate}
+\item A counterexample model was found.
+\item A proof of the hierarchical program was found, but it did not generalize.
+In this case, the partial proof will indicate which interpolants generalized
+and which did not so that the user can intelligently restrict construction of
+their next hierarchical approximation.
+\item A proof of the hierarchical program was found, and it generalized. This
+would indicate the user is now done with their proof entirely.
+\end{enumerate}
+
+The operation of \SHARA~is to be a parallel, recursive algorithm which at each
+step attempts to reduce the number of dependencies in the DAG. At any point, if
+there are no \emph{relevant} interpolants left to calculate, that branch of the
+computation can be killed. An interpolant is relevant if it appears somewhere
+in the proof structure.
+
+\SHARA~works in the following way: First, it constructs a disjoint dependency
+DAG based on the input DAG. It then performs the following recursive algorithm:
+
+\begin{enumerate}
+\item \SHARA~calculates a \emph{minimum cut} of the current subgraph. The
+minimum cut is calculated by assigning each vertex in the subgraph a weight
+inversely related to the number of dependencies which cross that vertex. Two
+vertices are dependent on one another if they exist on the same hyperpath in
+the DAG. This cut partitions the subgraph into three pieces: The vertices which
+must be interpolated \emph{now} to perform the cut, and the two new subgraphs
+on either side of this cut.
+\item \SHARA~interpolates the vertices along the cut before recursively
+dispatching the two subgraphs \emph{in parallel}.
+\item \SHARA~combines the resulting interpolant solutions from the cut and the
+two parallel calls.
+\item If the current invocation has the solution for all instances of a
+relevant vertex from the original DAG, it combines those solutions to construct
+an interpolant for the original DAG.
+\item If the current invocation has the solution to both relevant vertices
+involved in an entailment in the proof structure, it can query the entailment
+before returning.
+\end{enumerate}
+
+In addition to this, the following optimizations can be made:
+\begin{enumerate}
+\item The proof structure can contain distinct, optional ways to complete the
+proof tree at each level. If \SHARA~finds that one of these options is valid,
+the remaining options can be removed, potentially reducing the number of
+relevant interpolants.
+\item If the current subgraph contains only a small number of relevant
+interpolants (below some threshold), it can calculate them all sequentially
+rather than continuing to cut. This could reduce the number of interpolants to
+calculate since each cut might contain irrelevant interpolants.
+\end{enumerate}
+
+In short, the purpose of this algorithm is to try to gain two advantages over
+\DUALITY: 1) To aggresively reduce the number of required interpolant
+calculations 2) To parallelize SMT calls (both interpolation and and
+entailment) as much as possible.
+\end{document}

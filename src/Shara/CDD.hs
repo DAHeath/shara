@@ -16,6 +16,8 @@ import           Shara.Grammar
 import           Shara.Inf
 import qualified Shara.Reg           as R
 
+import Debug.Trace
+
 type Branch = Int
 type Unrolling = Int
 
@@ -90,8 +92,6 @@ cdd g = currentBranch .= 0 >> cddRule (start g & allFresh 0)
         R.Seq a b ->
           Infinite <$>
           (seq <$> (getInfinite <$> cddRule a) <*> (getInfinite <$> cddRule b))
-        R.Neg a ->
-          Infinite . neg . getInfinite <$> cddRule a
         STerm t -> pure (iflat $ Term (Fin t))
         R.Alt a b -> do
           -- We need to invent 2 new branch points, one for each branch
@@ -104,15 +104,13 @@ cdd g = currentBranch .= 0 >> cddRule (start g & allFresh 0)
           -- Also, manage the dependencies
           elem nt <$> use visited >>= \case
             -- We have alrady seen this nonterminal, so postpone expanding it.
-            True -> do
+            True ->
               pure (
                 iflat $ Term (Inf (do
                 visited .= S.empty
                 cddRule (SNonterm (vs, nt)))))
             False -> do
               -- We have not yet seen this nonterminal, so mark it.
-              visited %= S.insert nt
-
               cb <- use currentBranch
               -- Create a fresh nonterminal if needed, or use one we do not
               -- already depend on.
@@ -128,7 +126,9 @@ cdd g = currentBranch .= 0 >> cddRule (start g & allFresh 0)
                   nt' <- freshNT nt
                   addDep cb nt'
                   vocab <- substMap vs nt nt'
+                  visited %= S.insert nt
                   g' <- getInfinite <$> cddRule (ruleFor nt g & allFresh nt')
+                  visited %= S.delete nt
                   pure $ Infinite $ (flat (Term (Fin vocab)) `seq` abstract () nt' g')
 
 mkBranch :: MonadState CDDState m => Branch -> m ()
