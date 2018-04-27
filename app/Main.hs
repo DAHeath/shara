@@ -100,9 +100,9 @@ main = do
            if a == "topo"
              then Topological
              else if a == "par"
-                    then LicketySplit ConcurrentInterpolation
-                    else LicketySplit SequentialInterpolation
-         _ -> LicketySplit SequentialInterpolation)
+                    then LicketySplit (LicketySplitOptions True True)
+                    else LicketySplit (LicketySplitOptions False True)
+         _ -> LicketySplit (LicketySplitOptions False True))
   print sk
   shara sk test1M test1 >>= \case
     Left m -> print (fmap pretty m)

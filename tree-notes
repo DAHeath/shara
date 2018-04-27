@@ -1,0 +1,5 @@
+A reasonable strategy just invokes the iZ3 tree interpolation algorithm when
+the current subproblem happens to be treelike.  A problem is treelike when
+there is no uninterpolated predicate with multiple predecessors.  This should
+be relatively easy to recognize.  When this occurs, stop cutting the grammar
+and instead just solve it all once with the tree interpolator.

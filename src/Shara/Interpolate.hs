@@ -1,5 +1,7 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Shara.Interpolate where
 
+import           Control.Lens hiding (Context)
 import           Control.Concurrent.Async (concurrently)
 import           Control.Monad.Except
 import           Control.Monad.State
@@ -14,21 +16,26 @@ import           Formula
 import qualified Formula.Z3               as Z3
 import           Shara.GrammarCut
 
-data InterpolationStrategy
-  = SequentialInterpolation
-  | ConcurrentInterpolation
-  deriving (Show, Read, Eq, Ord)
+data LicketySplitOptions = LicketySplitOptions
+  -- When lickety split divides the problem in two, should it continue on the
+  -- two subproblems concurrently?
+  { _concurrentInterpolation :: Bool
+  -- If lickety split finds that the current subproblem is treelike, should it
+  -- invoke the tree interpolator?
+  , _useTreeInterpolator :: Bool
+  } deriving (Show, Read, Eq, Ord)
+makeLenses ''LicketySplitOptions
 
 -- | `licketySplit` computes interpolants of a DAG. It attempts to do this
 -- maximally in parallel by cutting the DAG consideration at each iteration.
 licketySplit ::
      MonadIO m
-  => InterpolationStrategy
+  => LicketySplitOptions
   -> Grammar Expr
   -> m (Either Model (IntMap Expr))
-licketySplit strategy g =
+licketySplit opts g =
   let ss = nonterminals g
-  in liftIO (loop strategy ss g (contextualize g) M.empty)
+  in liftIO (loop opts ss g (contextualize g) M.empty)
 
 -- | The core loop for interpolating a DAG. The loop requires two versions of
 -- the DAG, one which is a full representation and another which is a
@@ -38,16 +45,19 @@ licketySplit strategy g =
 -- current iteration. The two subgraphs on either side of the cut are the new
 -- restrictions which can be interpolated in parallel.
 loop ::
-     InterpolationStrategy
+     LicketySplitOptions
   -> IntSet
   -> Grammar Expr
   -> Context Expr
   -> IntMap Expr
   -> IO (Either Model (IntMap Expr))
-loop strategy targets g rev m =
-  if S.null (targets S.\\ M.keysSet m)
-    then pure (Right m)
-    else do
+loop opts targets g rev m = do
+  if treelike (targets S.\\ M.keysSet m) rev
+  then treeSolve targets g rev m
+   else do
+  -- if null (targets S.\\ M.keysSet m)
+  --   then pure (Right m)
+  --   else do
       let gr = grammarToGraph targets g
       let (now', half1', half2') = cut (M.keysSet m) gr
       let (now, half1, half2) =
@@ -64,17 +74,29 @@ loop strategy targets g rev m =
         (_, m') -> do
           (m1, m2) <-
             evaluator
-              (loop strategy (now <> half1) g rev m')
-              (loop strategy (now <> half2) g rev m')
+              (loop opts (now <> half1) g rev m')
+              (loop opts (now <> half2) g rev m')
         -- A simple union of the two maps suffices since there should be no
         -- possibility that the two subiterations computed interpolants for the
         -- same vertices.
           pure (M.union <$> m1 <*> m2)
   where
     evaluator =
-      case strategy of
-        SequentialInterpolation -> sequentially
-        ConcurrentInterpolation -> concurrently
+      case view concurrentInterpolation opts of
+        False -> sequentially
+        True -> concurrently
+
+treelike :: IntSet -> Context Expr -> Bool
+treelike remaining rev =
+  all (\nt -> length (contextFor nt rev) <= 1) (S.toList remaining)
+
+treeSolve :: IntSet
+          -> Grammar Expr
+          -> Context Expr
+          -> IntMap Expr
+          -> IO (Either Model (IntMap Expr))
+treeSolve targets g revg m = undefined
+  -- TODO invoke the iZ3 tree interpolator over the current grammar.
 
 -- Replace `concurrently` by this to perform the same action without parallelism.
 sequentially :: IO a -> IO b -> IO (a, b)

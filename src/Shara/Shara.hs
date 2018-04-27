@@ -17,7 +17,7 @@ import           Shara.Interpolate
 
 data SolveKind
   = Topological
-  | LicketySplit InterpolationStrategy
+  | LicketySplit LicketySplitOptions
   deriving (Show, Read, Eq, Ord)
 
 shara ::
