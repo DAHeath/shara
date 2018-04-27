@@ -1,0 +1,29 @@
+\scalebox{0.75}{%
+\begin{tikzpicture}
+\begin{scope}[every node/.style={circle,thick,draw}]
+  \node[label={0:$\{true\}$}] (L4) at (0,0) {$\cc{L}_4$};
+  \coordinate[above = of L4] (L4');
+  \node[label={180:$\{\cc{n} \geq 0\}$}, below left = of L4] (L6) {$\cc{L}_6$};
+  \node[label={0:$\{\cc{n} < 0\}$}, below right = of L4] (L8) {$\cc{L}_8$};
+  \node[label={180:$\{\cc{abs'} \geq 0\}$}, below right = of L6] (L9) {$\cc{L}_9$};
+  \node[label={0:$\{\cc{res} \geq 0\}$}, below right = 1.6 and 1.2 of L9] (main) {$\cc{main}$};
+  \node[label={0:$\{\cc{d} = 2*\cc{x}\}$}, above right = 1.6 and 1.2 of main] (dbl) {$\cc{dbl}$};
+  \coordinate[above = of dbl] (dbl');
+  \node[label={0:$\{false\}$}, below = of main, style = ultra thick] (bot) {$\bot$};
+  \coordinate[above = 0.5 of main] (main');
+\end{scope}
+
+\begin{scope}[every edge/.style={draw=black, very thick}]
+  \path[->, style=right] (L4') edge node {$\cc{abs} = 0$ \textbf{(2)}} (L4);
+  \path[->, style=above left] (L4) edge node {$\cc{n} \geq 0$ \textbf{(3)}} (L6);
+  \path[->, style=above right] (L4) edge node {$\cc{n} < 0$ \textbf{(4)}} (L8);
+  \path[->, style=left] (L6) edge node {$\cc{abs'} = \cc{n}$ \textbf{(5)}} (L9);
+  \path[->, style=right] (L8) edge node {$\cc{abs'} = -\cc{n}$ \textbf{(6)}} (L9);
+  \path[-] (L9) edge[out=330, in=90] (main');
+  \path[->, style=right] (dbl') edge node {$\cc{d} = 2*\cc{x}$ \textbf{(1)}} (dbl);
+  \path[-] (dbl) edge[out=210, in=90] (main');
+  \path[->, style=above right] (main') edge node {$\cc{abs'} = \cc{x} \land \cc{res} = \cc{d}$ \textbf{(7)}} (main);
+  \path[->, style=right] (main) edge node {$\cc{res} < 0$ \textbf{(8)}} (bot);
+\end{scope}
+\end{tikzpicture}
+}

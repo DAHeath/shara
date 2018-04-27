@@ -1,0 +1,184 @@
+% technical background material:
+\section{Background}
+\label{sec:background}
+
+% define CHC's:
+\subsection{Constrained Horn Clauses}
+\label{sec:chcs}
+
+\subsubsection{Structure}
+% definition of CHC
+A Constrained Horn Clause is a logical implication where the
+antecedent is called the body and the consequent is called the head.
+%
+The body is a conjunction of a logical formula, called the constraint,
+and a vector of uninterpreted predicates. The constraint is an arbitrary
+formula in some background logic, such as linear integer arithmetic.
+%
+The uninterpreted predicates are applied to variables which may or may
+not appear in the constraint.
+%
+A head can be either an uninterpreted predicate applied to variables or $False$.
+%
+A clause where the head is $False$ is called a query. A CHC can be
+defined structurally:
+\begin{align*}
+\cc{chc} \Coloneqq&~\cc{head} \gets \cc{body} \\
+\cc{head} \Coloneqq&~False \\
+  \mid&~\cc{pred} \\
+\cc{body} \Coloneqq&~\varphi \wedge \cc{preds} \\
+\cc{preds} \Coloneqq&~True \\
+  \mid&~\cc{pred} \wedge \cc{preds} \\
+\cc{pred} \Coloneqq&~\textsf{\emph{an uninterpreted predicate applied to variables}} \\
+\varphi \Coloneqq&~\textsf{\emph{a formula}} \\
+\end{align*}
+%
+% define a body function, head function, and recursion-free
+For a given CHC $C$, $\bodyof{C}$ denotes the vector of uninterpreted
+predicates in the body and $\consof{C}$ denotes the constraint in the
+body.
+%
+If $C$ is not a query, then $\headof{C}$ denotes the uninterpreted
+predicate in the head.
+%
+%define a CHC system
+A CHC system is a set of CHCs where exactly one clause is a query.
+%
+For a given CHC system $S$, $\predof{S}$ denotes the set of all
+uninterpreted predicates and $\cc{query}$ denotes the body of the
+query clause.
+
+To explain the structure of a CDD system, we need terminology that relates
+predicates in a CHC system including the terms \emph{predicate dependency},
+\emph{transitive predicate dependency}, and \emph{sibling}.
+% define dependency predicates
+\begin{defn}
+  Given a CHC system $\cc{S}$ and two uninterpreted predicates
+  $\cc{P}$ and $\cc{Q} \in \predof{S}$, if $\exists \cc{C} \in \cc{S}$
+  such that $\cc{P} = \headof{C}$ and $\cc{Q} \in \bodyof{C}$, then
+  $\cc{Q}$ is a \emph{predicate dependency} of $\cc{P}$.
+\end{defn}
+%
+\begin{ex}
+  In $\mcchc$, because $\cc{L}_4$ is in the body of clause (4) and
+  $\cc{L}_8$ is the head of clause (4), $\cc{L}_4$ is a predicate
+  dependency of $\cc{L}_8$.
+\end{ex}
+%
+Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$,
+$\depsof{P}$ denotes the set of all predicate dependencies of $\cc{P}$
+in $\cc{S}$.
+%
+%define transitive dependency predicates
+\begin{defn}
+  Given a CHC system $\cc{S}$ and three uninterpreted predicates
+  $\cc{P}, \cc{Q}$, and $\cc{R} \in \predof{S}$, if $\cc{Q} \in
+  \depsof{P}$ then \cc{Q} is a \emph{transitive predicate dependency} of
+  \cc{P}.
+  %
+  If \cc{Q} is a transitive predicate dependency of \cc{P} and \cc{R}
+  is a transitive predicate dependency of \cc{Q}, then $\cc{R}$ is a
+  \emph{transitive predicate dependency} of $\cc{P}$.
+\end{defn}
+%
+\begin{ex}
+  In $\mcchc$, because $\cc{L}_4$ is a predicate dependency of
+  $\cc{L}_8$, $\cc{L}_4$ is a transitive predicate dependency of
+  $\cc{L}_8$.
+  %
+  And because $\cc{L}_8$ is an transitive predicate dependency of
+  $\cc{L}_9$, $\cc{L}_4$ is a transitive predicate dependency of
+  $\cc{L}_9$.
+\end{ex}
+%
+Given a CHC system $\cc{S}$ and an uninterpreted predicate $\cc{P}$,
+$\tdepsof{P}$ denotes the set of all transitive predicate dependencies
+of $\cc{P}$ in $\cc{S}$.
+%
+%define siblings
+\begin{defn}
+  Given a CHC system $\cc{S}$ and two uninterpreted predicates
+  $\cc{P}$ and $\cc{Q} \in \predof{S}$, if $\exists \cc{C} \in \cc{S}$
+  such that $\cc{P} \in \bodyof{C}$ and $\cc{Q} \in \bodyof{C}$, then
+  $\cc{Q}$ and $\cc{P}$ are siblings.
+\end{defn}
+%
+\begin{ex}
+  Because uninterpreted predicates $\cc{L}_9$ and $\cc{dbl}$ both
+  appear in the body of clause (7), $\cc{L}_9$ and $\cc{dbl}$ are
+  siblings.
+  %
+\end{ex}
+%
+%
+For a given CHC system $\cc{S}$, if there is no uninterpreted
+predicate $\cc{P} \in \predof{S}$ such that $\cc{P} \in \tdepsof{P}$,
+then $\cc{S}$ is a \emph{recursion-free} CHCs system.
+%
+
+A solution to a CHC system $S$ is a map from each predicate $\cc{P}
+\in \predof{S}$ to its corresponding interpretation which is a
+formula.
+%
+For a solution to be valid, each clause in $S$ must be valid after
+substituting each predicate by its interpretation.
+
+% interpolants:
+\subsection{Logical interpolation}
+\label{sec:itps}
+%
+All logical objects in this paper are defined over a fixed space of first-order
+variables, $X$.
+%
+For a theory $T$, the space of $T$
+formulas over $X$ is denoted $\tformulas{T}$.
+%
+For each formula $\varphi \in \tformulas{T}$, the set of free
+variables that occur in $\varphi$ (i.e., the \emph{vocabulary} of
+$\varphi$) is denoted $\vocab(\varphi)$.
+%
+% define models, satisfaction, entailment
+For formulas $\varphi_0, \ldots, \varphi_n, \varphi \in
+\tformulas{T}$, the fact that $\varphi_0, \ldots, \varphi_n$
+\emph{entail} $\varphi$ is denoted $\varphi_0, \ldots, \varphi_n
+\entails \varphi$.
+
+
+% introduce interpolation:
+An interpolant of a pair of mutually inconsistent formulas
+$\varphi_0$ and $\varphi_1$ in $\tformulas{T}$ is a formula $I$ in $\tformulas{T}$ over 
+their common vocabulary that explains their inconsistency.
+%
+\begin{defn}
+  \label{defn:itps}
+  % define:
+  For $\varphi_0, \varphi_1, I \in \tformulas{T}$, if
+  %
+  \textbf{(1)} $\varphi_0 \entails I$, %
+  \textbf{(2)} $I \land \varphi_1 \entails \false$, and %
+  \textbf{(3)} $\vocab(I) \subseteq \vocab(\varphi_0) \intersection
+  \vocab(\varphi_1)$,
+  %
+  then $I$ is an \emph{interpolant} of $\varphi_0$ and $\varphi_1$.
+\end{defn}
+%
+For the remainder of this paper, all spaces of formulas will be
+defined for a fixed, arbitrary theory $T$ that supports
+interpolation, such as the theory of linear
+arithmetic.
+% introduce decision procedure:
+Although determining the satisfiability of formulas in such theories
+is NP-complete in general, decision procedures~\cite{moura08} and
+interpolating theorem provers~\cite{mcmillan04} for such theories have
+been proposed that operate on such formulas efficiently.
+%
+
+%
+We define \sys in terms of an abstract interpolating theorem
+prover for $T$ named $\solveitp$.
+%
+Given two formulas $\varphi_0$ and $\varphi_1$, if $\varphi_0$ and $\varphi_1$ are mutually 
+inconsistent, $\solveitp$ returns the interpolant of $\varphi_0$ and $\varphi_1$.
+%
+Otherwise, $\solveitp$ returns $\none$.
+

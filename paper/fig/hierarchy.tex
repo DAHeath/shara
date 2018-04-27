@@ -1,0 +1,40 @@
+\begin{tikzpicture}
+\begin{scope}
+  \node at (0, 0) (rec) {%
+    \begin{tabular}{c}
+      Recursion Free\\\textsc{co-Nexptime Complete}
+    \end{tabular}
+  };
+
+  \node[below = 0.5 of rec] (dir) {%
+    \begin{tabular}{c}
+      Directly Solvable\\\textsc{co-NP}
+    \end{tabular}
+  };
+
+  \node[draw, rounded corners=0.5cm, below = 0.5 of dir] (cdd) {%
+    \begin{tabular}{c}
+      Clause-Dependence Disjoint\\\textsc{co-NP}
+    \end{tabular}
+  };
+
+  \node[below left = 0.5 and -1.1 of cdd] (bd) {%
+    \begin{tabular}{c}
+      Body-Disjoint\\\textsc{co-NP}
+    \end{tabular}
+  };
+
+  \node[below right = 0.5 and -1.1 of cdd] (lin) {%
+    \begin{tabular}{c}
+      Linear\\\textsc{co-NP}
+    \end{tabular}
+  };
+
+\end{scope}
+\begin{scope}[every edge/.style={draw=black, very thick}]
+  \path[-] (bd) edge (cdd);
+  \path[-] (lin) edge (cdd);
+  \path[-] (cdd) edge (dir);
+  \path[-] (dir) edge (rec);
+\end{scope}
+\end{tikzpicture}

@@ -1,0 +1,291 @@
+\section{Overview}
+\label{sec:overview}
+
+%first introduce the question
+In \autoref{sec:running-ex}, we describe a recursion-free CHC system,
+$\mcchc$ (\autoref{fig:chc}), that models the safety of the program
+\cc{dblAbs} (\autoref{fig:multicall-code}).
+%
+In \autoref{sec:solve-ex}, we show that $\mcchc$ is a CDD system and
+how \sys can solve it by encoding it into binary interpolants.
+%
+In \autoref{sec:not-in}, we illustrate that $\mcchc$ is not in
+directly solvable classes introduced in previous work.
+%
+
+% introduce running example program
+\subsection{Verifying \cc{dblAbs}: an example hierarchical program}
+\label{sec:running-ex}
+
+% include code of running example and some figure:
+\begin{figure}[t]
+  \centering
+  \begin{floatrow}[2]
+    \ffigbox[.3\textwidth] {%
+      \caption{\cc{dblAbs}: an example hierarchical program.} %
+      \label{fig:multicall-code} }
+    {
+      \lstinputlisting[
+        basicstyle=\small,
+        % xleftmargin=\parindent,
+        xleftmargin=2em,framexleftmargin=1.5em,
+        numbers=left,
+        escapeinside={(*@}{@*)},
+        morekeywords={def, return, if, else, assert}]
+        {code/dblAbs.java}
+    }
+    %
+    \ffigbox[.66\textwidth]{%
+      \caption{A CHC system that models the safety condition of $\cc{dblAbs}$,
+    named $\mcchc$.}}{%
+      \label{fig:chc}
+      \begin{align}
+        % semantic constraint of dbl:
+        \cc{dbl}(\cc{x}, \cc{d}) &\gets \cc{d} = 2 * \cc{x} \\
+        % semantic constraint of line 3:
+        \cc{L}_4(\cc{n}, \cc{abs}) &\gets  \cc{abs} = 0 \\
+        % semantic constraint of line 5 (then branch)
+        \cc{L}_6(\cc{n}, \cc{abs}) &\gets \cc{L}_4(\cc{n}, \cc{abs}) \land \cc{n} \ge 0 \\
+        % semantic constraint of line 6 (else branch)
+        \cc{L}_8(\cc{n}, \cc{abs}) &\gets \cc{L}_4(\cc{n}, \cc{abs}) \land \cc{n} < 0 \\
+        % assign branch
+        \cc{L}_9(\cc{n}, \cc{abs'}) &\gets \cc{L}_6(\cc{n},\cc{abs}) \land \cc{abs'} = \cc{n} \\
+        \cc{L}_9(\cc{n}, \cc{abs'}) &\gets \cc{L}_8(\cc{n},\cc{abs}) \land \cc{abs'} = -\cc{n} \\
+        % semantic constraint of main procedure:
+        \cc{main}(\cc{n},\cc{res}) &\gets \cc{L}_9(\cc{n}, \cc{abs'}) \land
+        \cc{dbl}(\cc{x}, \cc{d})
+        \land \cc{abs'} = \cc{x} \land \cc{res} = \cc{d} \\
+        %
+        False &\gets \cc{main}(\cc{n}, \cc{res}) \land \cc{res} < 0 
+      \end{align}
+    }
+  \end{floatrow}
+\end{figure}
+% walk through code of running example:
+%
+\cc{dblAbs} is a procedure that doubles the absolute value of
+its input and stores the result in \cc{res}.
+% state the safety problem:
+The program also asserts that \cc{res} is greater than or equal to $0$
+before exiting.
+% talk about solving Horn Clauses:
+Verifying this assertion reduces to solving a recursion-free
+CHC system over a set of uninterpreted predicates that represent
+the control locations in \cc{dblAbs}.
+%
+In particular, one such system, $\mcchc$, is shown in
+\autoref{fig:chc}.
+%
+%
+While $\mcchc$ has been presented as the result
+of a translation from \cc{dblAbs}, \sys is
+purely a solver for CHC systems: it does not require access to the
+concrete representation of a program, or for a given CHC system to be
+the result of translation from a program at all.
+
+% solving the running example
+\subsection{$\mcchc$ as a Clause-Dependence Disjoint System}
+\label{sec:solve-ex}
+% state it is CDD
+The recursion-free CHC system $\mcchc$ is a
+\emph{Clause-Dependence Disjoint} (CDD) system.
+% state the defn of CDD:
+A CHC system can be classified as CDD when each clause satisfies the
+following rules:
+%
+\textbf{(1)} no two predicates in the body of the same clause share
+any transitive dependencies on other predicates and
+\textbf{(2)} no clause has more than one occurrence of a given
+predicate in the body.
+% give a example
+As an example, clause $(7)$ is dependence disjoint. 
+%
+Two predicates $\cc{L}_9$ and $\cc{dbl}$ are in its body.
+%
+The transitive dependency of $\cc{L}_9$ is the set
+$\{\cc{L}_4,\cc{L}_6,\cc{L}_8\}$ while the transitive dependency of
+\cc{dbl} is the empty set.
+%
+Therefore, their transitive dependencies are disjoint:
+$\{\cc{L}_4,\cc{L}_6,\cc{L}_8\} \cap \varnothing = \varnothing$.
+%
+All other clauses in $\mcchc$ have at most one uninterpreted predicate
+in the body, so they are trivially disjoint dependent.
+%
+Therefore $\mcchc$ is a CDD system.
+%
+%
+The formal definition of CDD and its key properties are given in
+\autoref{sec:CDD-defn}.
+The formal definition of transitive dependency is given in
+\autoref{sec:chcs}.
+%
+
+% restate defn of CDD systems:
+\sys solves CDD systems directly by issuing a binary interpolation
+query for each uninterpreted predicate in topological order.
+%
+Each interpretation of a predicate $P$ can be computed by
+interpolating
+\textbf{(1)} the \emph{pre}-formula, constructed from clauses where
+$P$ is the head, and
+\textbf{(2)} the \emph{post}-formula, constructed from
+all clauses where the head transitively depends on $P$.
+%
+
+For example, consider $\cc{L}_9$. By the time \sys attempts to
+synthesize an interpretation for $\cc{L}_9$ it will have solutions for
+$\cc{L}_4$, $\cc{L}_6$, $\cc{L}_8$.
+%
+Possible interpretations of these predicates are shown in
+\autoref{fig:ex-graph}.
+%
+The pre-formula is constructed from the bodies of clauses where
+$\cc{L}_9$ is the head.
+%
+Each relational predicate, $P$,
+is replaced by a corresponding boolean indicator variable, $\cc{b}_P$.
+%
+Each boolean indicator variable implies the solution for its
+predicate,
+encoded as the disjunction of the negation of the boolean
+indicator variable and the solution.
+%
+In particular, the pre-formula for $\cc{L}_9$ is constructed from
+clauses (5) and (6):
+\begin{gather}
+  ((\cc{b}_{\cc{L}_6} \land \cc{abs'} = \cc{n})
+  \lor
+  (\cc{b}_{\cc{L}_8} \land \cc{abs'} = -\cc{n}))
+  \land
+  (\neg \cc{b}_{\cc{L}_6} \lor \cc{n} \ge 0)
+  \land
+  (\neg \cc{b}_{\cc{L}_8} \lor \cc{n} < 0)
+\end{gather}
+%
+The post-formula is constructed from clauses that transitively depend
+on $\cc{L}_9$. Again, we replace relational predicates by
+corresponding boolean indicators. However, we omit the boolean indicator for
+$\cc{L}_9$. The post-formula is composed from clauses (1), (7), and
+(8):
+\begin{gather}
+  (\neg \cc{b}_{\cc{dbl}} \lor \cc{d} = 2*\cc{x})
+  \land
+  (\neg \cc{b}_{\cc{main}} \lor
+    (\cc{b}_{\cc{dbl}}
+    \land \cc{abs'}= \cc{x}
+    \land \cc{res}=\cc{d} ))
+  \land
+  (\cc{b}_{\cc{main}} \land \cc{res} < 0)
+\end{gather}
+%
+Interpolating the pre and post formulas yields an interpretation
+of $\cc{L}_9$: $\cc{abs'} \geq 0$.
+%
+The procedure for solving a CDD system is described in formal detail
+in \autoref{sec:solve-cdd}.
+
+\subsection{$\mcchc$ is not in other recursion-free classes}
+\label{sec:not-in}
+%
+In this section, we show that $\mcchc$ is not in other
+known classes of recursion-free CHC systems. 
+%
+Specifically, we will
+discuss body-disjoint systems and linear systems.
+%
+
+% tree solver
+Body-disjoint (or derivation tree)
+systems~\cite{mcmillan14,bjorner13,heizmann10,rummer13a,rummer13b} are
+a class of recursion-free CHC system where each uninterpreted
+predicate appears in the body of at most one clause and appears in
+such a clause exactly once.
+%
+Such systems cannot model a program with multiple control paths that
+share a common prefix, typically modeled as a CHC system with an
+uninterpreted predicate that occurs in the body of multiple clauses.
+%
+$\mcchc$ is not a body-disjoint system because $\cc{L}_4$ appears in the
+body of both clause (3) and clause (4).
+%
+In order to handle $\mcchc$, a solver that uses
+body-disjoint systems would have to duplicate
+$\cc{L}_4$. 
+%
+Worse, if $\cc{L}_4$ had dependencies, then each dependency would also
+need to be duplicated.
+
+%linear systems:
+Previous work has also introduced the class of linear
+systems~\cite{albarghouthi12a}, where the body of each clause has at
+most one uninterpreted predicate.
+%
+However, such systems cannot directly model the control flow of a
+program that contains procedure calls.
+%
+$\mcchc$ is not a linear system because the body of clause (7) has two
+predicates, \cc{L9} and \cc{dbl}.
+%
+CHC solvers that use linear systems effectively inline the
+constraints for relational predicates that occur in non-linear
+clauses~\cite{albarghouthi12b}.
+%
+In the case of $\mcchc$, inlining the constraints of $\cc{dbl}$ is
+efficient, but in general such approaches can generate systems that
+are exponentially larger than the input. For example, if the procedure
+$\cc{dbl}$ were called more than once in $\cc{dblAbs}$ then multiple
+copies of the body of the procedure would be inlined. And if the body
+of this procedure were large, the inlining could become
+prohibitively expensive.
+
+%% talk about expansion:
+\begin{figure}[t]
+  \centering
+  \begin{floatrow}[2]
+    \ffigbox[.45\textwidth] {%
+      {\caption{$\mcchc$ as a directed hypergraph. Each relational
+          predicate is depicted as a graph node while each clause is
+          represented by a hyperedge. Each hyperedge is labeled by the
+          constraint in the corresponding CHC\@. Each node has a valid
+          corresponding interpretation, written in braces.
+      }\label{fig:ex-graph}}}
+      {\input{fig/example}}
+    \ffigbox[.45\textwidth]
+      {\caption{The hierarchy of classes of recursion-free CHC
+          systems. Body Disjoint and Linear systems are subsumed by
+          CDD systems. Solving Directly Solvable CHC systems is in
+          co-NP while solving general, recursion-free systems is
+          co-NEXPTIME Complete.
+      }\label{fig:hierarchy}}
+      {\input{fig/hierarchy}}
+  \end{floatrow}
+\end{figure}
+
+The hierarchy of discussed classes of recursion-free systems is
+depicted in \autoref{fig:hierarchy}.
+%
+As shown, the class of CDD systems is a superset of both the class
+of body-disjoint systems and the class of linear systems. So any
+recursion-free system that is efficiently expressible in body-disjoint
+or linear form is also efficiently expressible in CDD form.
+%
+In addition, some systems which are expensive to express in
+body-disjoint or linear form are efficiently expressible in CDD form.
+%
+\sys~takes advantage of this fact when solving input systems.
+Given an arbitrary recursion-free CHC system $S$, \sys~reduces $S$ to
+a CDD system $S'$ and solves $S'$ directly.
+%
+In general, $S'$ may have size exponential in the size of
+$S$.
+%
+However, \sys~generates CDD systems via heuristics analogous to
+those used to generate compact verification conditions of hierarchical
+programs~\cite{flanagan01,lal-qadeer15}.
+%
+In practice these heuristics often yield CDD systems which are
+small with respect to the input system.
+%
+A general procedure for constructing a CDD expansion of a given CHC
+system is given in \autoref{app:cons-cdd}.
