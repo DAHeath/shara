@@ -1,2 +1,0 @@
-/Users/david/Documents/Research/start/.stack-work/install/x86_64-osx/lts-9.1/8.0.2/bin/shara par +RTS -N -threaded -p -N 
-<<ghc: 373719592 bytes, 708 GCs, 800503/1476520 avg/max bytes residency (40 samples), 6M in use, 0.001 INIT (0.003 elapsed), 2.067 MUT (2.126 elapsed), 0.083 GC (0.086 elapsed) :ghc>>
