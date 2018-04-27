@@ -8,7 +8,7 @@ import qualified Data.Map            as M
 import           Data.Ratio
 import           Data.Set            (Set)
 import qualified Data.Set            as S
-import           Shara.Grammar       hiding (partition)
+import           Shara.Grammar
 import qualified Shara.MinCut        as MC
 import qualified Shara.Reg           as R
 
@@ -34,18 +34,8 @@ initials g = S.filter (\s -> all null (predecessors s g)) (symbols g)
 terminals :: HyperGraph -> Set Symbol
 terminals g = symbols g `S.difference` M.keysSet (graphForward g)
 
-clear :: Set Symbol -> HyperGraph -> HyperGraph
-clear toKeep (HyperGraph for back) = HyperGraph for' back'
-  where
-    for' =
-      M.filterWithKey (\k v -> k `elem` toKeep && not (null v)) $
-      fmap (filter (`elem` toKeep)) for
-    back' =
-      M.filterWithKey (\k _ -> k `elem` toKeep) $
-      fmap (map (filter (`elem` toKeep))) back
-
-grammarToGraph :: Grammar a -> HyperGraph
-grammarToGraph (SGrammar _ rs) = HyperGraph forw back
+grammarToGraph :: Set Symbol -> Grammar a -> HyperGraph
+grammarToGraph toKeep (SGrammar _ rs) = clear toKeep $ HyperGraph forw back
   where
     back = fmap ruleSymbols rs
     forw = foldr addForw M.empty (M.toList back)
@@ -69,6 +59,15 @@ grammarToGraph (SGrammar _ rs) = HyperGraph forw back
                       else [a' ++ b' | a' <- as, b' <- bs]
         Nonterm nt -> [[nt]]
         Term _ -> []
+    clear :: Set Symbol -> HyperGraph -> HyperGraph
+    clear toKeep (HyperGraph for back) = HyperGraph for' back'
+      where
+        for' =
+          M.filterWithKey (\k v -> k `elem` toKeep && not (null v)) $
+          fmap (filter (`elem` toKeep)) for
+        back' =
+          M.filterWithKey (\k _ -> k `elem` toKeep) $
+          fmap (map (filter (`elem` toKeep))) back
 
 cut :: Set Symbol -> HyperGraph -> (Set Symbol, Set Symbol, Set Symbol)
 cut uncuttable g =

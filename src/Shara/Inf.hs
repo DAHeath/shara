@@ -3,7 +3,6 @@
 module Shara.Inf where
 
 import           Control.Monad
-import Shara.Semiring
 
 newtype Infinite m f a = Infinite
   { getInfinite :: f (Either a (m (Infinite m f a)))

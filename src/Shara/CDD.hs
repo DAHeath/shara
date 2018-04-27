@@ -188,19 +188,16 @@ addDep b nt = do
   mapM_ (connect b) bs
   ntBranches . at nt <>= Just (S.singleton b)
   branchDeps . at b <>= Just (S.singleton nt)
-
--- | Connect two branches by adding them as neighbors.
-connect :: MonadState CDDState m => Branch -> Branch -> m ()
-connect a b = do
-  branchSibs . at a <>= Just (S.singleton b)
-  branchSibs . at b <>= Just (S.singleton a)
+  where
+    connect a b = do
+      branchSibs . at a <>= Just (S.singleton b)
+      branchSibs . at b <>= Just (S.singleton a)
 
 -- | Construct a variable whose name reflects the nonterminal it belongs to.
-freshVar :: NT -> Var -> Var
-freshVar nt (Var n t) = Var (n ++ "#" ++ show nt) t
-
 allFresh :: Data a => NT -> a -> a
-allFresh nt x = x & vars %~ freshVar nt
+allFresh nt x = x & vars %~ fresh
+  where
+    fresh (Var n t) = Var (n ++ "#" ++ show nt) t
 
 findSet :: Ord a => a -> Map a (Set b) -> Set b
 findSet = M.findWithDefault S.empty

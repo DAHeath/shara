@@ -66,25 +66,6 @@ flat r = SGrammar r M.empty
 ruleFor :: NT -> SGrammar s a -> SRule s a
 ruleFor nt = M.findWithDefault R.Null nt . rules
 
-after :: NT -> SGrammar s a -> SGrammar s a
-after nt g =
-  let s = ruleFor nt g
-  in SGrammar s (fst $ execState (go s) (M.empty, S.empty))
-  where
-    go =
-      \case
-        SNonterm (_, nt') ->
-          elem nt' <$> use _2 >>= \case
-            True -> pure ()
-            False ->
-              let r = ruleFor nt' g
-              in do _1 %= M.insert nt' r
-                    _2 %= S.insert nt'
-                    go r
-        R.Alt x y -> go x >> go y
-        R.Seq x y -> go x >> go y
-        _ -> pure ()
-
 reverseRules :: Grammar a -> Map NT [(Maybe NT, Rule a)]
 reverseRules g = runReader (go $ start g) (Nothing, R.Eps)
   where
@@ -102,54 +83,6 @@ reverseRules g = runReader (go $ start g) (Nothing, R.Eps)
 grammarFromMap :: NT -> Map NT (SRule s a) -> SGrammar s a
 grammarFromMap st m =
   SGrammar (M.findWithDefault R.Null st m) (M.delete st m)
-
-before :: NT -> SGrammar s a -> SGrammar s a
-before nt g =
-  let (s, (rs, _)) = runState (go (start g)) (M.empty, S.empty)
-  in SGrammar s rs
-  where
-    go =
-      \case
-        SNonterm (vs, nt') -> do
-          when (nt /= nt') $
-            elem nt <$> use _2 >>= \case
-              True -> pure ()
-              False -> do
-                r' <- go (ruleFor nt' g)
-                _1 %= M.insert nt' r'
-                _2 %= S.insert nt'
-          pure (SNonterm (vs, nt'))
-        R.Alt x y -> R.alt <$> go x <*> go y
-        R.Seq x y -> R.seq <$> go x <*> go y
-        x -> pure x
-
-partition :: [NT] -> Grammar a -> (Grammar a, Grammar a)
-partition nts g = (bef, aft)
-  where
-    bef = evalState (go (start g)) (S.fromList nts)
-    aft =
-      evalState
-        (asum <$> mapM (\nt -> fmap (abstract () nt) $ go $ ruleFor nt g) nts)
-        (nonterminals bef)
-    go =
-      \case
-        R.Null -> pure empty
-        R.Eps -> pure mempty
-        R.Seq x y -> (<>) <$> go x <*> go y
-        R.Alt x y ->
-          (\(SGrammar st rs) (SGrammar st' rs') ->
-             SGrammar (R.alt st st') (M.unionWith R.alt rs rs')) <$>
-          go x <*>
-          go y
-        Term t -> pure $ singleton t
-        Nonterm nt -> do
-          vis <- get
-          r <-
-            if nt `elem` vis
-              then pure empty
-              else go (ruleFor nt g)
-          modify (S.insert nt)
-          pure (abstract () nt r)
 
 nonterminals :: SGrammar s a -> Set NT
 nonterminals (SGrammar st rs) =

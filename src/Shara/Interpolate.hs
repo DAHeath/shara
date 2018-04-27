@@ -48,7 +48,7 @@ loop strategy targets g rev m = do
   if null (targets S.\\ M.keysSet m)
     then pure (Right m)
     else do
-      let gr = clear targets $ grammarToGraph g
+      let gr = grammarToGraph targets g
       let (now', half1', half2') = cut (M.keysSet m) gr
       let (now, half1, half2) = if null (now' S.\\ M.keysSet m)
           then (targets S.\\ M.keysSet m, S.empty, S.empty)
@@ -117,9 +117,6 @@ interpolateNT solns g rg target =
 mkForm :: NT -> Map NT Expr -> Grammar Expr -> Expr
 mkForm st m g = evalState (ruleExpr m g (ruleFor st g)) S.empty
 
-mark :: NT -> Expr
-mark nt = V $ Var ("__b" ++ show nt) Bool
-
 mkRevForm ::
      NT -> Map NT Expr -> Grammar Expr -> Map NT [(Maybe NT, Rule Expr)] -> Expr
 mkRevForm st m g rg =
@@ -164,3 +161,6 @@ ruleExpr m g r = do
               Nothing -> go (ruleFor nt g)
               Just phi' -> pure (phi', [])
           pure (mark nt, (mkImpl (mark nt) phi) : is)
+
+mark :: NT -> Expr
+mark nt = V $ Var ("__b" ++ show nt) Bool

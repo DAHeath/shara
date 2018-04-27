@@ -14,5 +14,5 @@ extra-deps:
 - parsec-numbers-0.1.0
 - prettyprinter-1.1.1
 - global-lock-0.1
-# resolver: lts-11.4
-resolver: lts-9.1
+resolver: lts-11.4
+# resolver: lts-9.1
