@@ -5,6 +5,7 @@ import           Control.Monad.Except
 import           Control.Monad.State
 import           Data.Map                 (Map)
 import qualified Data.Map                 as M
+import           Data.Semigroup
 import           Data.Set (Set)
 import qualified Data.Set                 as S
 import           Formula
@@ -47,16 +48,20 @@ loop strategy targets g rev m = do
   if null (targets S.\\ M.keysSet m)
     then pure (Right m)
     else do
-      let gr = clear (targets S.\\ M.keysSet m) $ grammarToGraph g
-      -- let gr = grammarToGraph g
-      let (now, half1, half2) = cut gr
-      runStateT (runExceptT $ mapM_ (\nt -> interpolateNT' g rev nt) now) m >>=
+      let gr = clear targets $ grammarToGraph g
+      let (now', half1', half2') = cut (M.keysSet m) gr
+      let (now, half1, half2) = if null (now' S.\\ M.keysSet m)
+          then (targets S.\\ M.keysSet m, S.empty, S.empty)
+          else (now', half1', half2')
+      runStateT (runExceptT $ mapM_ (interpolateNT' g rev) (now S.\\ M.keysSet m)) m >>=
       -- We only proceed when none of the solved symbols failed.
        \case
         (Left m', _) -> pure (Left m')
         (_, m') -> do
           (m1, m2) <-
-            evaluator (loop strategy half1 g rev m') (loop strategy half2 g rev m')
+            evaluator
+              (loop strategy (now <> half1) g rev m')
+              (loop strategy (now <> half2) g rev m')
         -- A simple union of the two maps suffices since there should be no
         -- possibility that the two subiterations computed interpolants for the
         -- same vertices.

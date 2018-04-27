@@ -27,7 +27,7 @@ shara ::
   -> m (Either Model (Map NT Expr))
 shara sk vocab sg = evalStateT (go =<< cdd sg) (emptyCDDState vocab)
   where
-    go g = do
+    go g =
       solveDirect sk (finitePrefix g) >>= \case
         Left m -> pure (Left m)
         Right m -> do

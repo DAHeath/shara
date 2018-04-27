@@ -38,7 +38,7 @@ clear :: Set Symbol -> HyperGraph -> HyperGraph
 clear toKeep (HyperGraph for back) = HyperGraph for' back'
   where
     for' =
-      M.filterWithKey (\k _ -> k `elem` toKeep) $
+      M.filterWithKey (\k v -> k `elem` toKeep && not (null v)) $
       fmap (filter (`elem` toKeep)) for
     back' =
       M.filterWithKey (\k _ -> k `elem` toKeep) $
@@ -70,15 +70,16 @@ grammarToGraph (SGrammar _ rs) = HyperGraph forw back
         Nonterm nt -> [[nt]]
         Term _ -> []
 
-cut :: HyperGraph -> (Set Symbol, Set Symbol, Set Symbol)
-cut g =
-  let (mcg, caps) = mkCutGraph g
+cut :: Set Symbol -> HyperGraph -> (Set Symbol, Set Symbol, Set Symbol)
+cut uncuttable g =
+  let (mcg, caps) = mkCutGraph uncuttable g
   in MC.mincut caps mcg
 
 -- | Construct a simple, non-hyper graph and a map of costs from an input
 -- hypergraph.
-mkCutGraph :: HyperGraph -> (MC.Graph, Map (Symbol, Symbol) Rational)
-mkCutGraph g
+mkCutGraph ::
+     Set Symbol -> HyperGraph -> (MC.Graph, Map (Symbol, Symbol) Rational)
+mkCutGraph uncuttable g
   -- Find each pairing where each pairing represents a hyperedge. The list of
   -- symbols are the sources of the edge and the distinguished symbol is the
   -- sink.
@@ -115,51 +116,50 @@ mkCutGraph g
       -> Symbol
       -> (MC.Graph, Map (Symbol, Symbol) Rational)
       -> (MC.Graph, Map (Symbol, Symbol) Rational)
-    singlePair (snk, below) aboves src (mcg, cap)
-      -- Find the distinguished source's above count and separate it from the others.
-     =
-      let ([(_, srcUp)], aboves') = partition ((== src) . fst) aboves
-          -- The vertices above the source are dependent on the vertices below the
-          -- sink as well as all vertices above all other sources.
-          allDown = below + sum (map snd aboves')
-          -- The number of dependencies along this partial edge is the product of
-          -- the dependencies above the edge versus those below.
-          numDeps = allDown * srcUp
-          -- The cost of the edge is the inverse of the number of dependencies (or
-          -- some default value if the number of dependencies is 0).
-          cost =
-            if numDeps == 0
-              then 1
-              else 1 % numDeps
+    singlePair (snk, below) aboves src (mcg, cap) =
+      let cost =
+            if snk `elem` uncuttable
+              then 10000
+              else let ([(_, srcUp)], aboves') =
+                         partition ((== src) . fst) aboves
+                    -- The vertices above the source are dependent on the vertices below the
+                    -- sink as well as all vertices above all other sources.
+                       allDown = below + sum (map snd aboves')
+                    -- The number of dependencies along this partial edge is the product of
+                    -- the dependencies above the edge versus those below.
+                       numDeps = allDown * srcUp
+                    -- The cost of the edge is the inverse of the number of dependencies (or
+                    -- some default value if the number of dependencies is 0).
+                   in if numDeps == 0
+                        then 10000
+                        else 1 % numDeps
       in (MC.addEdge src snk mcg, M.insert (src, snk) cost cap)
 
 -- | Calculate the number of symbols above and below each symbol in the graph.
 count :: HyperGraph -> (Map Symbol Integer, Map Symbol Integer)
 count g =
-  ( execState (mapM_ up (symbols g)) M.empty
-  , execState (mapM_ down (symbols g)) M.empty)
+  ( fmap (toInteger . length) $ execState (mapM_ up (symbols g)) M.empty
+  , fmap (toInteger . length) $ execState (mapM_ down (symbols g)) M.empty)
     -- Find the number of symbols above the current symbol.
   where
-    up :: Symbol -> State (Map Symbol Integer) Integer
+    up :: Symbol -> State (Map Symbol (Set Symbol)) (Set Symbol)
     up s =
       M.lookup s <$> get >>= \case
-        Nothing
-        -- If we haven't found the answer yet, compute across the predecessors,
-        -- add 1, and insert it to the map.
-         -> do
+        Nothing -> do
           ps <- mapM up (concat $ predecessors s g)
-          at s <?= (sum ps + toInteger (length ps))
+          let allPs = S.unions (S.singleton s : ps)
+          at s <?= allPs
+          pure allPs
         Just c -> pure c
     -- `down` is symmetric to `up` with the notable distinction that
     -- predecessors come in lists (since we are dealing with directed hyperedges)
     -- whereas successors do not.
-    down :: Symbol -> State (Map Symbol Integer) Integer
+    down :: Symbol -> State (Map Symbol (Set Symbol)) (Set Symbol)
     down s =
       M.lookup s <$> get >>= \case
-        Nothing
-        -- If we haven't found the answer yet, compute across the predecessors,
-        -- add 1, and insert it to the map.
-         -> do
+        Nothing -> do
           ss <- mapM down (successors s g)
-          at s <?= (sum ss + toInteger (length ss))
+          let allSs = S.unions (S.singleton s : ss)
+          at s <?= allSs
+          pure allSs
         Just c -> pure c

@@ -173,10 +173,11 @@ dfsFrom s = do
     -- Otherwise, we can try to proceed both forward and backward from all
     -- edges connected to this vertex.
     | otherwise -> do
-      g <- view theGraph
-      succPaths <- concatMapM for $ S.toList (search s (view forward g))
-      predPaths <- concatMapM back $ S.toList (search s (view backward g))
-      pure (succPaths ++ predPaths)
+      local (visited %~ S.insert s) $ do
+        g <- view theGraph
+        succPaths <- concatMapM for $ S.toList (search s (view forward g))
+        predPaths <- concatMapM back $ S.toList (search s (view backward g))
+        pure (succPaths ++ predPaths)
   where
     -- We can proceed forward when there is capacity left in the edge.
     for :: Symbol -> Reader ExploreCtxt [Set Edge]
@@ -186,7 +187,7 @@ dfsFrom s = do
       -- We recurse, making sure to add the current edge to the eventual traversal and
       -- noting that we've already seen the current vertex.
       if weight < cap
-      then map (S.insert (s, t, Forward)) <$> local (visited %~ S.insert s) (dfsFrom t)
+      then map (S.insert (s, t, Forward)) <$> dfsFrom t
       else pure []
 
     -- We can proceed backward when there is weight in the edge.
@@ -196,7 +197,7 @@ dfsFrom s = do
       -- Note that we lookup the weight using the forward direction of the edge.
       let w = M.findWithDefault 0 (t, s) ws
       if w > 0
-      then map (S.insert (s, t, Backward)) <$> local (visited %~ S.insert s) (dfsFrom t)
+      then map (S.insert (s, t, Backward)) <$> dfsFrom t
       else pure []
 
 search :: Ord k => k -> Map k (Set a) -> Set a
