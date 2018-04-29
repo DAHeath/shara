@@ -5,13 +5,13 @@ module Formula.Z3 where
 import           Control.Lens
 import           Control.Monad.State
 import           Control.Monad.Except
-import           Data.List (partition, nub)
+import           Data.List (partition)
 import           Data.Maybe
 import qualified Data.Map as M
 import           Data.Map (Map)
 import           Formula (Expr((:@)), Chc, Type((:=>)), Var(..))
 import qualified Formula as F
-import           Z3.Monad hiding (local)
+import           Z3.Monad
 
 data Env = Env { _envVars :: Map Var AST
                , _envFuns :: Map Var FuncDecl
@@ -225,9 +225,7 @@ formFromApp n args range
   | n == "true"  = return $ F.LBool True
   | n == "false" = return $ F.LBool False
   -- The 'app' is just a variable
-  | null args = do
-    typ <- sortToType range
-    return $ F.V $ F.Var n typ
+  | null args = F.V . F.Var n <$> sortToType range
   | n == "ite" || n == "if" = do
     c <- astToExpr (head args)
     e1 <- astToExpr (args !! 1)

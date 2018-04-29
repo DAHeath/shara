@@ -1,48 +1,49 @@
 module Shara.GrammarCut where
 
-import           Control.Lens        hiding (below)
+import           Control.Lens
 import           Control.Monad.State
-import           Data.List           (partition)
-import           Data.Map            (Map)
-import qualified Data.Map            as M
+import           Data.IntMap           (IntMap)
+import qualified Data.IntMap           as IM
+import           Data.IntSet           (IntSet)
+import qualified Data.IntSet           as S
+import           Data.Language.Grammar hiding (null)
+import qualified Data.Language.Reg     as R
+import           Data.List             (partition)
+import           Data.Map              (Map)
+import qualified Data.Map              as M
 import           Data.Ratio
-import           Data.Set            (Set)
-import qualified Data.Set            as S
-import           Shara.Grammar
-import qualified Shara.MinCut        as MC
-import qualified Shara.Reg           as R
+import qualified Shara.MinCut          as MC
 
 type Symbol = Int
 
 data HyperGraph = HyperGraph
-  { graphForward  :: Map Symbol [Symbol]
-  , graphBackward :: Map Symbol [[Symbol]]
+  { graphForward  :: IntMap [Symbol]
+  , graphBackward :: IntMap [[Symbol]]
   } deriving (Show, Read, Eq, Ord)
 
 successors :: Symbol -> HyperGraph -> [Symbol]
-successors s = M.findWithDefault [] s . graphForward
+successors s = IM.findWithDefault [] s . graphForward
 
 predecessors :: Symbol -> HyperGraph -> [[Symbol]]
-predecessors s = M.findWithDefault [] s . graphBackward
+predecessors s = IM.findWithDefault [] s . graphBackward
 
-symbols :: HyperGraph -> Set Symbol
-symbols g = M.keysSet (graphForward g) `S.union` M.keysSet (graphBackward g)
+symbols :: HyperGraph -> IntSet
+symbols g = IM.keysSet (graphForward g) `S.union` IM.keysSet (graphBackward g)
 
-initials :: HyperGraph -> Set Symbol
+initials :: HyperGraph -> IntSet
 initials g = S.filter (\s -> all null (predecessors s g)) (symbols g)
 
-terminals :: HyperGraph -> Set Symbol
-terminals g = symbols g `S.difference` M.keysSet (graphForward g)
+terminals :: HyperGraph -> IntSet
+terminals g = symbols g `S.difference` IM.keysSet (graphForward g)
 
-grammarToGraph :: Set Symbol -> Grammar a -> HyperGraph
-grammarToGraph toKeep (SGrammar _ rs) = clear toKeep $ HyperGraph forw back
+grammarToGraph :: IntSet -> Grammar a -> HyperGraph
+grammarToGraph toKeep (Grammar _ rs) = clear toKeep $ HyperGraph forw back
   where
     back = fmap ruleSymbols rs
-    forw = foldr addForw M.empty (M.toList back)
-    addForw ::
-         (Symbol, [[Symbol]]) -> Map Symbol [Symbol] -> Map Symbol [Symbol]
+    forw = foldr addForw IM.empty (IM.toList back)
+    addForw :: (Symbol, [[Symbol]]) -> IntMap [Symbol] -> IntMap [Symbol]
     addForw (snk, srcs) m =
-      foldr (\src -> M.insertWith (++) src [snk]) m (concat srcs)
+      foldr (\src -> IM.insertWith (++) src [snk]) m (concat srcs)
     ruleSymbols :: Rule a -> [[Symbol]]
     ruleSymbols =
       \case
@@ -59,25 +60,24 @@ grammarToGraph toKeep (SGrammar _ rs) = clear toKeep $ HyperGraph forw back
                       else [a' ++ b' | a' <- as, b' <- bs]
         Nonterm nt -> [[nt]]
         Term _ -> []
-    clear :: Set Symbol -> HyperGraph -> HyperGraph
+    clear :: IntSet -> HyperGraph -> HyperGraph
     clear toKeep (HyperGraph for back) = HyperGraph for' back'
       where
         for' =
-          M.filterWithKey (\k v -> k `elem` toKeep && not (null v)) $
-          fmap (filter (`elem` toKeep)) for
+          IM.filterWithKey (\k v -> k `S.member` toKeep && not (null v)) $
+          IM.map (filter (`S.member` toKeep)) for
         back' =
-          M.filterWithKey (\k _ -> k `elem` toKeep) $
-          fmap (map (filter (`elem` toKeep))) back
+          IM.filterWithKey (\k _ -> k `S.member` toKeep) $
+          IM.map (map (filter (`S.member` toKeep))) back
 
-cut :: Set Symbol -> HyperGraph -> (Set Symbol, Set Symbol, Set Symbol)
+cut :: IntSet -> HyperGraph -> (IntSet, IntSet, IntSet)
 cut uncuttable g =
   let (mcg, caps) = mkCutGraph uncuttable g
   in MC.mincut caps mcg
 
 -- | Construct a simple, non-hyper graph and a map of costs from an input
 -- hypergraph.
-mkCutGraph ::
-     Set Symbol -> HyperGraph -> (MC.Graph, Map (Symbol, Symbol) Rational)
+mkCutGraph :: IntSet -> HyperGraph -> (MC.Graph, Map (Symbol, Symbol) Rational)
 mkCutGraph uncuttable g
   -- Find each pairing where each pairing represents a hyperedge. The list of
   -- symbols are the sources of the edge and the distinguished symbol is the
@@ -88,7 +88,7 @@ mkCutGraph uncuttable g
           (\s -> do
              ps <- predecessors s g
              pure (s, ps))
-          (symbols g) :: [(Symbol, [Symbol])]
+          (S.toList $ symbols g) :: [(Symbol, [Symbol])]
       -- The basic graph has the same initial and terminal symbols as the hypergraph.
       is = initials g
       ts = terminals g
@@ -104,8 +104,8 @@ mkCutGraph uncuttable g
       -> (MC.Graph, Map (Symbol, Symbol) Rational)
       -> (MC.Graph, Map (Symbol, Symbol) Rational)
     handlePair (snk, srcs) (mcg, cap) =
-      let below = (snk, M.findWithDefault 0 snk down)
-          aboves = map (\src -> (src, M.findWithDefault 0 src up)) srcs
+      let below = (snk, IM.findWithDefault 0 snk down)
+          aboves = map (\src -> (src, IM.findWithDefault 0 src up)) srcs
       -- To handle the hyperedge, consider the pairing of each source with the
       -- sink individually.
       in foldr (singlePair below aboves) (mcg, cap) srcs
@@ -117,7 +117,7 @@ mkCutGraph uncuttable g
       -> (MC.Graph, Map (Symbol, Symbol) Rational)
     singlePair (snk, below) aboves src (mcg, cap) =
       let cost =
-            if snk `elem` uncuttable
+            if snk `S.member` uncuttable
               then 10000
               else let ([(_, srcUp)], aboves') =
                          partition ((== src) . fst) aboves
@@ -135,15 +135,15 @@ mkCutGraph uncuttable g
       in (MC.addEdge src snk mcg, M.insert (src, snk) cost cap)
 
 -- | Calculate the number of symbols above and below each symbol in the graph.
-count :: HyperGraph -> (Map Symbol Integer, Map Symbol Integer)
+count :: HyperGraph -> (IntMap Integer, IntMap Integer)
 count g =
-  ( fmap (toInteger . length) $ execState (mapM_ up (symbols g)) M.empty
-  , fmap (toInteger . length) $ execState (mapM_ down (symbols g)) M.empty)
+  ( IM.map (toInteger . S.size) $ execState (mapM_ up (S.toList $ symbols g)) IM.empty
+  , IM.map (toInteger . S.size) $ execState (mapM_ down (S.toList $ symbols g)) IM.empty)
     -- Find the number of symbols above the current symbol.
   where
-    up :: Symbol -> State (Map Symbol (Set Symbol)) (Set Symbol)
+    up :: Symbol -> State (IntMap IntSet) IntSet
     up s =
-      M.lookup s <$> get >>= \case
+      gets (IM.lookup s) >>= \case
         Nothing -> do
           ps <- mapM up (concat $ predecessors s g)
           let allPs = S.unions (S.singleton s : ps)
@@ -153,9 +153,9 @@ count g =
     -- `down` is symmetric to `up` with the notable distinction that
     -- predecessors come in lists (since we are dealing with directed hyperedges)
     -- whereas successors do not.
-    down :: Symbol -> State (Map Symbol (Set Symbol)) (Set Symbol)
+    down :: Symbol -> State (IntMap IntSet) IntSet
     down s =
-      M.lookup s <$> get >>= \case
+      gets (IM.lookup s) >>= \case
         Nothing -> do
           ss <- mapM down (successors s g)
           let allSs = S.unions (S.singleton s : ss)

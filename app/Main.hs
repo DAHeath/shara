@@ -1,59 +1,60 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 import           Control.Monad.State
-import           Data.Map                  (Map)
-import qualified Data.Map                  as M
+import           Data.IntMap                 (IntMap)
+import qualified Data.IntMap                 as M
+import           Data.Language.Grammar
+import qualified Data.Language.Reg           as R
+import qualified Data.Language.ScopedGrammar as SG
 import           Data.Text.Prettyprint.Doc
-import           Formula                   hiding (res)
-import           Prelude                   hiding (abs, seq)
+import           Formula                     hiding (res)
+import           Prelude                     hiding (abs, seq)
 import           Shara.CDD
-import           Shara.Grammar
 import           Shara.Interpolate
-import qualified Shara.Reg                 as R
 import           Shara.Shara
-import           System.Environment        (getArgs)
+import           System.Environment          (getArgs)
 
-test1 :: SGrammar [Var] Expr
+test1 :: SG.Grammar [Var] Expr
 test1 =
-  SGrammar
-    (STerm [expr|x = 41|] `R.seq` SNonterm ([x], 0))
+  SG.Grammar
+    (SG.Term [expr|x = 41|] `R.seq` SG.Nonterm [x] 0)
     (M.fromList
        [ ( 0
          , R.alt
-             (STerm [expr|x = 0|])
-             (STerm [expr|x = x' + 2|] `R.seq` SNonterm ([x'], 0)))
+             (SG.Term [expr|x = 0|])
+             (SG.Term [expr|x = x' + 2|] `R.seq` SG.Nonterm [x'] 0))
        ])
   where
     x = Var "x" Int
     x' = Var "x'" Int
 
-test1M :: Map NT [Var]
+test1M :: IntMap [Var]
 test1M = M.fromList [(0, [Var "x" Int])]
 
-test2 :: SGrammar [Var] Expr
+test2 :: SG.Grammar [Var] Expr
 test2 =
-  SGrammar
-    (SNonterm ([n, res], m) `R.seq` STerm [expr|res < 0|])
+  SG.Grammar
+    (SG.Nonterm [n, res] m `R.seq` SG.Term [expr|res < 0|])
     (M.fromList
        [ ( m
          , mconcat
-             [ SNonterm ([n, abs'], l9)
-             , SNonterm ([x, d], dbl)
-             , STerm [expr|abs' = x && res = d|]
+             [ SG.Nonterm [n, abs'] l9
+             , SG.Nonterm [x, d] dbl
+             , SG.Term [expr|abs' = x && res = d|]
              ])
        , ( l9
          , R.alt
-             (SNonterm ([n, abs], l8) `R.seq` STerm [expr|abs' = (0 - n)|])
-             (SNonterm ([n, abs], l6) `R.seq` STerm [expr|abs' = n|]))
-       , (l8, SNonterm ([n, abs], l4) `R.seq` STerm [expr|n < 0|])
-       , (l6, SNonterm ([n, abs], l4) `R.seq` STerm [expr|n >= 0|])
-       , (l4, STerm [expr|abs = 0|])
-       , (dbl, STerm [expr|d = 2 * x|])
+             (SG.Nonterm [n, abs] l8 `R.seq` SG.Term [expr|abs' = (0 - n)|])
+             (SG.Nonterm [n, abs] l6 `R.seq` SG.Term [expr|abs' = n|]))
+       , (l8, SG.Nonterm [n, abs] l4 `R.seq` SG.Term [expr|n < 0|])
+       , (l6, SG.Nonterm [n, abs] l4 `R.seq` SG.Term [expr|n >= 0|])
+       , (l4, SG.Term [expr|abs = 0|])
+       , (dbl, SG.Term [expr|d = 2 * x|])
        ])
   where
 
 
-test2M :: Map NT [Var]
+test2M :: IntMap [Var]
 test2M =
   M.fromList
     [ (m, [n, res])
@@ -103,6 +104,6 @@ main = do
                     else LicketySplit SequentialInterpolation
          _ -> LicketySplit SequentialInterpolation)
   print sk
-  shara sk test2M test2 >>= \case
+  shara sk test1M test1 >>= \case
     Left m -> print (fmap pretty m)
     Right m -> print (fmap pretty m)

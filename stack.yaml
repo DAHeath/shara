@@ -7,6 +7,10 @@ extra-lib-dirs:
 packages:
 - .
 - location:
+    git: https://github.com/DAHeath/formal-language
+    commit: 87bec42b7df244471846153329cfe7a3cf50c450
+  extra-dep: true
+- location:
     git: https://github.com/DAHeath/z3-haskell
     commit: f18110558d74dd8df8560f2b0fc2cc0704673917
   extra-dep: true
@@ -15,4 +19,3 @@ extra-deps:
 - prettyprinter-1.1.1
 - global-lock-0.1
 resolver: lts-11.4
-# resolver: lts-9.1

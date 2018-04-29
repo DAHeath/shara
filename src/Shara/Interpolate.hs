@@ -3,16 +3,16 @@ module Shara.Interpolate where
 import           Control.Concurrent.Async (concurrently)
 import           Control.Monad.Except
 import           Control.Monad.State
-import           Data.Map                 (Map)
-import qualified Data.Map                 as M
+import           Data.IntMap              (IntMap)
+import qualified Data.IntMap              as M
+import           Data.IntSet              (IntSet)
+import qualified Data.IntSet              as S
+import           Data.Language.Grammar
+import qualified Data.Language.Reg        as R
 import           Data.Semigroup
-import           Data.Set (Set)
-import qualified Data.Set                 as S
 import           Formula
 import qualified Formula.Z3               as Z3
-import           Shara.Grammar
 import           Shara.GrammarCut
-import qualified Shara.Reg                as R
 
 data InterpolationStrategy
   = SequentialInterpolation
@@ -25,10 +25,10 @@ licketySplit ::
      MonadIO m
   => InterpolationStrategy
   -> Grammar Expr
-  -> m (Either Model (Map NT Expr))
+  -> m (Either Model (IntMap Expr))
 licketySplit strategy g =
-  let ss = nonterminals g in
-      liftIO (loop strategy ss g (reverseRules g) M.empty)
+  let ss = nonterminals g
+  in liftIO (loop strategy ss g (contextualize g) M.empty)
 
 -- | The core loop for interpolating a DAG. The loop requires two versions of
 -- the DAG, one which is a full representation and another which is a
@@ -39,21 +39,25 @@ licketySplit strategy g =
 -- restrictions which can be interpolated in parallel.
 loop ::
      InterpolationStrategy
-  -> Set NT
+  -> IntSet
   -> Grammar Expr
-  -> Map NT [(Maybe NT, Rule Expr)]
-  -> Map NT Expr
-  -> IO (Either Model (Map NT Expr))
-loop strategy targets g rev m = do
-  if null (targets S.\\ M.keysSet m)
+  -> Context Expr
+  -> IntMap Expr
+  -> IO (Either Model (IntMap Expr))
+loop strategy targets g rev m =
+  if S.null (targets S.\\ M.keysSet m)
     then pure (Right m)
     else do
       let gr = grammarToGraph targets g
       let (now', half1', half2') = cut (M.keysSet m) gr
-      let (now, half1, half2) = if null (now' S.\\ M.keysSet m)
-          then (targets S.\\ M.keysSet m, S.empty, S.empty)
-          else (now', half1', half2')
-      runStateT (runExceptT $ mapM_ (interpolateNT' g rev) (now S.\\ M.keysSet m)) m >>=
+      let (now, half1, half2) =
+            if S.null (now' S.\\ M.keysSet m)
+              then (targets S.\\ M.keysSet m, S.empty, S.empty)
+              else (now', half1', half2')
+      runStateT
+        (runExceptT $
+         mapM_ (interpolateNT' g rev) (S.toList $ now S.\\ M.keysSet m))
+        m >>=
       -- We only proceed when none of the solved symbols failed.
        \case
         (Left m', _) -> pure (Left m')
@@ -80,20 +84,20 @@ sequentially a b = do
   pure (a', b')
 
 topologicalInterpolation ::
-     MonadIO m => Grammar Expr -> m (Either Model (Map NT Expr))
+     MonadIO m => Grammar Expr -> m (Either Model (IntMap Expr))
 topologicalInterpolation g =
-  let rg = reverseRules g
+  let rg = contextualize g
       nts = topologicalOrder g
-  in runStateT (runExceptT $ mapM_ (\nt -> interpolateNT' g rg nt) nts) M.empty >>= \case
+  in runStateT (runExceptT $ mapM_ (interpolateNT' g rg) nts) M.empty >>= \case
        (Left m, _) -> pure (Left m)
        (_, m) -> pure (Right m)
 
 interpolateNT' ::
      MonadIO m
   => Grammar Expr
-  -> Map NT [(Maybe NT, Rule Expr)]
+  -> Context Expr
   -> NT
-  -> ExceptT Model (StateT (Map NT Expr) m) ()
+  -> ExceptT Model (StateT (IntMap Expr) m) ()
 interpolateNT' g rg target = do
   solns <- get
   interpolateNT solns g rg target >>= \case
@@ -104,35 +108,34 @@ interpolateNT' g rg target = do
 -- grammar.
 interpolateNT ::
      MonadIO m
-  => Map NT Expr
+  => IntMap Expr
   -> Grammar Expr
-  -> Map NT [(Maybe NT, Rule Expr)]
+  -> Context Expr
   -> NT
   -> m (Either Model Expr)
 interpolateNT solns g rg target =
   let phi1 = mkForm target solns g
       phi2 = mkRevForm target solns g rg
-   in Z3.interpolate phi2 phi1
+  in Z3.interpolate phi2 phi1
 
-mkForm :: NT -> Map NT Expr -> Grammar Expr -> Expr
+mkForm :: NT -> IntMap Expr -> Grammar Expr -> Expr
 mkForm st m g = evalState (ruleExpr m g (ruleFor st g)) S.empty
 
-mkRevForm ::
-     NT -> Map NT Expr -> Grammar Expr -> Map NT [(Maybe NT, Rule Expr)] -> Expr
-mkRevForm st m g rg =
-  evalState
-    (manyAnd <$> mapM go (M.findWithDefault [] st rg))
-    S.empty
+mkRevForm :: NT -> IntMap Expr -> Grammar Expr -> Context Expr -> Expr
+mkRevForm st m g rg = evalState (manyAnd <$> mapM go (contextFor st rg)) S.empty
   where
-    go (Nothing, e) = ruleExpr m g e
-    go (Just nt, e) = case M.lookup nt m of
-                        Nothing -> do
-                          let e' = mkRevForm nt m g rg
-                          r' <- ruleExpr m g e
-                          pure (manyAnd [ e', mark nt, mkImpl (mark nt) r' ])
-                        Just phi -> mkAnd (mkNot phi) <$> (ruleExpr m g e)
+    go (Nothing, e1, e2) = ruleExpr m g (e1 `R.seq` e2)
+    go (Just nt, e1, e2) =
+      let e = e1 `R.seq` e2
+      in case M.lookup nt m of
+           Nothing -> do
+             let e' = mkRevForm nt m g rg
+             r' <- ruleExpr m g e
+             pure (manyAnd [e', mark nt, mkImpl (mark nt) r'])
+           Just phi -> mkAnd (mkNot phi) <$> ruleExpr m g e
 
-ruleExpr :: MonadState (Set NT) m => Map NT Expr -> Grammar Expr -> Rule Expr -> m Expr
+ruleExpr ::
+     MonadState IntSet m => IntMap Expr -> Grammar Expr -> Rule Expr -> m Expr
 ruleExpr m g r = do
   (r', impls) <- go r
   pure $ manyAnd (r' : impls)
@@ -152,7 +155,7 @@ ruleExpr m g r = do
         Term t -> pure (t, [])
         Nonterm nt -> handleNT nt
     handleNT nt =
-      elem nt <$> get >>= \case
+      gets (S.member nt) >>= \case
         True -> pure (mark nt, [])
         False -> do
           modify (S.insert nt)
@@ -160,7 +163,7 @@ ruleExpr m g r = do
             case M.lookup nt m of
               Nothing -> go (ruleFor nt g)
               Just phi' -> pure (phi', [])
-          pure (mark nt, (mkImpl (mark nt) phi) : is)
+          pure (mark nt, mkImpl (mark nt) phi : is)
 
 mark :: NT -> Expr
 mark nt = V $ Var ("__b" ++ show nt) Bool

@@ -108,7 +108,7 @@ addop = (op "+" >> return (app2 $ Add T.Int))
     <|> (op "-" >> return (app2 $ Sub T.Int))
 
 integer :: (Read i, Integral i) => CharParser st i
-integer = lexeme $ do { ds <- many1 digit ; return (read ds) }
+integer = lexeme $ read <$> many1 digit
 
 parseChc :: CharParser st [Chc]
 parseChc = many parseChc'

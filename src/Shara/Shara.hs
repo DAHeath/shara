@@ -2,17 +2,18 @@ module Shara.Shara where
 
 import           Control.Lens
 import           Control.Monad.State
-import           Data.List.Split     (splitOn)
-import           Data.Map            (Map)
-import qualified Data.Map            as M
-import           Data.Set            (Set)
-import qualified Data.Set            as S
+import           Data.IntMap                 (IntMap)
+import qualified Data.IntMap                 as M
+import           Data.IntSet                 (IntSet)
+import qualified Data.IntSet                 as S
+import           Data.Language.Grammar
+import qualified Data.Language.Reg           as R
+import qualified Data.Language.ScopedGrammar as SG
+import           Data.List.Split             (splitOn)
 import           Formula
-import qualified Formula.Z3          as Z3
+import qualified Formula.Z3                  as Z3
 import           Shara.CDD
-import           Shara.Grammar
 import           Shara.Interpolate
-import qualified Shara.Reg           as R
 
 data SolveKind
   = Topological
@@ -22,9 +23,9 @@ data SolveKind
 shara ::
      MonadIO m
   => SolveKind
-  -> Map NT [Var]
-  -> SGrammar [Var] Expr
-  -> m (Either Model (Map NT Expr))
+  -> IntMap [Var]
+  -> SG.Grammar [Var] Expr
+  -> m (Either Model (IntMap Expr))
 shara sk vocab sg = evalStateT (go =<< cdd sg) (emptyCDDState vocab)
   where
     go g =
@@ -35,10 +36,11 @@ shara sk vocab sg = evalStateT (go =<< cdd sg) (emptyCDDState vocab)
           let sol = collapse cs m
           inductive vocab sol sg >>= \case
             Nothing -> pure (Right sol)
-            Just inds -> go =<< unrollCDD g {- inds -}
+            Just _ -> go =<< unrollCDD g {- inds -}
+             {- inds -}
 
 solveDirect ::
-     MonadIO m => SolveKind -> Grammar Expr -> m (Either Model (Map NT Expr))
+     MonadIO m => SolveKind -> Grammar Expr -> m (Either Model (IntMap Expr))
 solveDirect =
   \case
     Topological -> topologicalInterpolation
@@ -46,18 +48,18 @@ solveDirect =
 
 inductive ::
      MonadIO m
-  => Map NT [Var]
-  -> Map NT Expr
-  -> SGrammar [Var] Expr
-  -> m (Maybe (Set NT))
-inductive vars sols g = do
-  s <- (S.fromList . concat) <$> M.traverseWithKey indRule (rules g)
+  => IntMap [Var]
+  -> IntMap Expr
+  -> SG.Grammar [Var] Expr
+  -> m (Maybe IntSet)
+inductive vs sols g = do
+  s <- S.fromList . concat <$> M.traverseWithKey indRule (SG.rules g)
   pure $
-    if null (nonterminals g S.\\ s)
+    if S.null (SG.nonterminals g S.\\ s)
       then Nothing
       else Just s
   where
-    indRule :: MonadIO m => NT -> SRule [Var] Expr -> m [NT]
+    indRule :: MonadIO m => NT -> SG.Rule [Var] Expr -> m [NT]
     indRule nt r =
       let cons = M.findWithDefault (LBool False) nt sols
           ante = expr r
@@ -70,14 +72,14 @@ inductive vars sols g = do
         R.Alt x y -> mkOr (expr x) (expr y)
         R.Eps -> LBool True
         R.Null -> LBool False
-        STerm x -> x
-        SNonterm (vs, nt') ->
-          let vs' = M.findWithDefault [] nt' vars
+        SG.Term x -> x
+        SG.Nonterm vs' nt' ->
+          let vs'' = M.findWithDefault [] nt' vs
           in mkAnd
-               (copyVars vs (vs' & allFresh nt'))
+               (copyVars vs' (vs'' & allFresh nt'))
                (M.findWithDefault (LBool True) nt' sols & allFresh nt')
 
-collapse :: Map Int (Map NT (Set NT)) -> Map NT Expr -> Map NT Expr
+collapse :: IntMap (IntMap IntSet) -> IntMap Expr -> IntMap Expr
 collapse m sols' = M.unionsWith mkOr $ M.elems $ fmap collapseUnroll m
   where
     sols = fmap (vars . varName %~ head . splitOn "#") sols'

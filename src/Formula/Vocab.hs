@@ -27,12 +27,12 @@ instance MonadReader s m => MonadReader s (VocabT m) where
 instance Monad m => MonadVocab (VocabT m) where
   fresh n' = do
     let n = baseName n'
-    Vocab (M.lookup n <$> get >>= \case
+    Vocab (gets (M.lookup n) >>= \case
       Nothing -> modify (M.insert n 0)
       Just i  -> modify (M.insert n (i+1)))
     fetch n
 
-  fetch n = Vocab (M.lookup (baseName n) <$> get >>= \case
+  fetch n = Vocab (gets (M.lookup (baseName n)) >>= \case
     Nothing -> pure (baseName n)
     Just i -> pure (baseName n ++ "#" ++ show i))
 
