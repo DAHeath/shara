@@ -8,43 +8,19 @@ license: MIT
 default-extensions:
 - LambdaCase
 - MultiWayIf
-- GeneralizedNewtypeDeriving
-- DeriveDataTypeable
-- DeriveFunctor
-- DeriveFoldable
-- DeriveTraversable
-- RankNTypes
 - FlexibleContexts
-- FlexibleInstances
-- NoMonomorphismRestriction
-- PatternSynonyms
 
 dependencies:
 - base
-- ghc-paths
-- temporary
 - containers
-- parsec
-- parsec-numbers
-- unordered-containers
-- pretty
-- array
 - mtl
-- monad-loops
-- lens
-- prettyprinter
-- split
-- template-haskell
-- syb
-- z3 >=4.1
-- turtle
 - extra
+- lens
+- split
 - async >=2.1
-- stm
-- QuickCheck
-- hspec
-- semiring-simple
 - formal-language
+- formula
+- prettyprinter
 
 library:
   ghc-options: -Wall
