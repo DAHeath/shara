@@ -51,7 +51,7 @@ loop ::
   -> Context Expr
   -> IntMap Expr
   -> IO (Either Model (IntMap Expr))
-loop opts targets g rev m = do
+loop opts targets g rev m =
   if treelike (targets S.\\ M.keysSet m) rev
   then treeSolve targets g rev m
    else do
@@ -82,14 +82,17 @@ loop opts targets g rev m = do
           pure (M.union <$> m1 <*> m2)
   where
     evaluator =
-      case view concurrentInterpolation opts of
-        False -> sequentially
-        True -> concurrently
+      if view concurrentInterpolation opts
+      then concurrently
+      else sequentially 
 
 treelike :: IntSet -> Context Expr -> Bool
 treelike remaining rev =
   all (\nt -> length (contextFor nt rev) <= 1) (S.toList remaining)
 
+-- | We know that the current targets form a tree. This means we should be able
+-- to construct a tree of expressions whose interpolants are valid partial
+-- interpretations.
 treeSolve :: IntSet
           -> Grammar Expr
           -> Context Expr
