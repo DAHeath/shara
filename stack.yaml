@@ -12,7 +12,7 @@ packages:
   extra-dep: true
 - location:
     git: https://github.com/DAHeath/formula
-    commit: 59ef2a3857804e8ce9adc3296a9d278a863417cb
+    commit: 188210a2796770ae65bb925fe7b7d350efcd4272
   extra-dep: true
 - location:
     git: https://github.com/DAHeath/z3-haskell
