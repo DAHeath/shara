@@ -3,13 +3,11 @@
 import           Control.Monad.State
 import           Data.IntMap                 (IntMap)
 import qualified Data.IntMap                 as M
-import           Data.Language.Grammar
 import qualified Data.Language.Reg           as R
 import qualified Data.Language.ScopedGrammar as SG
 import           Data.Text.Prettyprint.Doc
 import           Formula                     hiding (res)
-import           Prelude                     hiding (abs, seq)
-import           Shara.CDD
+import           Prelude                     hiding (abs)
 import           Shara.Interpolate
 import           Shara.Shara
 import           System.Environment          (getArgs)
@@ -25,8 +23,7 @@ test1 =
              (SG.Term [expr|x = x' + 2|] `R.seq` SG.Nonterm [x'] 0))
        ])
   where
-    x = Var "x" Int
-    x' = Var "x'" Int
+
 
 test1M :: IntMap [Var]
 test1M = M.fromList [(0, [Var "x" Int])]
@@ -65,6 +62,7 @@ test2M =
     , (dbl, [x, d])
     ]
 
+m, dbl, l9, l8, l6, l4 :: Int
 m = 0
 
 dbl = 1
@@ -80,6 +78,8 @@ l4 = 5
 n = Var "n" Int
 
 x = Var "x" Int
+
+x' = Var "x'" Int
 
 d = Var "d" Int
 

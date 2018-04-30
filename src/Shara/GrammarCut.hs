@@ -1,6 +1,6 @@
 module Shara.GrammarCut where
 
-import           Control.Lens
+import           Control.Lens          hiding (below)
 import           Control.Monad.State
 import           Data.IntMap           (IntMap)
 import qualified Data.IntMap           as IM
@@ -37,10 +37,10 @@ terminals :: HyperGraph -> IntSet
 terminals g = symbols g `S.difference` IM.keysSet (graphForward g)
 
 grammarToGraph :: IntSet -> Grammar a -> HyperGraph
-grammarToGraph toKeep (Grammar _ rs) = clear toKeep $ HyperGraph forw back
+grammarToGraph toKeep (Grammar _ rs) = clear $ HyperGraph forw' back'
   where
-    back = fmap ruleSymbols rs
-    forw = foldr addForw IM.empty (IM.toList back)
+    back' = fmap ruleSymbols rs
+    forw' = foldr addForw IM.empty (IM.toList back')
     addForw :: (Symbol, [[Symbol]]) -> IntMap [Symbol] -> IntMap [Symbol]
     addForw (snk, srcs) m =
       foldr (\src -> IM.insertWith (++) src [snk]) m (concat srcs)
@@ -60,13 +60,13 @@ grammarToGraph toKeep (Grammar _ rs) = clear toKeep $ HyperGraph forw back
                       else [a' ++ b' | a' <- as, b' <- bs]
         Nonterm nt -> [[nt]]
         Term _ -> []
-    clear :: IntSet -> HyperGraph -> HyperGraph
-    clear toKeep (HyperGraph for back) = HyperGraph for' back'
+    clear :: HyperGraph -> HyperGraph
+    clear (HyperGraph for back) = HyperGraph for' bac'
       where
         for' =
           IM.filterWithKey (\k v -> k `S.member` toKeep && not (null v)) $
           IM.map (filter (`S.member` toKeep)) for
-        back' =
+        bac' =
           IM.filterWithKey (\k _ -> k `S.member` toKeep) $
           IM.map (map (filter (`S.member` toKeep))) back
 
@@ -137,8 +137,10 @@ mkCutGraph uncuttable g
 -- | Calculate the number of symbols above and below each symbol in the graph.
 count :: HyperGraph -> (IntMap Integer, IntMap Integer)
 count g =
-  ( IM.map (toInteger . S.size) $ execState (mapM_ up (S.toList $ symbols g)) IM.empty
-  , IM.map (toInteger . S.size) $ execState (mapM_ down (S.toList $ symbols g)) IM.empty)
+  ( IM.map (toInteger . S.size) $
+    execState (mapM_ up (S.toList $ symbols g)) IM.empty
+  , IM.map (toInteger . S.size) $
+    execState (mapM_ down (S.toList $ symbols g)) IM.empty)
     -- Find the number of symbols above the current symbol.
   where
     up :: Symbol -> State (IntMap IntSet) IntSet
@@ -147,7 +149,7 @@ count g =
         Nothing -> do
           ps <- mapM up (concat $ predecessors s g)
           let allPs = S.unions (S.singleton s : ps)
-          at s <?= allPs
+          _ <- at s <?= allPs
           pure allPs
         Just c -> pure c
     -- `down` is symmetric to `up` with the notable distinction that
@@ -159,6 +161,6 @@ count g =
         Nothing -> do
           ss <- mapM down (successors s g)
           let allSs = S.unions (S.singleton s : ss)
-          at s <?= allSs
+          _ <- at s <?= allSs
           pure allSs
         Just c -> pure c

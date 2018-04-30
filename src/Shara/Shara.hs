@@ -61,15 +61,15 @@ inductive vs sols g = do
   where
     indRule :: MonadIO m => NT -> SG.Rule [Var] Expr -> m [NT]
     indRule nt r =
-      let cons = M.findWithDefault (LBool False) nt sols
-          ante = expr r
-      in Z3.entails ante cons >>= \case
+      let conseq = M.findWithDefault (LBool False) nt sols
+          ante = ex r
+      in Z3.entails ante conseq >>= \case
            True -> pure [nt]
            False -> pure []
-    expr =
+    ex =
       \case
-        R.Seq x y -> mkAnd (expr x) (expr y)
-        R.Alt x y -> mkOr (expr x) (expr y)
+        R.Seq x y -> mkAnd (ex x) (ex y)
+        R.Alt x y -> mkOr (ex x) (ex y)
         R.Eps -> LBool True
         R.Null -> LBool False
         SG.Term x -> x
