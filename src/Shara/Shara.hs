@@ -36,6 +36,18 @@ shara sk vocab sg = evalStateT (go =<< cdd sg) (emptyCDDState vocab)
             Nothing -> pure (Right m)
             Just _ -> go =<< unrollCDD g {- inds -}
 
+-- | A Shara variant which does not check inductiveness and does not attempt to
+-- unwind the grammar: Used for nontercursive problems.
+sharaNonrecursive ::
+     MonadIO m
+  => SolveKind
+  -> IntMap [Var]
+  -> SG.Grammar [Var] Expr
+  -> m (Either Model (IntMap Expr))
+sharaNonrecursive sk vocab sg =
+  evalStateT (sharaStep sk =<< cdd sg) (emptyCDDState vocab)
+
+-- | Perform a single step -- solving a particular unwinding of the grammar.
 sharaStep ::
      (MonadIO m, MonadState CDDState m)
   => SolveKind
@@ -47,16 +59,6 @@ sharaStep sk g =
     Right m -> do
       cs <- use clones
       pure (Right $ collapse cs m)
-
--- | A Shara variant which does not check inductiveness and does not attempt
-sharaNonrecursive ::
-     MonadIO m
-  => SolveKind
-  -> IntMap [Var]
-  -> SG.Grammar [Var] Expr
-  -> m (Either Model (IntMap Expr))
-sharaNonrecursive sk vocab sg =
-  evalStateT (sharaStep sk =<< cdd sg) (emptyCDDState vocab)
 
 solveDirect ::
      MonadIO m => SolveKind -> Grammar Expr -> m (Either Model (IntMap Expr))

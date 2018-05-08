@@ -1,7 +1,8 @@
 {-# LANGUAGE QuasiQuotes #-}
+
 module Shara.Chc where
 
-import           Control.Lens hiding (anon)
+import           Control.Lens                hiding (anon)
 import           Control.Monad.State
 import           Data.Foldable               (fold)
 import           Data.Function               (on)
@@ -27,6 +28,16 @@ solveChc hcs =
        Left m -> pure (Left m)
        Right m -> pure (Right (transcribe ntToRel m))
 
+solveNonrecursiveChc ::
+     MonadIO m => [Chc] -> m (Either (Map Var Expr) (Map Var Expr))
+solveNonrecursiveChc hcs =
+  let (relToNt, ntToRel) = mapRels hcs
+      vs = varMapping relToNt hcs
+      g = grammar relToNt vs hcs
+  in sharaNonrecursive (LicketySplit SequentialInterpolation) vs g >>= \case
+       Left m -> pure (Left m)
+       Right m -> pure (Right (transcribe ntToRel m))
+
 mapRels :: [Chc] -> (Map Var Int, IntMap Var)
 mapRels hcs =
   let allAs = foldMap apps hcs
@@ -37,7 +48,7 @@ mapRels hcs =
 varMapping :: Map Var Int -> [Chc] -> IntMap [Var]
 varMapping rels hcs =
   let vs = nubBy (on (==) fst) (concatMap appVars hcs)
-   in fold $ evalState (mapM mkMap vs) (0 :: Int)
+  in fold $ evalState (mapM mkMap vs) (0 :: Int)
   where
     mkMap (r, vs) = do
       let hd = M.findWithDefault 0 r rels
@@ -66,7 +77,9 @@ grammar relToNt vMap = foldr (SG.alt . clause) SG.null
                      (SG.Term $ form & subst table)
                      (body & subst table)))
         Query body form hd ->
-          SG.Grammar (foldr (R.seq . app) (SG.Term (mkNot hd `mkAnd` form)) body) IM.empty
+          SG.Grammar
+            (foldr (R.seq . app) (SG.Term (mkNot hd `mkAnd` form)) body)
+            IM.empty
     app (App rel vs) = SG.Nonterm vs (M.findWithDefault 0 rel relToNt)
 
 transcribe :: IntMap Var -> IntMap Expr -> Map Var Expr
