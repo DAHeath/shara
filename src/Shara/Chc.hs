@@ -19,24 +19,25 @@ import           Formula
 import           Shara.Interpolate
 import           Shara.Shara
 
-solveChc :: MonadIO m => [Chc] -> m (Either (Map Var Expr) (Map Var Expr))
-solveChc hcs =
+chcStrategy ::
+     Monad m
+  => (SolveKind -> IntMap [Var] -> SG.Grammar [Var] Expr -> m (Either a (IntMap Expr)))
+  -> [Chc]
+  -> m (Either a (Map Var Expr))
+chcStrategy solver hcs =
   let (relToNt, ntToRel) = mapRels hcs
-      vs = varMapping relToNt hcs
+      (vs, mapBack) = varMapping relToNt hcs
       g = grammar relToNt vs hcs
-  in shara (LicketySplit SequentialInterpolation) vs g >>= \case
+  in solver (LicketySplit SequentialInterpolation) vs g >>= \case
        Left m -> pure (Left m)
-       Right m -> pure (Right (transcribe ntToRel m))
+       Right m -> pure (Right (transcribe mapBack ntToRel m))
+
+solveChc :: MonadIO m => [Chc] -> m (Either (Map Var Expr) (Map Var Expr))
+solveChc = chcStrategy shara
 
 solveNonrecursiveChc ::
      MonadIO m => [Chc] -> m (Either (Map Var Expr) (Map Var Expr))
-solveNonrecursiveChc hcs =
-  let (relToNt, ntToRel) = mapRels hcs
-      vs = varMapping relToNt hcs
-      g = grammar relToNt vs hcs
-  in sharaNonrecursive (LicketySplit SequentialInterpolation) vs g >>= \case
-       Left m -> pure (Left m)
-       Right m -> pure (Right (transcribe ntToRel m))
+solveNonrecursiveChc = chcStrategy sharaNonrecursive
 
 mapRels :: [Chc] -> (Map Var Int, IntMap Var)
 mapRels hcs =
@@ -45,7 +46,7 @@ mapRels hcs =
   where
     mkMap (v, n) = (M.singleton v n, IM.singleton n v)
 
-varMapping :: Map Var Int -> [Chc] -> IntMap [Var]
+varMapping :: Map Var Int -> [Chc] -> (IntMap [Var], Map String String)
 varMapping rels hcs =
   let vs = nubBy (on (==) fst) (concatMap appVars hcs)
   in fold $ evalState (mapM mkMap vs) (0 :: Int)
@@ -53,7 +54,10 @@ varMapping rels hcs =
     mkMap (r, vs) = do
       let hd = M.findWithDefault 0 r rels
       vs' <- mapM anon vs
-      pure (IM.singleton hd vs')
+      let mapBack =
+            M.fromList $
+            zip (map (view varName) vs') (map (\n -> "!" ++ show n) [0 ..])
+      pure (IM.singleton hd vs', mapBack)
     anon (Var _ t) = do
       s <- get
       put (s + 1)
@@ -67,25 +71,30 @@ grammar relToNt vMap = foldr (SG.alt . clause) SG.null
         Rule body form (App hd vs) ->
           let hd' = M.findWithDefault 0 hd relToNt
               vs' = IM.findWithDefault [] hd' vMap
-              table = M.fromList (zip vs vs')
+              tbl = M.fromList (zip vs vs')
           in SG.Grammar
                R.Null
                (IM.singleton
                   hd'
                   (foldr
                      (R.seq . app)
-                     (SG.Term $ form & subst table)
-                     (body & subst table)))
+                     (SG.Term $ form & subst tbl)
+                     (body & subst tbl)))
         Query body form hd ->
           SG.Grammar
             (foldr (R.seq . app) (SG.Term (mkNot hd `mkAnd` form)) body)
             IM.empty
     app (App rel vs) = SG.Nonterm vs (M.findWithDefault 0 rel relToNt)
 
-transcribe :: IntMap Var -> IntMap Expr -> Map Var Expr
-transcribe ntToRel sol =
-  M.mapKeys (\k -> IM.findWithDefault (error "bad key") k ntToRel) $
-  M.fromList (IM.toList sol)
+transcribe :: Map String String -> IntMap Var -> IntMap Expr -> Map Var Expr
+transcribe mapBack ntToRel sol =
+  (M.mapKeys (\k -> IM.findWithDefault (error "bad key") k ntToRel) $
+   M.fromList (IM.toList sol)) &
+  vars .
+  varName %~
+  lookupName mapBack
+  where
+    lookupName m k = M.findWithDefault k k m
 
 apps :: Chc -> Set Var
 apps =
