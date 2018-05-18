@@ -56,22 +56,17 @@ loop ::
   -> IO (Either Model (IntMap Expr))
 loop opts targets g rev m =
   if
-    | S.null (targets S.\\ M.keysSet m) -> pure (Right m)
-    | treelike (targets S.\\ M.keysSet m) rev -> do
-      putStrLn "treelike"
-      -- mapM print (M.toList $ getContext rev)
-      print targets
+    | S.null (targets S.\\ M.keysSet m) ->
+      pure (Right m)
+    | treelike (targets S.\\ M.keysSet m) rev ->
       treeSolve targets g rev m
     | otherwise -> do
-      putStrLn "not treelike"
-      print targets
       let gr = grammarToGraph targets g
       let (now', half1', half2') = cut (M.keysSet m) gr
       let (now, half1, half2) =
             if S.null (now' S.\\ M.keysSet m)
               then (targets S.\\ M.keysSet m, S.empty, S.empty)
               else (now', half1', half2')
-      print now
       runStateT
         (runExceptT $
          mapM_ (interpolateNT' g rev) (S.toList $ now S.\\ M.keysSet m))

@@ -104,6 +104,6 @@ main = do
                     else LicketySplit (LicketySplitOptions False True)
          _ -> LicketySplit (LicketySplitOptions False True))
   print sk
-  shara sk test2M test2 >>= \case
+  shara sk test1M test1 >>= \case
     Left m -> print (fmap pretty m)
     Right m -> print (fmap pretty m)
