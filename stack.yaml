@@ -1,22 +1,18 @@
 flags: {}
-extra-include-dirs:
-- /usr/local/include
 extra-package-dbs: []
-extra-lib-dirs:
-- /usr/local/lib
 packages:
 - .
 - location:
+    git: https://github.com/DAHeath/z3-haskell
+    commit: f18110558d74dd8df8560f2b0fc2cc0704673917
+  extra-dep: true
+- location:
     git: https://github.com/DAHeath/formal-language
-    commit: 87bec42b7df244471846153329cfe7a3cf50c450
+    commit: cd329e3b370e5f688ee914d740db783eb9c5ddb3
   extra-dep: true
 - location:
     git: https://github.com/DAHeath/formula
-    commit: 188210a2796770ae65bb925fe7b7d350efcd4272
-  extra-dep: true
-- location:
-    git: https://github.com/DAHeath/z3-haskell
-    commit: f18110558d74dd8df8560f2b0fc2cc0704673917
+    commit: df11d60def711545c98113eef672f2a07d6c342e
   extra-dep: true
 extra-deps:
 - parsec-numbers-0.1.0

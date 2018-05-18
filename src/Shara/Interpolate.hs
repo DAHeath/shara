@@ -12,9 +12,12 @@ import qualified Data.IntSet              as S
 import           Data.Language.Grammar
 import qualified Data.Language.Reg        as R
 import           Data.Semigroup
+import           Data.Tree as Tree
 import           Formula
 import qualified Formula.Z3               as Z3
 import           Shara.GrammarCut
+
+import Data.Text.Prettyprint.Doc
 
 data LicketySplitOptions = LicketySplitOptions
   -- When lickety split divides the problem in two, should it continue on the
@@ -52,18 +55,23 @@ loop ::
   -> IntMap Expr
   -> IO (Either Model (IntMap Expr))
 loop opts targets g rev m =
-  if treelike (targets S.\\ M.keysSet m) rev
-  then treeSolve targets g rev m
-   else do
-  -- if null (targets S.\\ M.keysSet m)
-  --   then pure (Right m)
-  --   else do
+  if
+    | S.null (targets S.\\ M.keysSet m) -> pure (Right m)
+    | treelike (targets S.\\ M.keysSet m) rev -> do
+      putStrLn "treelike"
+      -- mapM print (M.toList $ getContext rev)
+      print targets
+      treeSolve targets g rev m
+    | otherwise -> do
+      putStrLn "not treelike"
+      print targets
       let gr = grammarToGraph targets g
       let (now', half1', half2') = cut (M.keysSet m) gr
       let (now, half1, half2) =
             if S.null (now' S.\\ M.keysSet m)
               then (targets S.\\ M.keysSet m, S.empty, S.empty)
               else (now', half1', half2')
+      print now
       runStateT
         (runExceptT $
          mapM_ (interpolateNT' g rev) (S.toList $ now S.\\ M.keysSet m))
@@ -98,8 +106,52 @@ treeSolve :: IntSet
           -> Context Expr
           -> IntMap Expr
           -> IO (Either Model (IntMap Expr))
-treeSolve targets g revg m = undefined
-  -- TODO invoke the iZ3 tree interpolator over the current grammar.
+treeSolve targets g revg m =
+  let branches = M.fromList $ map branchFor (S.toList targets)
+      -- The nonterminals which are reached
+      reached = S.fromList $ concatMap snd $ M.elems branches
+      -- The root of the tree is the nonterminal that no other reaches.
+      root = S.findMin (targets S.\\ reached)
+      context = mkRevForm root m g revg
+      (eTree, ntTree) = mkTree branches root
+      eTree' = Tree.Node context [eTree]
+  in do
+    t <- liftIO (Z3.treeInterpolate eTree')
+    case t of
+      Left m -> pure (Left m)
+      Right t' -> do
+        let m' = execState (bindTreeResults ntTree (stripRoot t')) m
+        pure (Right m')
+  where
+    stripRoot :: Tree a -> Tree a
+    stripRoot (Tree.Node _ [t]) = t
+    stripRoot _ = error "invalid root strip"
+
+    bindTreeResults :: Tree NT -> Tree Expr -> State (IntMap Expr) ()
+    bindTreeResults (Tree.Node nt nts) (Tree.Node e es) = do
+      modify (M.insert nt e)
+      mapM_ (uncurry bindTreeResults) (zip nts es)
+
+
+    mkTree :: IntMap (Expr, [NT]) -> NT -> (Tree Expr, Tree NT)
+    mkTree m nt =
+      let (e, nts) = M.findWithDefault (LBool True, []) nt m
+          (eTs, ntTs) = unzip (map (mkTree m) nts)
+      in (Tree.Node e eTs, Tree.Node nt ntTs)
+
+    branchFor :: NT -> (NT, (Expr, [NT]))
+    branchFor nt = (nt, runState (go $ ruleFor nt g) [])
+
+    go = \case
+      R.Seq a b -> mkAnd <$> go a <*> go b
+      R.Alt a b -> mkOr <$> go a <*> go b
+      R.Eps -> pure (LBool True)
+      R.Null -> pure (LBool False)
+      Term t -> pure t
+      Nonterm nt ->
+        case M.lookup nt m of
+          Nothing -> modify (nt :) >> pure (LBool True)
+          Just e -> pure e
 
 -- Replace `concurrently` by this to perform the same action without parallelism.
 sequentially :: IO a -> IO b -> IO (a, b)

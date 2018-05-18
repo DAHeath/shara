@@ -29,15 +29,36 @@ shara ::
 shara sk vocab sg = evalStateT (go =<< cdd sg) (emptyCDDState vocab)
   where
     go g =
-      solveDirect sk (finitePrefix g) >>= \case
+      sharaStep sk g >>= \case
         Left m -> pure (Left m)
-        Right m -> do
-          cs <- use clones
-          let sol = collapse cs m
-          inductive vocab sol sg >>= \case
-            Nothing -> pure (Right sol)
+        Right m ->
+          inductive vocab m sg >>= \case
+            Nothing -> pure (Right m)
             Just _ -> go =<< unrollCDD g {- inds -}
-             {- inds -}
+
+-- | A Shara variant which does not check inductiveness and does not attempt to
+-- unwind the grammar: Used for nontercursive problems.
+sharaNonrecursive ::
+     MonadIO m
+  => SolveKind
+  -> IntMap [Var]
+  -> SG.Grammar [Var] Expr
+  -> m (Either Model (IntMap Expr))
+sharaNonrecursive sk vocab sg =
+  evalStateT (sharaStep sk =<< cdd sg) (emptyCDDState vocab)
+
+-- | Perform a single step -- solving a particular unwinding of the grammar.
+sharaStep ::
+     (MonadIO m, MonadState CDDState m)
+  => SolveKind
+  -> IGrammar m' Expr
+  -> m (Either Model (IntMap Expr))
+sharaStep sk g =
+  solveDirect sk (finitePrefix g) >>= \case
+    Left m -> pure (Left m)
+    Right m -> do
+      cs <- use clones
+      pure (Right $ collapse cs m)
 
 solveDirect ::
      MonadIO m => SolveKind -> Grammar Expr -> m (Either Model (IntMap Expr))
