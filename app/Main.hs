@@ -3,11 +3,13 @@
 import           Control.Monad.State
 import           Data.IntMap                 (IntMap)
 import qualified Data.IntMap                 as M
+import           Data.Language.Inf
 import qualified Data.Language.Reg           as R
 import qualified Data.Language.ScopedGrammar as SG
 import           Data.Text.Prettyprint.Doc
 import           Formula                     hiding (res)
 import           Prelude                     hiding (abs)
+import           Shara.CDD
 import           Shara.Interpolate
 import           Shara.Shara
 import           System.Environment          (getArgs)
@@ -15,7 +17,7 @@ import           System.Environment          (getArgs)
 test1 :: SG.Grammar [Var] Expr
 test1 =
   SG.Grammar
-    (SG.Term [expr|x = 41|] `R.seq` SG.Nonterm [x] 0)
+    (SG.Term [expr|x = 5|] `R.seq` SG.Nonterm [x] 0)
     (M.fromList
        [ ( 0
          , R.alt
@@ -104,6 +106,6 @@ main = do
                     else LicketySplit (LicketySplitOptions False True)
          _ -> LicketySplit (LicketySplitOptions False True))
   print sk
-  shara sk test1M test1 >>= \case
+  shara sk test2M test2 >>= \case
     Left m -> print (fmap pretty m)
     Right m -> print (fmap pretty m)

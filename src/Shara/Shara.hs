@@ -14,6 +14,7 @@ import           Formula
 import qualified Formula.Z3                  as Z3
 import           Shara.CDD
 import           Shara.Interpolate
+import           Shara.Plan
 
 data SolveKind
   = Topological
@@ -54,7 +55,8 @@ sharaStep ::
   -> IGrammar m' Expr
   -> m (Either Model (IntMap Expr))
 sharaStep sk g =
-  solveDirect sk (finitePrefix g) >>= \case
+  liftIO (interp (finitePrefix g)) >>= \case
+  -- solveDirect sk (finitePrefix g) >>= \case
     Left m -> pure (Left m)
     Right m -> do
       cs <- use clones

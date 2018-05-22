@@ -17,8 +17,6 @@ import           Formula
 import qualified Formula.Z3               as Z3
 import           Shara.GrammarCut
 
-import Data.Text.Prettyprint.Doc
-
 data LicketySplitOptions = LicketySplitOptions
   -- When lickety split divides the problem in two, should it continue on the
   -- two subproblems concurrently?
