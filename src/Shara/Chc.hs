@@ -21,14 +21,14 @@ import           Shara.Shara
 
 chcStrategy ::
      Monad m
-  => (SolveKind -> IntMap [Var] -> SG.Grammar [Var] Expr -> m (Either a (IntMap Expr)))
+  => (IntMap [Var] -> SG.Grammar [Var] Expr -> m (Either a (IntMap Expr)))
   -> [Chc]
   -> m (Either a (Map Var Expr))
 chcStrategy solver hcs =
   let (relToNt, ntToRel) = mapRels hcs
       (vs, mapBack) = varMapping relToNt hcs
       g = grammar relToNt vs hcs
-   in solver (LicketySplit $ LicketySplitOptions False True) vs g >>= \case
+   in solver vs g >>= \case
        Left m -> pure (Left m)
        Right m -> pure (Right (transcribe mapBack ntToRel m))
 

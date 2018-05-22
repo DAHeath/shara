@@ -14,23 +14,16 @@ import           Formula
 import qualified Formula.Z3                  as Z3
 import           Shara.CDD
 import           Shara.Interpolate
-import           Shara.Plan
-
-data SolveKind
-  = Topological
-  | LicketySplit LicketySplitOptions
-  deriving (Show, Read, Eq, Ord)
 
 shara ::
      MonadIO m
-  => SolveKind
-  -> IntMap [Var]
+  => IntMap [Var]
   -> SG.Grammar [Var] Expr
   -> m (Either Model (IntMap Expr))
-shara sk vocab sg = evalStateT (go =<< cdd sg) (emptyCDDState vocab)
+shara vocab sg = evalStateT (go =<< cdd sg) (emptyCDDState vocab)
   where
     go g =
-      sharaStep sk g >>= \case
+      sharaStep g >>= \case
         Left m -> pure (Left m)
         Right m ->
           inductive vocab m sg >>= \case
@@ -41,33 +34,23 @@ shara sk vocab sg = evalStateT (go =<< cdd sg) (emptyCDDState vocab)
 -- unwind the grammar: Used for nontercursive problems.
 sharaNonrecursive ::
      MonadIO m
-  => SolveKind
-  -> IntMap [Var]
+  => IntMap [Var]
   -> SG.Grammar [Var] Expr
   -> m (Either Model (IntMap Expr))
-sharaNonrecursive sk vocab sg =
-  evalStateT (sharaStep sk =<< cdd sg) (emptyCDDState vocab)
+sharaNonrecursive vocab sg =
+  evalStateT (sharaStep =<< cdd sg) (emptyCDDState vocab)
 
 -- | Perform a single step -- solving a particular unwinding of the grammar.
 sharaStep ::
      (MonadIO m, MonadState CDDState m)
-  => SolveKind
-  -> IGrammar m' Expr
+  => IGrammar m' Expr
   -> m (Either Model (IntMap Expr))
-sharaStep sk g =
-  liftIO (interp (finitePrefix g)) >>= \case
-  -- solveDirect sk (finitePrefix g) >>= \case
+sharaStep g =
+  liftIO (interpolate (finitePrefix g)) >>= \case
     Left m -> pure (Left m)
     Right m -> do
       cs <- use clones
       pure (Right $ collapse cs m)
-
-solveDirect ::
-     MonadIO m => SolveKind -> Grammar Expr -> m (Either Model (IntMap Expr))
-solveDirect =
-  \case
-    Topological -> topologicalInterpolation
-    LicketySplit strat -> licketySplit strat
 
 inductive ::
      MonadIO m

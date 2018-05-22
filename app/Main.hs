@@ -92,20 +92,6 @@ abs' = Var "abs'" Int
 res = Var "res" Int
 
 main :: IO ()
-main = do
-  sk <-
-    getArgs >>=
-    (\as ->
-       pure $
-       case as of
-         [a] ->
-           if a == "topo"
-             then Topological
-             else if a == "par"
-                    then LicketySplit (LicketySplitOptions True True)
-                    else LicketySplit (LicketySplitOptions False True)
-         _ -> LicketySplit (LicketySplitOptions False True))
-  print sk
-  shara sk test2M test2 >>= \case
-    Left m -> print (fmap pretty m)
-    Right m -> print (fmap pretty m)
+main = shara test2M test2 >>= \case
+  Left m -> print (fmap pretty m)
+  Right m -> print (fmap pretty m)
