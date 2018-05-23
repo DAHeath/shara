@@ -70,35 +70,33 @@ Proof is given in \autoref{app:char}.
 
 % algorithm for constructing a CDD system:
 \begin{algorithm}[t]
-  % Declare IO markers.
   \SetKwInOut{Input}{Input}
-  %
   \SetKwInOut{Output}{Output}
-  % Declare sub-program (procedure) markers.
   \SetKwProg{myproc}{Procedure}{}{}
-  % Inputs: a heap program and an error location.
+  %
   \Input{A CDD System $\cc{S}$.}
-  % Output: inductive invariants.
-  \Output{If $\cc{S}$ is solvable, then a solution of
-    $\cc{S}$; %
-    otherwise, the value $\nosoln$.}
-  % 
-  \myproc{$\solvecdd(\cc{S})$ %
-    \label{line:solve-begin}}{%
+  \Output{%
+    If $\cc{S}$ is solvable, then a solution of
+    $\cc{S}$;
+    otherwise, the value $\nosoln$.
+  }
+  \myproc{$\solvecdd(\cc{S})$}{%
     $\sigma \assign \emptyset$ \\
-    $\cc{Preds} \assign \topSort(\predof{S})$ \\
-    \label{line:top-sort}}{%
-    \For {$P \in \cc{Preds}$}
-    {$\cc{interpolant} \assign \solveitp(\prectr(P,\sigma),\postctr(P,\sigma))$
-      \label{line:interp}\\
-     \Switch{\cc{interpolant}}{%
-       \lCase{\cc{SAT}:}{\Return{$\nosoln$}}\label{line:interp-sat}
-       \lCase{$\cc{I}$:}{$\sigma$ [$P$] $\assign$ $\cc{I}$}\label{line:interp-valid}
-     }
+    $\cc{Preds} \assign \topSort(\predof{S})$\label{line:top-sort} \\
+    \For {$P \in \cc{Preds}$}{%
+      $\cc{interpolant} \assign
+        \solveitp(\prectr(P,\sigma),\postctr(P,\sigma))$\label{line:interp} \\
+      \Switch{\cc{interpolant}}{%
+        \lCase{\cc{SAT}:}{%
+          \Return{$\nosoln$}
+        }\label{line:interp-sat}
+        \lCase{$\cc{I}$:}{%
+          $\sigma$ [$P$] $\assign$ $\cc{I}$
+        }\label{line:interp-valid}
+      }
     }
     \Return{$\sigma$}\label{line:solve-done}
-    }
-  %
+  }
   \caption{$\solvecdd$: for a CDD system $\cc{S}$, returns a
     solution to $\cc{S}$ or the value $\none$ to denote that
     $\cc{S}$ has no solution.}
